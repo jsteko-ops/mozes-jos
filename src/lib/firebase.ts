@@ -1,26 +1,25 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
+// 🔒 CHECK IF ENV EXISTS
+const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+if (!apiKey) {
+  throw new Error("❌ Missing Firebase API KEY in .env.local");
+}
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBQLW5zQ8KBM9C6wfjD67li9kWt9Q834A",
-  authDomain: "mozes-jos.firebaseapp.com",
-  projectId: "mozes-jos",
-  storageBucket: "mozes-jos.firebasestorage.app",
-  messagingSenderId: "38170886413",
-  appId: "1:38170886413:web:e52dfb8c2bf75014df7044",
+  apiKey,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// 🔒 prevent multiple init (Next.js safe)
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-
-// 🔥 AUTO LOGIN (pamti usera u browseru)
-setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log("Auth persistence enabled");
-  })
-  .catch((error) => {
-    console.log("Persistence error:", error);
-  });
