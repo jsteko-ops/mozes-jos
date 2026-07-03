@@ -8,15 +8,18 @@ export function useKlijent(id?: string) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
 
-    async function load() {
-      const data = await getKlijentById(id);
+    async function load(clientId: string) {
+      const data = await getKlijentById(clientId);
       setKlijent(data);
       setLoading(false);
     }
 
-    load();
+    load(id);
   }, [id]);
 
   return { klijent, loading };
