@@ -1,62 +1,37 @@
-import Stripe from "stripe";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { stripe } from "@/lib/stripe";
 
-// 🔐 ENV
-const secretKey = process.env.STRIPE_SECRET_KEY;
-const priceId = process.env.STRIPE_PRICE_ID;
-const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+export async function POST(req: Request) {
+  try {
+    const origin = req.headers.get("origin");
 
-if (!secretKey || !priceId || !appUrl) {
-  throw new Error("Missing Stripe env variables");
-}
-
-// 💳 Stripe
-const stripe = new Stripe(secretKey, {
-  apiVersion: "2023-10-16",
+const session = await stripe.checkout.sessions.create({
+  payment_method_types: ["card"],
+  mode: "payment",
+  metadata: {
+    userId: "test1234" // 🔥 kasnije ćemo uzeti iz cookie-a
+  },
+  line_items: [
+    {
+      price_data: {
+        currency: "eur",
+        product_data: {
+          name: "Premium Access"
+        },
+        unit_amount: 1000
+      },
+      quantity: 1
+    }
+  ],
+  success_url: `${origin}/dashboard?success=true`,
+  cancel_url: `${origin}/dashboard?canceled=true`
 });
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-
-    if (!body?.userId) {
-      return NextResponse.json(
-        { error: "Missing userId" },
-        { status: 400 }
-      );
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "subscription",
-
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-
-      success_url: `${appUrl}/dashboard?success=true`,
-      cancel_url: `${appUrl}/dashboard?canceled=true`,
-
-      metadata: {
-        userId: body.userId,
-      },
-    });
-
-    return NextResponse.json({
-      url: session.url,
-    });
-  } catch (error: any) {
+    return NextResponse.redirect(session.url!, 303);
+  } catch (err) {
     return NextResponse.json(
-      {
-        error: error.message || "Stripe error",
-      },
-      {
-        status: 500,
-      }
+      { error: "Stripe checkout error" },
+      { status: 500 }
     );
   }
 }

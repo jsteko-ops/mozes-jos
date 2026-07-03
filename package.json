@@ -4,26 +4,26 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev-oneclick.js",
+    "stripe": "stripe listen --forward-to localhost:3000/api/stripe/webhook",
+    "dev:single": "concurrently -n NEXT,STRIPE -c green,magenta \"npm run dev\" \"npm run stripe\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "firebase": "^10.0.0",
-    "firebase-admin": "^12.0.0",
+    "firebase": "^12.15.0",
+    "firebase-admin": "^14.1.0",
     "kill-port": "^2.0.1",
     "next": "16.2.9",
     "react": "^18",
     "react-dom": "^18",
-    "recharts": "^3.9.1",
-    "stripe": "^14.0.0"
+    "stripe": "^14.25.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "19.2.17",
     "autoprefixer": "^10.5.2",
+    "concurrently": "^9.0.0",
     "postcss": "^8.5.16",
     "tailwindcss": "^4.3.2",
     "typescript": "^5"
