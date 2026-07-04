@@ -1,0 +1,13 @@
+[33m61b1626[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mstripe-integration[m[33m)[m Stripe checkout working
+[33me2f0828[m Auth system + Stripe integration + dashboard protection
+[33m7a6ffe5[m[33m ([m[1;31morigin/stripe-integration[m[33m)[m Fix TypeScript errors and clean up tsconfig
+[33m566d7e7[m[33m ([m[1;32mmain[m[33m)[m working SaaS version - clients system stable
+[33md38d178[m[33m ([m[1;31morigin/main[m[33m)[m fix auth page default export clean
+[33m1449168[m fix auth default export
+[33m40a4a0a[m test auth build fix
+[33m6d00889[m restore firebase login
+[33m689f322[m fix auth page minimal
+[33mec2f83b[m fix auth page export
+[33m7baa03c[m test deploy
+[33m7a7d85e[m add logout button
+[33m01b5dc4[m first commit

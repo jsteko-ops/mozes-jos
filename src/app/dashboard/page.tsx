@@ -1,13 +1,24 @@
-import PayButton from "@/components/PayButton";
+import { adminDb } from "@/lib/firebaseAdmin";
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  const userId = "test-user-123";
+
+  const userRef = adminDb.collection("users").doc(userId);
+  const userSnap = await userRef.get();
+
+  const data = userSnap.data();
+
+  if (!data?.isPremium) {
+    return (
+      <div>
+        <h1>🚫 Nema pristupa</h1>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Dashboard</h1>
-
-      <p>Ovo je tvoj user dashboard.</p>
-
-      <PayButton />
+    <div>
+      <h1>✅ Premium Dashboard</h1>
     </div>
   );
 }

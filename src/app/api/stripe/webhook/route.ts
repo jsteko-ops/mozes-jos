@@ -1,32 +1,43 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import Stripe from "stripe";
+import { adminDb } from "@/lib/firebaseAdmin";
+
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const origin = req.headers.get("origin") || "http://localhost:3000";
+  const body = await req.text();
+  const sig = req.headers.get("stripe-signature") as string;
 
-  const body = await req.json().catch(() => ({}));
-  const userId = body.userId || "test1234";
+  let event: Stripe.Event;
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "payment",
-    metadata: { userId },
-    line_items: [
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (err) {
+    return NextResponse.json({ error: "Webhook error" }, { status: 400 });
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    const userId = session.metadata?.userId;
+
+    console.log("PAYMENT SUCCESS:", userId);
+
+    if (!userId) return NextResponse.json({ ok: true });
+
+    await adminDb.collection("users").doc(userId).set(
       {
-        price_data: {
-          currency: "eur",
-          product_data: { name: "Premium Access" },
-          unit_amount: 1000,
-        },
-        quantity: 1,
+        isPremium: true,
+        premiumSince: new Date().toISOString(),
       },
-    ],
-    success_url: `${origin}/dashboard?success=true`,
-    cancel_url: `${origin}/dashboard?canceled=true`,
-  });
+      { merge: true }
+    );
+  }
 
-  return NextResponse.json({
-    url: session.url,
-    sessionId: session.id,
-  });
+  return NextResponse.json({ received: true });
 }
