@@ -3,32 +3,40 @@ import { stripe } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   try {
-    const origin = req.headers.get("origin");
+    const origin = req.headers.get("origin") || "http://localhost:3000";
 
-const session = await stripe.checkout.sessions.create({
-  payment_method_types: ["card"],
-  mode: "payment",
-  metadata: {
-    userId: "test1234" // 🔥 kasnije ćemo uzeti iz cookie-a
-  },
-  line_items: [
-    {
-      price_data: {
-        currency: "eur",
-        product_data: {
-          name: "Premium Access"
-        },
-        unit_amount: 1000
+    const body = await req.json().catch(() => ({}));
+    const userId = body.userId || "test1234";
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      metadata: {
+        userId,
       },
-      quantity: 1
-    }
-  ],
-  success_url: `${origin}/dashboard?success=true`,
-  cancel_url: `${origin}/dashboard?canceled=true`
-});
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: "Premium Access",
+            },
+            unit_amount: 1000,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${origin}/dashboard?success=true`,
+      cancel_url: `${origin}/dashboard?canceled=true`,
+    });
 
-    return NextResponse.redirect(session.url!, 303);
+    return NextResponse.json({
+      url: session.url,
+      sessionId: session.id,
+    });
   } catch (err) {
+    console.error(err);
+
     return NextResponse.json(
       { error: "Stripe checkout error" },
       { status: 500 }

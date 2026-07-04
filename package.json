@@ -11,6 +11,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^9.9.0",
     "firebase": "^12.15.0",
     "firebase-admin": "^14.1.0",
     "kill-port": "^2.0.1",

@@ -6,7 +6,6 @@ export async function POST(req: Request) {
   (await cookies()).set("user", userId, {
     httpOnly: true,
     path: "/",
-    sameSite: "lax",
   });
 
   return Response.json({ ok: true });

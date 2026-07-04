@@ -9,30 +9,28 @@ export default function StripeButton() {
     try {
       setLoading(true);
 
-      // 🔴 PRIVREMENO (kasnije Firebase user)
-      const userId = "test-user-123";
-
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId,
+          userId: "test1234",
         }),
       });
 
       const data = await res.json();
 
-      console.log("🧾 CHECKOUT RESPONSE:", data);
+      console.log("STRIPE RESPONSE:", data);
 
       if (data?.url) {
+        // 🔥 OVO JE KLJUČ
         window.location.href = data.url;
       } else {
-        console.error("❌ No URL returned:", data);
+        console.error("No URL returned", data);
       }
     } catch (err) {
-      console.error("Checkout error:", err);
+      console.error("Stripe error:", err);
     } finally {
       setLoading(false);
     }
@@ -50,7 +48,7 @@ export default function StripeButton() {
         cursor: "pointer",
       }}
     >
-      {loading ? "Processing..." : "Subscribe"}
+      {loading ? "Processing..." : "Upgrade (Stripe)"}
     </button>
   );
 }
