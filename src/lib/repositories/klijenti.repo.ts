@@ -4,6 +4,9 @@ import {
   getDoc,
   collection,
   onSnapshot,
+  getDocs,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 
 /* 👤 GET CLIENT BY ID */
@@ -22,6 +25,38 @@ export function listenKlijenti(cb: Function) {
 
   return onSnapshot(ref, (snap) => {
     cb(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  });
+}
+
+/* ➕ ADD CLIENT (FREE LIMIT + PREMIUM CHECK) */
+export async function addKlijent(data: {
+  name: string;
+  goal: string;
+  email?: string;
+  phone?: string;
+  userId: string;
+}) {
+  // 1. provjeri usera
+  const userRef = doc(db, "users", data.userId);
+  const userSnap = await getDoc(userRef);
+
+  const isPremium = userSnap.exists()
+    ? userSnap.data().isPremium
+    : false;
+
+  // 2. FREE LIMIT (5 klijenata)
+  if (!isPremium) {
+    const klijentiSnap = await getDocs(collection(db, "klijenti"));
+
+    if (klijentiSnap.size >= 5) {
+      throw new Error("LIMIT_REACHED");
+    }
+  }
+
+  // 3. spremi klijenta
+  await addDoc(collection(db, "klijenti"), {
+    ...data,
+    createdAt: serverTimestamp(),
   });
 }
 

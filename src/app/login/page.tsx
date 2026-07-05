@@ -1,24 +1,29 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [userId, setUserId] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const login = async () => {
-    const res = await fetch("/api/auth/login", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({ userId }),
-});
+  const handleLogin = async () => {
+    try {
+      const userCred = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-    if (res.ok) {
-      router.push("/dashboard");
-      router.refresh();
+      const token = await userCred.user.getIdToken();
+
+      document.cookie = `token=${token}; path=/`;
+
+      window.location.href = "/dashboard";
+    } catch (err) {
+      console.error(err);
+      alert("Login error");
     }
   };
 
@@ -27,14 +32,23 @@ export default function LoginPage() {
       <h1>Login</h1>
 
       <input
-        placeholder="User ID"
-        value={userId}
-        onChange={(e) => setUserId(e.target.value)}
+        placeholder="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
       />
 
-      <button onClick={login} style={{ marginLeft: 10 }}>
-        Login
-      </button>
+      <br />
+
+      <input
+        placeholder="password"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+
+      <br />
+
+      <button onClick={handleLogin}>Login</button>
     </div>
   );
 }

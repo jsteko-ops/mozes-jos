@@ -1,27 +1,30 @@
 "use client";
 
+import { auth } from "@/lib/firebase";
+
 export default function PayButton() {
   const handlePay = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Not logged in");
+      return;
+    }
+
     const res = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        userId: "test123",
+        userId: user.uid, // 🔥 SINGLE SOURCE OF TRUTH
       }),
     });
 
     const data = await res.json();
 
-    if (data.url) {
-      window.location.href = data.url;
-    }
+    window.location.href = data.url;
   };
 
-  return (
-    <button onClick={handlePay}>
-      Plati 10€
-    </button>
-  );
+  return <button onClick={handlePay}>💳 Plati</button>;
 }

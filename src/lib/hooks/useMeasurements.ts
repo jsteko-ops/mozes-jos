@@ -1,26 +1,20 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { listenMeasurements } from "@/lib/repositories/klijenti.repo";
 
-export function useMeasurements(clientId?: string) {
+export function useMeasurements(clientId: string) {
   const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!clientId) return;
 
-    const unsub = listenMeasurements(clientId, (d: any[]) => {
-      setData(
-        [...d].sort(
-          (a, b) =>
-            (b.createdAt?.seconds || 0) -
-            (a.createdAt?.seconds || 0)
-        )
-      );
+    const unsub = listenMeasurements(clientId, (items: any[]) => {
+      setData(items);
+      setLoading(false);
     });
 
     return () => unsub();
   }, [clientId]);
 
-  return data;
+  return { data, loading };
 }
