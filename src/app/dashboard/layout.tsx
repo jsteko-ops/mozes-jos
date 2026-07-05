@@ -1,63 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import { useUser } from "@/lib/hooks/useUser";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isPremium } = useUser();
-
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      
+    <div style={wrap}>
       {/* SIDEBAR */}
-      <div
-        style={{
-          width: 240,
-          background: "#111",
-          color: "white",
-          padding: 20,
-        }}
-      >
-        <h2 style={{ marginBottom: 20 }}>⚡ SaaS App</h2>
+      <aside style={sidebar}>
+        <div style={logo}>⚡ Moje SaaS</div>
 
-        <nav style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <Link href="/dashboard" style={{ color: "white" }}>
-            🏠 Dashboard
-          </Link>
-
-          <Link href="/dashboard/klijenti" style={{ color: "white" }}>
-            👥 Klijenti
-          </Link>
-
-          <Link href="/dashboard/billing" style={{ color: "white" }}>
-            💳 Billing
-          </Link>
-
-          <Link href="/dashboard/settings" style={{ color: "white" }}>
-            ⚙️ Settings
-          </Link>
+        <nav style={nav}>
+          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/dashboard/klijenti">Klijenti</Link>
+          <Link href="/dashboard/reports">Reports</Link>
+          <Link href="/dashboard/billing">Billing</Link>
+          <Link href="/dashboard/upgrade">Upgrade</Link>
         </nav>
-
-        <div style={{ marginTop: 30, fontSize: 12 }}>
-          Status:
-          <div
-            style={{
-              marginTop: 5,
-              color: isPremium ? "lightgreen" : "orange",
-              fontWeight: "bold",
-            }}
-          >
-            {isPremium ? "⭐ Premium" : "Free plan"}
-          </div>
-        </div>
-      </div>
+      </aside>
 
       {/* CONTENT */}
-      <div style={{ flex: 1, padding: 20 }}>{children}</div>
+      <main style={content}>{children}</main>
     </div>
   );
 }
+
+const wrap = {
+  display: "flex",
+  minHeight: "100vh",
+  background: "#f7f7f8",
+};
+
+const sidebar = {
+  width: 240,
+  background: "white",
+  borderRight: "1px solid #e5e7eb",
+  padding: 20,
+};
+
+const logo = {
+  fontWeight: 700,
+  marginBottom: 20,
+};
+
+const nav = {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 10,
+};
+
+const content = {
+  flex: 1,
+  padding: 30,
+};

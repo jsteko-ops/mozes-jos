@@ -1,54 +1,22 @@
 "use client";
 
-import { useUser } from "@/lib/hooks/useUser";
+import Card from "@/components/ui/Card";
 
-export default function BillingPage() {
-  const { isPremium } = useUser();
-
-  const handleUpgrade = async () => {
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      body: JSON.stringify({
-        userId: "test", // možeš zamijeniti s real user.uid
-      }),
-    });
-
-    const data = await res.json();
-
-    if (data.url) {
-      window.location.href = data.url;
-    }
-  };
-
+export default function Billing() {
   return (
     <div>
-      <h1>💳 Billing</h1>
+      <h1>Billing</h1>
 
-      <div
-        style={{
-          padding: 15,
-          marginTop: 10,
-          background: isPremium ? "#e6ffed" : "#fff3cd",
-          borderRadius: 10,
-        }}
-      >
-        Status: {isPremium ? "⭐ Premium" : "Free plan"}
-      </div>
+      <Card>
+        <h2>Current plan</h2>
+        <p style={{ color: "#6b7280" }}>
+          Free plan (5 clients limit)
+        </p>
 
-      {!isPremium && (
-        <button
-          onClick={handleUpgrade}
-          style={{
-            marginTop: 20,
-            padding: 12,
-            background: "black",
-            color: "white",
-            borderRadius: 8,
-          }}
-        >
-          🚀 Upgrade to Premium
+        <button className="btn btn-primary">
+          Upgrade
         </button>
-      )}
+      </Card>
     </div>
   );
 }
