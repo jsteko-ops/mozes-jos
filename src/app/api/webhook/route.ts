@@ -1,105 +1,96 @@
 import { NextResponse } from "next/server";
+import { stripe } from "@/lib/stripe";
+import { adminDb } from "@/lib/firebaseAdmin";
 import Stripe from "stripe";
-import { headers } from "next/headers";
-import { db } from "@/lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
-});
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: Request) {
-  console.log("========== WEBHOOK HIT ==========");
-
-  const body = await req.text();
-
-  const signature = (await headers()).get("stripe-signature");
-
-  console.log("Stripe signature:", signature ? "FOUND" : "MISSING");
-  console.log("Body length:", body.length);
-
-  let event: Stripe.Event;
-
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature!,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    const body = await req.text();
+    const sig = req.headers.get("stripe-signature") as string;
 
-    console.log("Webhook verified");
-    console.log("Event:", event.type);
-  } catch (err: any) {
-    console.error("Webhook verification failed:");
-    console.error(err.message);
-
-    return NextResponse.json(
-      {
-        error: err.message,
-      },
-      {
-        status: 400,
-      }
-    );
-  }
-
-  if (event.type === "checkout.session.completed") {
-    console.log("Checkout completed");
-
-    const session = event.data.object as Stripe.Checkout.Session;
-
-    const userId = session.metadata?.userId;
-
-    console.log("User ID:", userId);
-
-    if (!userId) {
-      console.log("No userId found in metadata");
-
-      return NextResponse.json(
-        {
-          error: "No userId",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
+    let event: Stripe.Event;
 
     try {
-      await setDoc(
-        doc(db, "users", userId),
-        {
-          email: session.customer_details?.email ?? "",
-          isPremium: true,
-          stripeCustomerId:
-            typeof session.customer === "string"
-              ? session.customer
-              : null,
-        },
-        {
-          merge: true,
-        }
+      event = stripe.webhooks.constructEvent(
+        body,
+        sig,
+        endpointSecret
       );
-
-      console.log("USER UPGRADED:", userId);
-    } catch (err) {
-      console.error("Firestore write failed:");
-      console.error(err);
-
-      return NextResponse.json(
-        {
-          error: "Firestore failed",
-        },
-        {
-          status: 500,
-        }
-      );
+    } catch (err: any) {
+      console.error("Webhook signature error:", err.message);
+      return new NextResponse(`Webhook Error: ${err.message}`, {
+        status: 400,
+      });
     }
+
+    // 💳 1. SUBSCRIPTION CREATED / UPDATED
+    if (
+      event.type === "checkout.session.completed"
+    ) {
+      const session = event.data.object as Stripe.Checkout.Session;
+
+      const userId = session.metadata?.userId;
+      const plan = session.metadata?.plan;
+
+      if (userId) {
+        await adminDb.collection("users").doc(userId).update({
+          subscriptionStatus: "active",
+          plan,
+          stripeCustomerId: session.customer as string,
+          updatedAt: new Date(),
+        });
+      }
+    }
+
+    // 🔁 2. SUBSCRIPTION UPDATED (renew/cancel/past_due)
+    if (event.type === "customer.subscription.updated") {
+      const subscription = event.data.object as Stripe.Subscription;
+
+      const customerId = subscription.customer as string;
+      const status = subscription.status;
+
+      const usersRef = adminDb.collection("users");
+      const snapshot = await usersRef
+        .where("stripeCustomerId", "==", customerId)
+        .get();
+
+      snapshot.forEach(async (doc) => {
+        await doc.ref.update({
+          subscriptionStatus: status,
+          updatedAt: new Date(),
+        });
+      });
+    }
+
+    // ❌ 3. SUBSCRIPTION DELETED (cancel)
+    if (event.type === "customer.subscription.deleted") {
+      const subscription = event.data.object as Stripe.Subscription;
+
+      const customerId = subscription.customer as string;
+
+      const usersRef = adminDb.collection("users");
+      const snapshot = await usersRef
+        .where("stripeCustomerId", "==", customerId)
+        .get();
+
+      snapshot.forEach(async (doc) => {
+        await doc.ref.update({
+          subscriptionStatus: "canceled",
+          plan: "free",
+          updatedAt: new Date(),
+        });
+      });
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (error: any) {
+    console.error("Webhook error:", error);
+
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
-
-  console.log("Webhook finished");
-
-  return NextResponse.json({
-    received: true,
-  });
 }

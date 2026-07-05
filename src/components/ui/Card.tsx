@@ -1,32 +1,19 @@
-type CardProps = {
-  title?: string;
+export default function Card({
+  children,
+}: {
   children: React.ReactNode;
-};
-
-export default function Card({ title, children }: CardProps) {
+}) {
   return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: 16,
-        padding: 20,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-        marginBottom: 20,
-      }}
-    >
-      {title && (
-        <h2
-          style={{
-            marginBottom: 16,
-            fontSize: 20,
-            fontWeight: 700,
-          }}
-        >
-          {title}
-        </h2>
-      )}
-
+    <div style={box}>
       {children}
     </div>
   );
 }
+
+const box = {
+  background: "#fff",
+  border: "1px solid #e5e7eb",
+  borderRadius: 16,
+  padding: 20,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.04)",
+};

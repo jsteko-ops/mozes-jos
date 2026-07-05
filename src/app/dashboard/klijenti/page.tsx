@@ -1,66 +1,46 @@
 "use client";
 
 import Link from "next/link";
+import Card from "@/components/ui/Card";
 import { useKlijenti } from "@/lib/hooks/useKlijenti";
 
 export default function KlijentiPage() {
-  const { klijenti, loading, isPremium, count } = useKlijenti();
-
-  if (loading) return <p>Loading clients...</p>;
-
-  const limitReached = !isPremium && count >= 5;
+  const { klijenti } = useKlijenti();
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>👥 Klijenti</h1>
+    <div style={{ padding: 30 }}>
+      <div style={header}>
+        <h1>Clients</h1>
 
-      {!isPremium && (
-        <p style={{ color: "gray" }}>
-          Free plan: {count}/5 klijenata
-        </p>
-      )}
-
-      {limitReached && (
-        <div style={{ color: "red", marginBottom: 10 }}>
-          🚫 Dosegnuli ste limit besplatnog plana (5 klijenata).
-          <br />
-          ⭐ Nadogradite na Premium za neograničeno.
-        </div>
-      )}
-
-      {!limitReached && (
-        <Link
-          href="/dashboard/klijenti/novi"
-          style={{
-            display: "inline-block",
-            padding: 10,
-            marginBottom: 10,
-            background: "black",
-            color: "white",
-            borderRadius: 8,
-          }}
-        >
-          ➕ Novi klijent
+        <Link href="/dashboard/klijenti/novi" style={button}>
+          + New client
         </Link>
-      )}
+      </div>
 
-      {klijenti.length === 0 && <p>Nema klijenata</p>}
-
-      {klijenti.map((k) => (
-        <Link
-          key={k.id}
-          href={`/dashboard/klijenti/${k.id}`}
-          style={{
-            display: "block",
-            padding: 10,
-            marginTop: 10,
-            background: "#eee",
-            borderRadius: 8,
-          }}
-        >
-          👤 {k.name} — 🎯 {k.goal}
-        </Link>
-      ))}
+      <div style={{ marginTop: 20 }}>
+        {klijenti.map((k) => (
+          <Card key={k.id}>
+            <Link href={`/dashboard/klijenti/${k.id}`}>
+              <strong>{k.name}</strong>
+              <p style={{ color: "#6b7280" }}>{k.goal}</p>
+            </Link>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
+
+const header = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+};
+
+const button = {
+  background: "#111",
+  color: "#fff",
+  padding: "10px 14px",
+  borderRadius: 10,
+  textDecoration: "none",
+};

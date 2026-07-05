@@ -1,21 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { useUser } from "@/lib/hooks/useUser";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/login");
-  };
+  const { isPremium } = useUser();
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
@@ -27,40 +20,40 @@ export default function DashboardLayout({
           background: "#111",
           color: "white",
           padding: 20,
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
         }}
       >
-        <h2>⚡ Mozeš Jos</h2>
+        <h2 style={{ marginBottom: 20 }}>⚡ SaaS App</h2>
 
-        <Link href="/dashboard" style={{ color: "white" }}>
-          🏠 Dashboard
-        </Link>
+        <nav style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Link href="/dashboard" style={{ color: "white" }}>
+            🏠 Dashboard
+          </Link>
 
-        <Link href="/dashboard/klijenti" style={{ color: "white" }}>
-          👥 Klijenti
-        </Link>
+          <Link href="/dashboard/klijenti" style={{ color: "white" }}>
+            👥 Klijenti
+          </Link>
 
-        <Link href="/dashboard/billing" style={{ color: "white" }}>
-          💳 Billing
-        </Link>
+          <Link href="/dashboard/billing" style={{ color: "white" }}>
+            💳 Billing
+          </Link>
 
-        <hr style={{ width: "100%", opacity: 0.3 }} />
+          <Link href="/dashboard/settings" style={{ color: "white" }}>
+            ⚙️ Settings
+          </Link>
+        </nav>
 
-        <button
-          onClick={handleLogout}
-          style={{
-            marginTop: "auto",
-            background: "red",
-            color: "white",
-            border: "none",
-            padding: 10,
-            cursor: "pointer",
-          }}
-        >
-          Logout
-        </button>
+        <div style={{ marginTop: 30, fontSize: 12 }}>
+          Status:
+          <div
+            style={{
+              marginTop: 5,
+              color: isPremium ? "lightgreen" : "orange",
+              fontWeight: "bold",
+            }}
+          >
+            {isPremium ? "⭐ Premium" : "Free plan"}
+          </div>
+        </div>
       </div>
 
       {/* CONTENT */}
