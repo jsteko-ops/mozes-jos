@@ -1,95 +1,61 @@
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
-import { adminDb } from "@/lib/firebaseAdmin";
 import Stripe from "stripe";
+import { FieldValue } from "firebase-admin/firestore";
+import { adminDb } from "@/lib/firebase-admin";
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2023-10-16",
+});
 
 export async function POST(req: Request) {
   try {
-    const body = await req.text();
-    const sig = req.headers.get("stripe-signature") as string;
+    const signature = req.headers.get("stripe-signature");
 
-    let event: Stripe.Event;
-
-    try {
-      event = stripe.webhooks.constructEvent(
-        body,
-        sig,
-        endpointSecret
+    if (!signature) {
+      return NextResponse.json(
+        { error: "Missing stripe-signature" },
+        { status: 400 }
       );
-    } catch (err: any) {
-      console.error("Webhook signature error:", err.message);
-      return new NextResponse(`Webhook Error: ${err.message}`, {
-        status: 400,
-      });
     }
 
-    // 💳 1. SUBSCRIPTION CREATED / UPDATED
-    if (
-      event.type === "checkout.session.completed"
-    ) {
+    const body = await req.text();
+
+    const event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET as string
+    );
+
+    if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
       const userId = session.metadata?.userId;
-      const plan = session.metadata?.plan;
+      const plan = session.metadata?.plan ?? "pro";
 
-      if (userId) {
-        await adminDb.collection("users").doc(userId).update({
+      if (!userId) {
+        return NextResponse.json(
+          { error: "Missing userId" },
+          { status: 400 }
+        );
+      }
+
+      await adminDb.collection("users").doc(userId).set(
+        {
+          isPremium: true,
           subscriptionStatus: "active",
           plan,
-          stripeCustomerId: session.customer as string,
-          updatedAt: new Date(),
-        });
-      }
-    }
-
-    // 🔁 2. SUBSCRIPTION UPDATED (renew/cancel/past_due)
-    if (event.type === "customer.subscription.updated") {
-      const subscription = event.data.object as Stripe.Subscription;
-
-      const customerId = subscription.customer as string;
-      const status = subscription.status;
-
-      const usersRef = adminDb.collection("users");
-      const snapshot = await usersRef
-        .where("stripeCustomerId", "==", customerId)
-        .get();
-
-      snapshot.forEach(async (doc) => {
-        await doc.ref.update({
-          subscriptionStatus: status,
-          updatedAt: new Date(),
-        });
-      });
-    }
-
-    // ❌ 3. SUBSCRIPTION DELETED (cancel)
-    if (event.type === "customer.subscription.deleted") {
-      const subscription = event.data.object as Stripe.Subscription;
-
-      const customerId = subscription.customer as string;
-
-      const usersRef = adminDb.collection("users");
-      const snapshot = await usersRef
-        .where("stripeCustomerId", "==", customerId)
-        .get();
-
-      snapshot.forEach(async (doc) => {
-        await doc.ref.update({
-          subscriptionStatus: "canceled",
-          plan: "free",
-          updatedAt: new Date(),
-        });
-      });
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
     }
 
     return NextResponse.json({ received: true });
-  } catch (error: any) {
-    console.error("Webhook error:", error);
+  } catch (error) {
+    console.error("WEBHOOK ERROR:", error);
 
     return NextResponse.json(
-      { error: error.message },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

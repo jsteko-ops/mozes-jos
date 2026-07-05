@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
-
-export default function StripeButton() {
-  const [loading, setLoading] = useState(false);
-
-  const handleCheckout = async () => {
+export default function StripeButton({
+  plan,
+}: {
+  plan: "pro" | "business";
+}) {
+  const upgrade = async () => {
     try {
-      setLoading(true);
+      console.log("CLICK:", plan);
 
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -15,40 +15,29 @@ export default function StripeButton() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: "test1234",
+          userId: "test-user-123",
+          plan,
         }),
       });
 
       const data = await res.json();
 
-      console.log("STRIPE RESPONSE:", data);
+      console.log("RESPONSE:", data);
 
-      if (data?.url) {
-        // 🔥 OVO JE KLJUČ
+      if (data.url) {
         window.location.href = data.url;
       } else {
-        console.error("No URL returned", data);
+        alert("Stripe error: no URL returned");
       }
     } catch (err) {
-      console.error("Stripe error:", err);
-    } finally {
-      setLoading(false);
+      console.error(err);
+      alert("Checkout failed");
     }
   };
 
   return (
-    <button
-      onClick={handleCheckout}
-      disabled={loading}
-      style={{
-        padding: "10px 16px",
-        background: "black",
-        color: "white",
-        borderRadius: 6,
-        cursor: "pointer",
-      }}
-    >
-      {loading ? "Processing..." : "Upgrade (Stripe)"}
+    <button onClick={upgrade}>
+      Upgrade to {plan}
     </button>
   );
 }
