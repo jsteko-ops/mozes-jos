@@ -1,44 +1,25 @@
 "use client";
 
-import UpgradeButton from "@/components/UpgradeButton";
+import { handleUpgrade } from "@/lib/checkout";
 
 export default function UpgradePage() {
   return (
-    <div style={page}>
-      <h1>Upgrade your plan</h1>
-      <p style={{ color: "#6b7280" }}>
-        Choose the plan that fits your business
-      </p>
+    <div style={{ padding: 20 }}>
+      <h1>Upgrade plan</h1>
 
-      <div style={grid}>
-        <div style={card}>
-          <h2>Pro</h2>
-          <p>9.99€ / month</p>
-          <UpgradeButton plan="pro" />
-        </div>
+      <button
+        onClick={() => handleUpgrade("pro")}
+        style={{ padding: 10, background: "black", color: "white" }}
+      >
+        Upgrade to Pro
+      </button>
 
-        <div style={card}>
-          <h2>Business</h2>
-          <p>19.99€ / month</p>
-          <UpgradeButton plan="business" />
-        </div>
-      </div>
+      <button
+        onClick={() => handleUpgrade("business")}
+        style={{ padding: 10, marginLeft: 10 }}
+      >
+        Upgrade to Business
+      </button>
     </div>
   );
 }
-
-const page = { padding: 30 };
-
-const grid = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: 20,
-  marginTop: 20,
-};
-
-const card = {
-  background: "#fff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 16,
-  padding: 20,
-};

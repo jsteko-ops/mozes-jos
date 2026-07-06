@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { ensureUser } from "@/lib/ensureUser";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,13 +11,21 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     try {
-      const userCred = await signInWithEmailAndPassword(
+      const cred = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
 
-      const token = await userCred.user.getIdToken();
+      const user = cred.user;
+
+      // 🔥 KLJUČNO
+      await ensureUser({
+        uid: user.uid,
+        email: user.email,
+      });
+
+      const token = await user.getIdToken();
 
       document.cookie = `token=${token}; path=/`;
 
@@ -48,7 +57,9 @@ export default function LoginPage() {
 
       <br />
 
-      <button onClick={handleLogin}>Login</button>
+      <button onClick={handleLogin}>
+        Login
+      </button>
     </div>
   );
 }

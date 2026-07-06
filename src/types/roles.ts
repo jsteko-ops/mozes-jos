@@ -1,0 +1,1 @@
+export type UserRole = "trainer" | "gym_owner" | "client" | "admin";
