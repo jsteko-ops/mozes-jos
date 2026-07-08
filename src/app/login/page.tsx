@@ -1,63 +1,90 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
-import { ensureUser } from "@/lib/ensureUser";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function LoginPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
+  // Ako je korisnik već prijavljen, preusmjeri na dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/dashboard");
+    }
+  }, [user, loading, router]);
+
+  const login = async () => {
     try {
-      const cred = await signInWithEmailAndPassword(
+      console.log("Email:", email);
+      console.log("Password length:", password.length);
+
+      await signInWithEmailAndPassword(
         auth,
-        email,
+        email.trim(),
         password
       );
 
-      const user = cred.user;
+      router.push("/dashboard");
+    } catch (error: any) {
+      console.error("Login error:", error);
 
-      // 🔥 KLJUČNO
-      await ensureUser({
-        uid: user.uid,
-        email: user.email,
-      });
+      switch (error.code) {
+        case "auth/invalid-email":
+          alert("Neispravna e-mail adresa.");
+          break;
 
-      const token = await user.getIdToken();
+        case "auth/user-not-found":
+          alert("Korisnik ne postoji.");
+          break;
 
-      document.cookie = `token=${token}; path=/`;
+        case "auth/wrong-password":
+          alert("Pogrešna lozinka.");
+          break;
 
-      window.location.href = "/dashboard";
-    } catch (err) {
-      console.error(err);
-      alert("Login error");
+        case "auth/invalid-credential":
+          alert("Neispravan e-mail ili lozinka.");
+          break;
+
+        default:
+          alert(error.message);
+      }
     }
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Login</h1>
+    <div
+      style={{
+        maxWidth: 400,
+        margin: "80px auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+      }}
+    >
+      <h1>Prijava</h1>
 
       <input
-        placeholder="email"
+        type="email"
+        placeholder="E-mail"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
 
-      <br />
-
       <input
-        placeholder="password"
         type="password"
+        placeholder="Lozinka"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <br />
-
-      <button onClick={handleLogin}>
+      <button onClick={login}>
         Login
       </button>
     </div>

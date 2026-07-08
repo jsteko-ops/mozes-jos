@@ -1,73 +1,51 @@
 "use client";
 
-import { ButtonHTMLAttributes, forwardRef } from "react";
-import clsx from "clsx";
+import { ButtonHTMLAttributes, ReactNode } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
-type ButtonSize = "sm" | "md" | "lg";
+type ButtonVariant = "primary" | "secondary" | "danger" | "success";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: ReactNode;
   variant?: ButtonVariant;
-  size?: ButtonSize;
-  isLoading?: boolean;
+  fullWidth?: boolean;
+  loading?: boolean;
 }
 
-const baseStyles =
-  "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
+export default function Button({
+  children,
+  variant = "primary",
+  fullWidth = false,
+  loading = false,
+  className = "",
+  disabled,
+  ...props
+}: ButtonProps) {
+  const base =
+    "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
-const variants: Record<ButtonVariant, string> = {
-  primary:
-    "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm",
-  secondary:
-    "bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300",
-  danger:
-    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800",
-  ghost:
-    "bg-transparent text-gray-700 hover:bg-gray-100",
-};
+  const variants = {
+    primary:
+      "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-600",
 
-const sizes: Record<ButtonSize, string> = {
-  sm: "px-3 py-1.5 text-sm",
-  md: "px-4 py-2 text-sm",
-  lg: "px-6 py-3 text-base",
-};
+    secondary:
+      "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-400",
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      children,
-      variant = "primary",
-      size = "md",
-      isLoading = false,
-      disabled,
-      className,
-      ...props
-    },
-    ref
-  ) => {
-    return (
-      <button
-        ref={ref}
-        disabled={disabled || isLoading}
-        className={clsx(
-          baseStyles,
-          variants[variant],
-          sizes[size],
-          className
-        )}
-        {...props}
-      >
-        {isLoading ? (
-          <span className="flex items-center gap-2">
-            <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            Loading...
-          </span>
-        ) : (
-          children
-        )}
-      </button>
-    );
-  }
-);
+    success:
+      "bg-green-600 text-white hover:bg-green-700 focus:ring-green-600",
 
-Button.displayName = "Button";
+    danger:
+      "bg-red-600 text-white hover:bg-red-700 focus:ring-red-600",
+  };
+
+  return (
+    <button
+      className={`${base} ${variants[variant]} ${
+        fullWidth ? "w-full" : ""
+      } ${className}`}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading ? "Loading..." : children}
+    </button>
+  );
+}

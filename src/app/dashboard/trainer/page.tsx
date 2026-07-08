@@ -1,14 +1,19 @@
 "use client";
 
-import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleGuard from "@/components/auth/RoleGuard";
 
-export default function TrainerDashboard() {
+export default function TrainerPage() {
   return (
-    <ProtectedRoute allowedRoles={["trainer"]}>
-      <div style={{ padding: 20 }}>
-        <h1>🏋️ Trainer Dashboard</h1>
-        <p>Samo treneri vide ovu stranicu.</p>
+    <RoleGuard allowedRoles={["trainer"]}>
+      <div>
+        <h1 className="text-2xl font-bold">
+          Trainer Dashboard 🏋️
+        </h1>
+
+        <p>
+          Ovdje će trener upravljati klijentima.
+        </p>
       </div>
-    </ProtectedRoute>
+    </RoleGuard>
   );
 }

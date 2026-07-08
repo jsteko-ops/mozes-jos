@@ -1,54 +1,39 @@
 "use client";
 
 import { useEffect } from "react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { getUserRole } from "@/lib/getUserRole";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
 
-export default function DashboardRouter() {
+export default function DashboardPage() {
+  const { userProfile, loading } = useAuth();
+  const router = useRouter();
+
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      const role = await getUserRole(user.uid);
-
-      if (!role) {
-        window.location.href = "/login";
-        return;
-      }
-
-      // 🔥 ROLE REDIRECT LOGIKA
-      switch (role) {
+    if (!loading && userProfile) {
+      switch (userProfile.role) {
         case "trainer":
-          window.location.href = "/dashboard/trainer";
+          router.replace("/dashboard/trainer");
           break;
 
-        case "gym_owner":
-          window.location.href = "/dashboard/owner";
-          break;
-
-        case "client":
-          window.location.href = "/dashboard/client";
+        case "gymOwner":
+          router.replace("/dashboard/gym-owner");
           break;
 
         case "admin":
-          window.location.href = "/dashboard/admin";
+          router.replace("/dashboard/admin");
           break;
 
+        case "client":
         default:
-          window.location.href = "/login";
+          router.replace("/dashboard/client");
+          break;
       }
-    });
-
-    return () => unsub();
-  }, []);
+    }
+  }, [userProfile, loading, router]);
 
   return (
-    <div style={{ padding: 20 }}>
-      <p>Loading dashboard...</p>
+    <div className="p-6">
+      Učitavanje dashboarda...
     </div>
   );
 }
