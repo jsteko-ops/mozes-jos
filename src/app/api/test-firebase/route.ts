@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { adminDb } from "@/lib/firebase-admin";
 
 export async function GET() {
   try {
@@ -8,13 +8,19 @@ export async function GET() {
       time: new Date().toISOString(),
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+    });
   } catch (err) {
     console.error(err);
 
     return NextResponse.json(
-      { error: "Firebase failed" },
-      { status: 500 }
+      {
+        error: "Firebase failed",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
