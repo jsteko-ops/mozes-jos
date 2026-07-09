@@ -14,449 +14,340 @@ import {
 import { db } from "@/lib/firebase";
 
 
-
 // =======================
-// DODAVANJE KLIJENTA
+// KLIJENTI
 // =======================
 
 export async function addClient(
-  trainerId: string,
-  data: {
-    name: string;
-    email: string;
-    phone: string;
-    note: string;
+  trainerId:string,
+  data:{
+    name:string;
+    email:string;
+    phone:string;
+    note:string;
   }
-) {
+){
 
-  const ref = collection(
-    db,
-    "clients"
+  await addDoc(
+    collection(db,"clients"),
+    {
+      trainerId,
+      ...data,
+      createdAt:serverTimestamp()
+    }
   );
-
-
-  await addDoc(ref, {
-
-    trainerId,
-
-    ...data,
-
-    createdAt: serverTimestamp(),
-
-  });
 
 }
 
 
-
-
-
-// =======================
-// LISTA KLIJENATA
-// =======================
 
 export async function getClients(
-  trainerId: string
-) {
+  trainerId:string
+){
 
-  const q = query(
-    collection(
-      db,
-      "clients"
-    ),
-    where(
-      "trainerId",
-      "==",
-      trainerId
-    )
-  );
+ const q=query(
+  collection(db,"clients"),
+  where(
+    "trainerId",
+    "==",
+    trainerId
+  )
+ );
 
 
-  const snapshot =
-    await getDocs(q);
+ const snap=await getDocs(q);
 
 
-
-  return snapshot.docs.map((item) => ({
-    id: item.id,
-    ...item.data(),
-  }));
+ return snap.docs.map(doc=>({
+   id:doc.id,
+   ...doc.data()
+ }));
 
 }
 
 
 
-
-
-// =======================
-// JEDAN KLIJENT
-// =======================
-
 export async function getClient(
-  clientId: string
-) {
+ clientId:string
+){
 
-  const ref = doc(
+ const snap=await getDoc(
+  doc(
     db,
     "clients",
     clientId
-  );
+  )
+ );
 
 
-  const snapshot =
-    await getDoc(ref);
+ if(!snap.exists())
+ return null;
+
+
+ return {
+  id:snap.id,
+  ...snap.data()
+ };
+
+}
 
 
 
-  if (!snapshot.exists()) {
+export async function updateClient(
+ clientId:string,
+ data:{
+  name:string;
+  email:string;
+  phone:string;
+  note:string;
+ }
+){
 
-    return null;
+ await updateDoc(
+  doc(
+   db,
+   "clients",
+   clientId
+  ),
+  data
+ );
+
+}
+
+
+
+// =======================
+// MJERENJA
+// =======================
+
+
+export async function addMeasurement(
+ clientId:string,
+ data:{
+  weight:number;
+  height:number;
+  waist:number;
+  chest:number;
+  arm:number;
+ }
+){
+
+ await addDoc(
+  collection(
+   db,
+   "clients",
+   clientId,
+   "measurements"
+  ),
+  {
+   ...data,
+   createdAt:serverTimestamp()
+  }
+ );
+
+}
+
+
+
+export async function getMeasurements(
+ clientId:string
+){
+
+ const snap=
+ await getDocs(
+  collection(
+   db,
+   "clients",
+   clientId,
+   "measurements"
+  )
+ );
+
+
+ return snap.docs.map(doc=>({
+  id:doc.id,
+  ...doc.data()
+ }));
+
+}
+
+
+
+export async function updateMeasurement(
+ clientId:string,
+ measurementId:string,
+ data:{
+  weight:number;
+  height:number;
+  waist:number;
+  chest:number;
+  arm:number;
+ }
+){
+
+ await updateDoc(
+  doc(
+   db,
+   "clients",
+   clientId,
+   "measurements",
+   measurementId
+  ),
+  data
+ );
+
+}
+
+
+
+export async function deleteMeasurement(
+ clientId:string,
+ measurementId:string
+){
+
+ await deleteDoc(
+  doc(
+   db,
+   "clients",
+   clientId,
+   "measurements",
+   measurementId
+  )
+ );
+
+}
+
+
+
+
+// =======================
+// TRENING PLANOVI
+// =======================
+
+
+export async function addWorkout(
+ clientId:string,
+ data:{
+  title:string;
+  exercises:string;
+ }
+){
+
+ await addDoc(
+  collection(
+   db,
+   "clients",
+   clientId,
+   "workouts"
+  ),
+  {
+   ...data,
+   createdAt:serverTimestamp()
+  }
+ );
+
+}
+
+
+
+
+export async function getWorkouts(
+ clientId:string
+){
+
+ const snap=
+ await getDocs(
+  collection(
+   db,
+   "clients",
+   clientId,
+   "workouts"
+  )
+ );
+
+
+ return snap.docs.map(doc=>({
+  id:doc.id,
+  ...doc.data()
+ }));
+
+}
+
+
+
+
+export async function updateWorkout(
+ clientId:string,
+ workoutId:string,
+ data:{
+  title:string;
+  exercises:string;
+ }
+){
+
+ await updateDoc(
+  doc(
+   db,
+   "clients",
+   clientId,
+   "workouts",
+   workoutId
+  ),
+  data
+ );
+
+}
+
+
+
+
+export async function deleteWorkout(
+ clientId:string,
+ workoutId:string
+){
+
+ await deleteDoc(
+  doc(
+   db,
+   "clients",
+   clientId,
+   "workouts",
+   workoutId
+  )
+ );
+
+}
+export async function getTrainerStats(
+  trainerId:string
+){
+
+  const clients =
+    await getClients(trainerId);
+
+
+  let totalMeasurements = 0;
+
+
+  for(const client of clients){
+
+    const measurements =
+      await getMeasurements(client.id);
+
+
+    totalMeasurements += measurements.length;
 
   }
 
 
 
   return {
-    id: snapshot.id,
-    ...snapshot.data(),
+
+    clientsCount:
+      clients.length,
+
+    measurementsCount:
+      totalMeasurements
+
   };
-
-}
-
-
-
-
-
-// =======================
-// IZMJENA KLIJENTA
-// =======================
-
-export async function updateClient(
-
-  clientId: string,
-
-  data: {
-    name: string;
-    email: string;
-    phone: string;
-    note: string;
-  }
-
-) {
-
-
-  const ref = doc(
-    db,
-    "clients",
-    clientId
-  );
-
-
-  await updateDoc(
-    ref,
-    data
-  );
-
-}
-
-
-
-
-
-
-
-// =======================
-// DODAVANJE MJERENJA
-// =======================
-
-export async function addMeasurement(
-
-  clientId: string,
-
-  data: {
-    weight: number;
-    height: number;
-    waist: number;
-    chest: number;
-    arm: number;
-  }
-
-) {
-
-
-  const ref = collection(
-    db,
-    "clients",
-    clientId,
-    "measurements"
-  );
-
-
-  await addDoc(ref, {
-
-    ...data,
-
-    createdAt:
-      serverTimestamp(),
-
-  });
-
-}
-
-
-
-
-
-
-// =======================
-// DOHVAT MJERENJA
-// =======================
-
-export async function getMeasurements(
-
-  clientId: string
-
-) {
-
-
-  const ref = collection(
-    db,
-    "clients",
-    clientId,
-    "measurements"
-  );
-
-
-  const snapshot =
-    await getDocs(ref);
-
-
-
-  return snapshot.docs.map((item)=>({
-
-    id:item.id,
-
-    ...item.data(),
-
-  }));
-
-}
-
-
-
-
-
-
-// =======================
-// IZMJENA MJERENJA
-// =======================
-
-export async function updateMeasurement(
-
-  clientId:string,
-
-  measurementId:string,
-
-  data:{
-    weight:number;
-    height:number;
-    waist:number;
-    chest:number;
-    arm:number;
-  }
-
-){
-
-  const ref = doc(
-    db,
-    "clients",
-    clientId,
-    "measurements",
-    measurementId
-  );
-
-
-  await updateDoc(
-    ref,
-    data
-  );
-
-}
-
-
-
-
-
-
-// =======================
-// BRISANJE MJERENJA
-// =======================
-
-export async function deleteMeasurement(
-
-  clientId:string,
-
-  measurementId:string
-
-){
-
-  const ref = doc(
-    db,
-    "clients",
-    clientId,
-    "measurements",
-    measurementId
-  );
-
-
-  await deleteDoc(ref);
-
-}
-
-
-
-
-
-
-// =======================
-// DODAVANJE TRENINGA
-// =======================
-
-export async function addWorkout(
-
-  clientId:string,
-
-  data:{
-    title:string;
-    exercises:string;
-  }
-
-){
-
-
-  const ref = collection(
-    db,
-    "clients",
-    clientId,
-    "workouts"
-  );
-
-
-  await addDoc(ref, {
-
-    ...data,
-
-    createdAt:
-      serverTimestamp(),
-
-  });
-
-}
-
-
-
-
-
-
-// =======================
-// DOHVAT TRENINGA
-// =======================
-
-export async function getWorkouts(
-
-  clientId:string
-
-){
-
-
-  const ref = collection(
-    db,
-    "clients",
-    clientId,
-    "workouts"
-  );
-
-
-  const snapshot =
-    await getDocs(ref);
-
-
-
-  return snapshot.docs.map((item)=>({
-
-    id:item.id,
-
-    ...item.data(),
-
-  }));
-
-}
-
-
-
-
-
-
-// =======================
-// IZMJENA TRENINGA
-// =======================
-
-export async function updateWorkout(
-
-  clientId:string,
-
-  workoutId:string,
-
-  data:{
-    title:string;
-    exercises:string;
-  }
-
-){
-
-
-  const ref = doc(
-    db,
-    "clients",
-    clientId,
-    "workouts",
-    workoutId
-  );
-
-
-  await updateDoc(
-    ref,
-    data
-  );
-
-}
-
-
-
-
-
-
-// =======================
-// BRISANJE TRENINGA
-// =======================
-
-export async function deleteWorkout(
-
-  clientId:string,
-
-  workoutId:string
-
-){
-
-  const ref = doc(
-    db,
-    "clients",
-    clientId,
-    "workouts",
-    workoutId
-  );
-
-
-  await deleteDoc(ref);
 
 }
