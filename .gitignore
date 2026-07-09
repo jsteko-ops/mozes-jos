@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase secret key
+serviceAccountKey.json
+src/lib/serviceAccountKey.json

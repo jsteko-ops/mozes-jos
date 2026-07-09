@@ -317,6 +317,11 @@ export async function deleteWorkout(
  );
 
 }
+// =======================
+// STATISTIKA TRENERA
+// =======================
+
+
 export async function getTrainerStats(
   trainerId:string
 ){
@@ -345,9 +350,87 @@ export async function getTrainerStats(
     clientsCount:
       clients.length,
 
+
     measurementsCount:
       totalMeasurements
 
   };
+
+}
+
+
+
+
+
+// =======================
+// CHECK IN
+// =======================
+
+
+export async function addCheckin(
+ clientId:string,
+ data:{
+  weight:number;
+  energy:number;
+  note:string;
+ }
+){
+
+
+ await addDoc(
+
+  collection(
+   db,
+   "clients",
+   clientId,
+   "checkins"
+  ),
+
+  {
+
+   ...data,
+
+   createdAt:
+    serverTimestamp()
+
+  }
+
+ );
+
+
+}
+
+
+
+
+
+export async function getCheckins(
+ clientId:string
+){
+
+
+ const snap =
+
+ await getDocs(
+
+  collection(
+   db,
+   "clients",
+   clientId,
+   "checkins"
+  )
+
+ );
+
+
+
+ return snap.docs.map(doc=>({
+
+  id:doc.id,
+
+  ...doc.data()
+
+ }));
+
 
 }
