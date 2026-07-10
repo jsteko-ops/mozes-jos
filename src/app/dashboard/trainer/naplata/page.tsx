@@ -12,8 +12,7 @@ export default function NaplataPage() {
 
   const [premium, setPremium] = useState(false);
   const [status, setStatus] = useState("");
-  const [stripeCustomer, setStripeCustomer] = useState("");
-  const [subscriptionId, setSubscriptionId] = useState("");
+  const [activatedAt, setActivatedAt] = useState("");
   const [loading, setLoading] = useState(true);
 
 
@@ -50,14 +49,16 @@ export default function NaplataPage() {
         );
 
 
-        setStripeCustomer(
-          data.stripeCustomerId || ""
-        );
+        if(data.premiumActivatedAt){
 
+          const date =
+          data.premiumActivatedAt.toDate();
 
-        setSubscriptionId(
-          data.stripeSubscriptionId || ""
-        );
+          setActivatedAt(
+            date.toLocaleDateString("hr-HR")
+          );
+
+        }
 
       }
 
@@ -102,7 +103,6 @@ export default function NaplataPage() {
           "Content-Type":"application/json"
         },
 
-
         body:JSON.stringify({
 
           userId:user.uid,
@@ -146,7 +146,6 @@ export default function NaplataPage() {
 
 
 
-
   return(
 
     <RoleGuard allowedRoles={["trainer"]}>
@@ -161,78 +160,118 @@ export default function NaplataPage() {
 
 
 
-        <div className="border rounded-xl p-5 space-y-4">
+        <div className="border rounded-xl p-6 bg-white shadow-sm">
 
 
-          <h2 className="text-xl font-bold">
+          <h2 className="text-2xl font-bold">
             Možeš Još Pro
           </h2>
+
+
+
+          <p className="mt-2 text-gray-600">
+            Profesionalni alati za trenere.
+          </p>
+
 
 
 
           {
             loading ?
 
-            <p>
+
+            <p className="mt-5">
               Učitavanje...
             </p>
 
+
+
             :
+
+
 
             premium ?
 
-            <div>
 
-              <p className="font-bold text-green-600">
+
+            <div className="mt-6 space-y-3">
+
+
+              <p className="text-green-600 font-bold text-lg">
                 ✅ Aktivna pretplata
               </p>
 
 
               <p>
-                Status: {status}
+                Status: 
+                <span className="font-bold ml-2">
+                  {status}
+                </span>
               </p>
 
 
-              <p>
-                Stripe Customer:
-                <br />
-                {stripeCustomer || "-"}
-              </p>
+
+              {
+                activatedAt &&
+
+                <p>
+                  Aktivirano:
+                  <span className="font-bold ml-2">
+                    {activatedAt}
+                  </span>
+                </p>
+
+              }
 
 
-              <p>
-                Subscription:
-                <br />
-                {subscriptionId || "-"}
-              </p>
+
+              <div className="mt-5 rounded-lg bg-gray-100 p-4">
+
+                <p className="font-semibold">
+                  Vaš Pro račun je aktivan.
+                </p>
+
+                <p className="text-sm text-gray-600 mt-1">
+                  Možete koristiti sve dostupne Pro funkcije.
+                </p>
+
+              </div>
+
 
 
             </div>
+
 
 
             :
 
 
-            <div>
+
+            <div className="mt-6">
+
 
               <p>
-                Nema aktivne pretplate.
+                Trenutno nemate aktivnu pretplatu.
               </p>
+
 
 
               <button
 
-                className="bg-black text-white px-5 py-2 rounded mt-5"
+                className="mt-5 bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800"
 
                 onClick={startCheckout}
 
               >
+
                 Aktiviraj Pro plan
 
               </button>
 
 
+
             </div>
+
 
           }
 
