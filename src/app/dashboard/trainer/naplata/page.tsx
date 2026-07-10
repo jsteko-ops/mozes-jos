@@ -1,169 +1,251 @@
 "use client";
 
-
 import RoleGuard from "@/components/auth/RoleGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
+export default function NaplataPage() {
 
+  const { user } = useAuth();
 
-export default function NaplataPage(){
+  const [premium, setPremium] = useState(false);
+  const [status, setStatus] = useState("");
+  const [stripeCustomer, setStripeCustomer] = useState("");
+  const [subscriptionId, setSubscriptionId] = useState("");
+  const [loading, setLoading] = useState(true);
 
 
-const { user } = useAuth();
+  useEffect(() => {
 
+    async function loadSubscription(){
 
+      if(!user){
+        return;
+      }
 
 
+      const snap = await getDoc(
+        doc(
+          db,
+          "users",
+          user.uid
+        )
+      );
 
-async function startCheckout(){
 
+      if(snap.exists()){
 
-if(!user){
+        const data = snap.data();
 
-alert(
-"Nema prijavljenog korisnika"
-);
 
-return;
+        setPremium(
+          data.isPremium === true
+        );
 
-}
 
+        setStatus(
+          data.subscriptionStatus || ""
+        );
 
 
+        setStripeCustomer(
+          data.stripeCustomerId || ""
+        );
 
-const res =
-await fetch(
-"/api/stripe/checkout",
-{
 
-method:"POST",
+        setSubscriptionId(
+          data.stripeSubscriptionId || ""
+        );
 
-headers:{
+      }
 
-"Content-Type":"application/json"
 
-},
+      setLoading(false);
 
+    }
 
-body:JSON.stringify({
 
-userId:user.uid,
+    loadSubscription();
 
-email:user.email,
 
-plan:"pro"
+  },[user]);
 
-})
 
 
-}
 
-);
 
+  async function startCheckout(){
 
 
+    if(!user){
 
-const data =
-await res.json();
+      alert(
+        "Nema prijavljenog korisnika"
+      );
 
+      return;
 
+    }
 
 
 
-if(data.error){
+    const res =
+    await fetch(
+      "/api/stripe/checkout",
+      {
 
-alert(data.error);
+        method:"POST",
 
-return;
+        headers:{
+          "Content-Type":"application/json"
+        },
 
-}
 
+        body:JSON.stringify({
 
+          userId:user.uid,
 
+          email:user.email,
 
+          plan:"pro"
 
-if(data.url){
+        })
 
-window.location.href =
-data.url;
+      }
+    );
 
-return;
 
-}
 
+    const data =
+    await res.json();
 
 
 
-}
+    if(data.error){
 
+      alert(data.error);
 
+      return;
 
+    }
 
 
 
+    if(data.url){
 
-return(
+      window.location.href =
+      data.url;
 
-<RoleGuard allowedRoles={["trainer"]}>
+    }
 
+  }
 
-<div className="p-6 space-y-6">
 
 
-<h1 className="text-3xl font-bold">
-💳 Naplata
-</h1>
 
 
 
+  return(
 
-<div className="border rounded-xl p-5">
+    <RoleGuard allowedRoles={["trainer"]}>
 
 
-<h2 className="text-xl font-bold">
-Možeš Još Pro
-</h2>
+      <div className="p-6 space-y-6">
 
 
+        <h1 className="text-3xl font-bold">
+          💳 Naplata
+        </h1>
 
-<p className="mt-3">
-Status pretplate:
-</p>
 
 
+        <div className="border rounded-xl p-5 space-y-4">
 
-<p className="font-bold text-green-600">
-Aktivan korisnik
-</p>
 
+          <h2 className="text-xl font-bold">
+            Možeš Još Pro
+          </h2>
 
 
 
-<button
+          {
+            loading ?
 
-className="bg-black text-white px-5 py-2 rounded mt-5"
+            <p>
+              Učitavanje...
+            </p>
 
-onClick={startCheckout}
+            :
 
->
+            premium ?
 
-Aktiviraj Pro plan
+            <div>
 
-</button>
+              <p className="font-bold text-green-600">
+                ✅ Aktivna pretplata
+              </p>
 
 
+              <p>
+                Status: {status}
+              </p>
 
-</div>
 
+              <p>
+                Stripe Customer:
+                <br />
+                {stripeCustomer || "-"}
+              </p>
 
 
+              <p>
+                Subscription:
+                <br />
+                {subscriptionId || "-"}
+              </p>
 
-</div>
 
+            </div>
 
-</RoleGuard>
 
-);
+            :
 
+
+            <div>
+
+              <p>
+                Nema aktivne pretplate.
+              </p>
+
+
+              <button
+
+                className="bg-black text-white px-5 py-2 rounded mt-5"
+
+                onClick={startCheckout}
+
+              >
+                Aktiviraj Pro plan
+
+              </button>
+
+
+            </div>
+
+          }
+
+
+
+        </div>
+
+
+      </div>
+
+
+    </RoleGuard>
+
+  );
 
 }
