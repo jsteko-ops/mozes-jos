@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-
+import { adminDb } from "@/lib/firebase-admin";
 
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY!,
@@ -10,28 +10,30 @@ const stripe = new Stripe(
 );
 
 
-
 export async function POST(req: Request) {
 
   try {
 
-
-    const {
-      userId,
-      email,
-      plan
-    } = await req.json();
+    const origin =
+      req.headers.get("origin") ||
+      "http://localhost:3000";
 
 
+    const body = await req.json();
 
-    if(!userId || !email){
+
+    const userId = body.userId;
+    const email = body.email;
+
+
+    if (!userId) {
 
       return NextResponse.json(
         {
-          error:"Missing userId or email"
+          error: "Nedostaje userId",
         },
         {
-          status:400
+          status: 400,
         }
       );
 
@@ -39,10 +41,24 @@ export async function POST(req: Request) {
 
 
 
-    const price =
-      plan === "business"
-      ? process.env.STRIPE_PRICE_BUSINESS
-      : process.env.STRIPE_PRICE_PRO;
+    const priceId =
+      process.env.STRIPE_PRICE_PRO;
+
+
+
+    if (!priceId) {
+
+      return NextResponse.json(
+        {
+          error:
+          "STRIPE_PRICE_PRO nije postavljen",
+        },
+        {
+          status:500,
+        }
+      );
+
+    }
 
 
 
@@ -53,43 +69,51 @@ export async function POST(req: Request) {
 
 
         payment_method_types:[
-          "card"
+          "card",
         ],
-
-
-        customer_email:
-          email,
-
 
 
         line_items:[
 
           {
-            price:price!,
-            quantity:1
+            price: priceId,
+            quantity:1,
           }
 
         ],
 
 
 
+        customer_email:
+          email || undefined,
+
+
+
         metadata:{
 
-          userId,
+          userId:userId,
 
-          plan
+        },
+
+
+
+        subscription_data:{
+
+          metadata:{
+            userId:userId,
+          },
 
         },
 
 
 
         success_url:
-        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/trainer/naplata?success=1`,
+        `${origin}/dashboard/trainer/naplata?success=1`,
 
 
 
         cancel_url:
-        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/trainer/naplata?canceled=1`,
+        `${origin}/dashboard/trainer/naplata?canceled=1`,
 
 
       });
@@ -98,7 +122,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
 
-      url:session.url
+      url:session.url,
 
     });
 
@@ -116,11 +140,13 @@ export async function POST(req: Request) {
     return NextResponse.json(
 
       {
-        error:"Checkout failed"
+        error:
+        error.message ||
+        "Checkout failed",
       },
 
       {
-        status:500
+        status:500,
       }
 
     );

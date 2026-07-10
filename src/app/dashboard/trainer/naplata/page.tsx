@@ -16,6 +16,7 @@ export default function NaplataPage() {
   const [loading, setLoading] = useState(true);
 
 
+
   useEffect(() => {
 
     async function loadSubscription(){
@@ -53,6 +54,7 @@ export default function NaplataPage() {
 
           const date =
           data.premiumActivatedAt.toDate();
+
 
           setActivatedAt(
             date.toLocaleDateString("hr-HR")
@@ -103,6 +105,7 @@ export default function NaplataPage() {
           "Content-Type":"application/json"
         },
 
+
         body:JSON.stringify({
 
           userId:user.uid,
@@ -146,6 +149,74 @@ export default function NaplataPage() {
 
 
 
+
+  async function openPortal(){
+
+
+    if(!user){
+
+      alert(
+        "Nema prijavljenog korisnika"
+      );
+
+      return;
+
+    }
+
+
+
+    const res =
+    await fetch(
+      "/api/stripe/portal",
+      {
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":"application/json"
+        },
+
+
+        body:JSON.stringify({
+
+          userId:user.uid
+
+        })
+
+      }
+    );
+
+
+
+    const data =
+    await res.json();
+
+
+
+    if(data.error){
+
+      alert(data.error);
+
+      return;
+
+    }
+
+
+
+    if(data.url){
+
+      window.location.href =
+      data.url;
+
+    }
+
+  }
+
+
+
+
+
+
   return(
 
     <RoleGuard allowedRoles={["trainer"]}>
@@ -176,6 +247,7 @@ export default function NaplataPage() {
 
 
 
+
           {
             loading ?
 
@@ -202,12 +274,14 @@ export default function NaplataPage() {
               </p>
 
 
+
               <p>
-                Status: 
+                Status:
                 <span className="font-bold ml-2">
                   {status}
                 </span>
               </p>
+
 
 
 
@@ -225,17 +299,36 @@ export default function NaplataPage() {
 
 
 
+
               <div className="mt-5 rounded-lg bg-gray-100 p-4">
 
                 <p className="font-semibold">
                   Vaš Pro račun je aktivan.
                 </p>
 
+
                 <p className="text-sm text-gray-600 mt-1">
                   Možete koristiti sve dostupne Pro funkcije.
                 </p>
 
+
               </div>
+
+
+
+
+              <button
+
+                className="mt-5 bg-gray-900 text-white px-6 py-3 rounded-lg"
+
+                onClick={openPortal}
+
+              >
+
+                ⚙️ Upravljaj pretplatom
+
+              </button>
+
 
 
 
@@ -243,7 +336,9 @@ export default function NaplataPage() {
 
 
 
+
             :
+
 
 
 
@@ -258,7 +353,7 @@ export default function NaplataPage() {
 
               <button
 
-                className="mt-5 bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800"
+                className="mt-5 bg-black text-white px-6 py-3 rounded-lg"
 
                 onClick={startCheckout}
 
