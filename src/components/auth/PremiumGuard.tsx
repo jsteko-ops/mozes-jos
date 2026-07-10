@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-import { useAuth } from "@/components/auth/AuthProvider";
+import { doc, getDoc } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { useAuth } from "@/components/auth/AuthProvider";
+
+
+interface PremiumGuardProps {
+  children: React.ReactNode;
+}
 
 
 export default function PremiumGuard({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+}: PremiumGuardProps) {
 
 
   const { user } = useAuth();
@@ -30,43 +32,73 @@ export default function PremiumGuard({
   useEffect(() => {
 
 
-    async function checkPremium(){
+    async function checkPremium() {
 
 
-      if(!user){
+      if (!user) {
+
         setLoading(false);
         return;
+
       }
 
 
-      const ref =
-        doc(
-          db,
-          "users",
-          user.uid
+
+      try {
+
+
+        const snap =
+          await getDoc(
+            doc(
+              db,
+              "users",
+              user.uid
+            )
+          );
+
+
+
+        if (snap.exists()) {
+
+
+          const data =
+            snap.data();
+
+
+
+          const isPremium =
+            data.isPremium === true;
+
+
+
+          const active =
+            data.subscriptionStatus === "active";
+
+
+
+          setPremium(
+            isPremium && active
+          );
+
+
+        }
+
+
+
+      } catch (error) {
+
+
+        console.error(
+          "Premium check error:",
+          error
         );
 
 
-      const snap =
-        await getDoc(ref);
-
-
-
-      if(snap.exists()){
-
-
-        const data =
-          snap.data();
-
-
-
-        setPremium(
-          data.isPremium === true &&
-          data.subscriptionStatus === "active"
-        );
+        setPremium(false);
 
 
       }
+
 
 
       setLoading(false);
@@ -79,58 +111,22 @@ export default function PremiumGuard({
     checkPremium();
 
 
-  },[user]);
+
+  }, [user]);
 
 
 
 
 
-  if(loading){
 
-    return (
-      <p className="p-6">
-        Provjera pretplate...
-      </p>
-    );
+  if (loading) {
 
-  }
-
-
-
-
-
-  if(!premium){
 
     return (
 
       <div className="p-6">
 
-
-        <div className="border rounded-xl p-6 bg-yellow-50">
-
-
-          <h2 className="text-xl font-bold">
-            🔒 Možeš Još Pro funkcija
-          </h2>
-
-
-          <p className="mt-2">
-            Ova funkcija je dostupna samo Pro korisnicima.
-          </p>
-
-
-          <a
-          href="/dashboard/trainer/naplata"
-          className="inline-block mt-4 px-4 py-2 rounded-lg bg-black text-white"
-          >
-
-            Aktiviraj Pro
-
-          </a>
-
-
-        </div>
-
+        Učitavanje Pro statusa...
 
       </div>
 
@@ -141,10 +137,69 @@ export default function PremiumGuard({
 
 
 
+
+
+  if (!premium) {
+
+
+    return (
+
+      <div className="p-6">
+
+        <div className="border rounded-xl bg-white shadow-sm p-6">
+
+
+          <h2 className="text-xl font-bold">
+
+            🔒 Možeš Još Pro
+
+          </h2>
+
+
+
+          <p className="mt-3 text-gray-600">
+
+            Ova funkcija je dostupna samo Pro korisnicima.
+
+          </p>
+
+
+
+          <a
+
+            href="/dashboard/trainer/naplata"
+
+            className="inline-block mt-5 bg-black text-white px-5 py-3 rounded-lg"
+
+          >
+
+            Aktiviraj Pro plan
+
+          </a>
+
+
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+
+
+
+
   return (
+
     <>
+
       {children}
+
     </>
+
   );
 
 

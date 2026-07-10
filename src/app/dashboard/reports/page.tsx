@@ -4,9 +4,11 @@ import { useUser } from "@/lib/hooks/useUser";
 import { canAccessFeature } from "@/lib/auth/checkPremium";
 
 export default function ReportsPage() {
-  const { user, loading } = useUser();
+  const { user } = useUser();
 
-  if (loading) return <p>Loading...</p>;
+  if (!user) {
+    return <p>Loading...</p>;
+  }
 
   if (!canAccessFeature(user, "analytics")) {
     return (

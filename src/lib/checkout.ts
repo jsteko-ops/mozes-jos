@@ -1,18 +1,14 @@
 "use client";
 
-import { loadStripe } from "@stripe/stripe-js";
 import { getAuth } from "firebase/auth";
-import { app } from "@/lib/firebase"; // mora postojati firebase init
+import { app } from "@/lib/firebase";
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
-
-export async function handleUpgrade(plan: "pro" | "business") {
+export async function handleUpgrade(
+  plan: "pro" | "business"
+) {
   try {
-    console.log("1. handleUpgrade:", plan);
-
     const auth = getAuth(app);
+
     const user = auth.currentUser;
 
     if (!user) {
@@ -32,29 +28,20 @@ export async function handleUpgrade(plan: "pro" | "business") {
       }),
     });
 
-    console.log("2. Status:", res.status);
-
     const data = await res.json();
-    console.log("3. Response:", data);
 
     if (!res.ok) {
-      console.error("Checkout failed:", data);
+      console.error(data);
       return;
     }
 
-    const stripe = await stripePromise;
-
-    if (!stripe) {
-      console.error("Stripe not loaded");
+    if (data.url) {
+      window.location.href = data.url;
       return;
     }
 
-    const result = await stripe.redirectToCheckout({
-      sessionId: data.sessionId,
-    });
-
-    console.log("4. Redirect result:", result);
+    console.error("Stripe URL nije vraćen.");
   } catch (err) {
-    console.error("handleUpgrade error:", err);
+    console.error(err);
   }
 }

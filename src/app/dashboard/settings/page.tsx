@@ -16,9 +16,10 @@ export default function SettingsPage() {
         }}
       >
         <h2>Subscription</h2>
+
         <p>Upgrade your account</p>
 
-        <StripeButton />
+        <StripeButton plan="pro" />
       </div>
     </div>
   );

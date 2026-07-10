@@ -21,29 +21,29 @@ export default function IzvjestajiPage() {
   const { user } = useAuth();
 
 
-  const [stats,setStats] = useState({
+  const [stats, setStats] = useState({
 
-    clients:0,
-    measurements:0,
-    checkins:0
+    clients: 0,
+    measurements: 0,
+    checkins: 0
 
   });
 
 
 
-  const [loading,setLoading] =
+  const [loading, setLoading] =
     useState(true);
 
 
 
 
-  useEffect(()=>{
+  useEffect(() => {
 
 
-    async function load(){
+    async function load() {
 
 
-      if(!user) return;
+      if (!user) return;
 
 
 
@@ -59,7 +59,7 @@ export default function IzvjestajiPage() {
 
 
 
-      for(const client of clients){
+      for (const client of clients) {
 
 
         const m =
@@ -67,7 +67,6 @@ export default function IzvjestajiPage() {
 
 
         measurements += m.length;
-
 
 
 
@@ -86,9 +85,7 @@ export default function IzvjestajiPage() {
       setStats({
 
         clients: clients.length,
-
         measurements,
-
         checkins
 
       });
@@ -105,19 +102,17 @@ export default function IzvjestajiPage() {
     load();
 
 
-
-  },[user]);
-
+  }, [user]);
 
 
 
 
 
-  return(
 
+
+  return (
 
     <RoleGuard allowedRoles={["trainer"]}>
-
 
       <PremiumGuard>
 
@@ -132,20 +127,18 @@ export default function IzvjestajiPage() {
 
 
 
-          {loading ? (
-
+          {
+            loading ?
 
             <p>
               Učitavanje...
             </p>
 
 
-          ) : (
+            :
 
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-
 
 
 
@@ -199,7 +192,6 @@ export default function IzvjestajiPage() {
 
 
 
-
               <Link
 
                 href="/dashboard/trainer/checkin"
@@ -222,12 +214,9 @@ export default function IzvjestajiPage() {
 
 
 
-
-
             </div>
 
-
-          )}
+          }
 
 
 
@@ -236,11 +225,8 @@ export default function IzvjestajiPage() {
 
       </PremiumGuard>
 
-
     </RoleGuard>
 
-
   );
-
 
 }

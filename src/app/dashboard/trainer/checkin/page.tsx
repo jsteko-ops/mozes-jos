@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import RoleGuard from "@/components/auth/RoleGuard";
+import PremiumGuard from "@/components/auth/PremiumGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 import {
@@ -13,430 +14,501 @@ import {
 
 
 
-export default function CheckinPage(){
+export default function CheckinPage() {
 
 
-const { user } = useAuth();
+  const { user } = useAuth();
 
 
 
-const [clients,setClients] =
-useState<any[]>([]);
 
+  const [clients,setClients] =
+    useState<any[]>([]);
 
 
-const [clientId,setClientId] =
-useState("");
 
+  const [clientId,setClientId] =
+    useState("");
 
 
-const [checkins,setCheckins] =
-useState<any[]>([]);
 
+  const [checkins,setCheckins] =
+    useState<any[]>([]);
 
 
-const [weight,setWeight] =
-useState("");
 
+  const [weight,setWeight] =
+    useState("");
 
 
-const [energy,setEnergy] =
-useState("");
 
+  const [energy,setEnergy] =
+    useState("");
 
 
-const [note,setNote] =
-useState("");
 
+  const [note,setNote] =
+    useState("");
 
 
-const [loading,setLoading] =
-useState(true);
 
+  const [loading,setLoading] =
+    useState(true);
 
 
 
 
-useEffect(()=>{
 
 
-async function load(){
+  useEffect(()=>{
 
 
-if(!user) return;
+    async function load(){
 
 
+      if(!user) return;
 
-const data =
-await getClients(user.uid);
 
 
 
-setClients(data as any[]);
+      const data =
+        await getClients(user.uid);
 
 
-setLoading(false);
 
 
-}
+      setClients(data as any[]);
 
 
 
-load();
+      setLoading(false);
 
 
-},[user]);
+    }
 
 
 
 
+    load();
 
 
 
-async function loadCheckins(){
+  },[user]);
 
 
-if(!clientId) {
 
-setCheckins([]);
 
-return;
 
-}
 
 
 
-const data =
-await getCheckins(clientId);
+  async function loadCheckins(){
 
 
+    if(!clientId){
 
-setCheckins(data as any[]);
 
+      setCheckins([]);
 
-}
 
+      return;
 
 
+    }
 
 
 
 
-async function save(){
 
+    const data =
+      await getCheckins(clientId);
 
-if(!clientId){
 
-alert("Odaberi klijenta");
 
-return;
 
-}
+    setCheckins(data as any[]);
 
 
 
-await addCheckin(
+  }
 
-clientId,
 
-{
 
-weight:
-Number(
-weight.replace(",", ".")
-),
 
-energy:
-Number(energy),
 
-note
 
-}
 
-);
 
+  async function save(){
 
 
-setWeight("");
+    if(!clientId){
 
-setEnergy("");
 
-setNote("");
+      alert("Odaberi klijenta");
 
 
+      return;
 
-await loadCheckins();
 
+    }
 
 
-alert("Check-in spremljen ✅");
 
 
-}
 
 
+    await addCheckin(
 
+      clientId,
 
+      {
 
+        weight:
+          Number(
+            weight.replace(",", ".")
+          ),
 
 
-return(
+        energy:
+          Number(energy),
 
-<RoleGuard allowedRoles={["trainer"]}>
 
+        note
 
-<div className="p-6 space-y-6">
 
+      }
 
+    );
 
-<h1 className="text-3xl font-bold">
-✅ Check-in klijenata
-</h1>
 
 
 
 
 
-{loading &&
+    setWeight("");
 
-<p>
-Učitavanje klijenata...
-</p>
+    setEnergy("");
 
-}
+    setNote("");
 
 
 
 
 
-<div className="border rounded-xl p-5 space-y-3">
+    await loadCheckins();
 
 
 
-<h2 className="text-xl font-bold">
-Novi Check-in
-</h2>
 
 
+    alert("Check-in spremljen ✅");
 
 
 
-<select
+  }
 
-className="border p-2 w-full"
 
-value={clientId}
 
-onChange={(e)=>{
 
-setClientId(e.target.value);
 
-}}
 
->
 
-<option value="">
-Odaberi klijenta
-</option>
 
+  return (
 
+    <RoleGuard allowedRoles={["trainer"]}>
 
-{clients.map((c)=>(
 
-<option
+      <PremiumGuard>
 
-key={c.id}
 
-value={c.id}
 
->
+        <div className="p-6 space-y-6">
 
-{c.name}
 
-</option>
 
-))}
+          <h1 className="text-3xl font-bold">
+            ✅ Check-in klijenata
+          </h1>
 
 
 
-</select>
 
 
 
+          {
+            loading &&
 
+            <p>
+              Učitavanje klijenata...
+            </p>
 
+          }
 
-<button
 
-className="bg-gray-200 px-4 py-2 rounded"
 
-onClick={loadCheckins}
 
->
 
-Učitaj povijest
 
-</button>
+          <div className="border rounded-xl p-5 space-y-3">
 
 
 
+            <h2 className="text-xl font-bold">
+              Novi Check-in
+            </h2>
 
 
 
-<input
 
-className="border p-2 w-full"
 
-placeholder="Težina kg"
 
-value={weight}
 
-onChange={(e)=>
+            <select
 
-setWeight(e.target.value)
+              className="border p-2 w-full"
 
-}
+              value={clientId}
 
-/>
+              onChange={(e)=>{
 
+                setClientId(e.target.value);
 
+              }}
 
+            >
 
 
-<input
+              <option value="">
+                Odaberi klijenta
+              </option>
 
-className="border p-2 w-full"
 
-placeholder="Energija 1-10"
 
-value={energy}
 
-onChange={(e)=>
+              {
+                clients.map((c)=>(
 
-setEnergy(e.target.value)
 
-}
+                  <option
 
-/>
+                    key={c.id}
 
+                    value={c.id}
 
+                  >
 
+                    {c.name}
 
+                  </option>
 
-<textarea
 
-className="border p-2 w-full"
+                ))
 
-placeholder="Kako se klijent osjeća / napomena"
+              }
 
-value={note}
 
-onChange={(e)=>
 
-setNote(e.target.value)
+            </select>
 
-}
 
-/>
 
 
 
 
 
-<button
+            <button
 
-className="bg-black text-white px-5 py-2 rounded"
+              className="bg-gray-200 px-4 py-2 rounded"
 
-onClick={save}
+              onClick={loadCheckins}
 
->
+            >
 
-Spremi Check-in
+              Učitaj povijest
 
-</button>
+            </button>
 
 
 
-</div>
 
 
 
 
+            <input
 
+              className="border p-2 w-full"
 
+              placeholder="Težina kg"
 
+              value={weight}
 
+              onChange={(e)=>
+                setWeight(e.target.value)
+              }
 
-<div className="border rounded-xl p-5">
+            />
 
 
-<h2 className="text-xl font-bold">
-📋 Povijest Check-inova
-</h2>
 
 
 
 
 
-{checkins.length === 0 &&
+            <input
 
-<p className="mt-3">
-Nema spremljenih check-inova.
-</p>
+              className="border p-2 w-full"
 
-}
+              placeholder="Energija 1-10"
 
+              value={energy}
 
+              onChange={(e)=>
+                setEnergy(e.target.value)
+              }
 
+            />
 
 
-{checkins.map((c)=>(
 
 
-<div
 
-key={c.id}
 
-className="border rounded p-3 mt-3"
 
->
+            <textarea
 
+              className="border p-2 w-full"
 
-<p>
-⚖️ Težina: {String(c.weight).replace(".",",")} kg
-</p>
+              placeholder="Kako se klijent osjeća / napomena"
 
+              value={note}
 
-<p>
-⚡ Energija: {c.energy}/10
-</p>
+              onChange={(e)=>
+                setNote(e.target.value)
+              }
 
+            />
 
-<p>
-📝 {c.note}
-</p>
 
 
 
-</div>
 
 
-))}
 
+            <button
 
+              className="bg-black text-white px-5 py-2 rounded"
 
-</div>
+              onClick={save}
 
+            >
 
+              Spremi Check-in
 
+            </button>
 
 
-</div>
 
+          </div>
 
-</RoleGuard>
 
-);
 
+
+
+
+
+
+
+          <div className="border rounded-xl p-5">
+
+
+
+            <h2 className="text-xl font-bold">
+              📋 Povijest Check-inova
+            </h2>
+
+
+
+
+
+
+
+            {
+              checkins.length === 0 &&
+
+              <p className="mt-3">
+                Nema spremljenih check-inova.
+              </p>
+
+            }
+
+
+
+
+
+
+
+
+            {
+              checkins.map((c)=>(
+
+
+                <div
+
+                  key={c.id}
+
+                  className="border rounded p-3 mt-3"
+
+                >
+
+
+
+                  <p>
+                    ⚖️ Težina: {String(c.weight).replace(".",",")} kg
+                  </p>
+
+
+
+                  <p>
+                    ⚡ Energija: {c.energy}/10
+                  </p>
+
+
+
+
+                  <p>
+                    📝 {c.note}
+                  </p>
+
+
+
+                </div>
+
+
+              ))
+
+            }
+
+
+
+
+
+          </div>
+
+
+
+
+
+        </div>
+
+
+
+      </PremiumGuard>
+
+
+    </RoleGuard>
+
+  );
 
 }
