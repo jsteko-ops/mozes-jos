@@ -99,7 +99,7 @@ export async function POST(req: Request) {
   .doc(userId)
   .update({
     isPremium: true,
-    premium: true,
+  
 
     subscriptionStatus: "active",
 
