@@ -1,20 +1,24 @@
 import { adminDb } from "@/lib/firebase-admin";
 
 export async function checkPremium(userId: string) {
-  const userRef = adminDb
-    .collection("users")
-    .doc(userId);
+  try {
+    const userDoc = await adminDb
+      .collection("users")
+      .doc(userId)
+      .get();
 
-  const snap = await userRef.get();
+    if (!userDoc.exists) {
+      return false;
+    }
 
-  if (!snap.exists) {
+    const user = userDoc.data();
+
+    return (
+      user?.isPremium === true &&
+      user?.subscriptionStatus === "active"
+    );
+  } catch (error) {
+    console.error("Premium check error:", error);
     return false;
   }
-
-  const data = snap.data();
-
-  return (
-    data?.isPremium === true &&
-    data?.subscriptionStatus === "active"
-  );
 }
