@@ -1,32 +1,22 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
+import { stripe } from "@/lib/stripe";
 import { adminDb } from "@/lib/firebase-admin";
 
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY!,
-  {
-    apiVersion:"2023-10-16",
-  }
-);
+export async function POST(req: Request) {
 
+  try {
 
+    const body = await req.json();
 
-export async function POST(req:Request){
-
-  try{
-
-
-    const { userId } =
-    await req.json();
-
+    const userId = body.userId;
 
 
     if(!userId){
 
       return NextResponse.json(
         {
-          error:"Missing userId"
+          error:"Nedostaje userId"
         },
         {
           status:400
@@ -38,10 +28,10 @@ export async function POST(req:Request){
 
 
     const userSnap =
-    await adminDb
-    .collection("users")
-    .doc(userId)
-    .get();
+      await adminDb
+      .collection("users")
+      .doc(userId)
+      .get();
 
 
 
@@ -49,7 +39,7 @@ export async function POST(req:Request){
 
       return NextResponse.json(
         {
-          error:"User not found"
+          error:"Korisnik ne postoji"
         },
         {
           status:404
@@ -61,15 +51,20 @@ export async function POST(req:Request){
 
 
     const userData =
-    userSnap.data();
+      userSnap.data();
 
 
 
-    if(!userData?.stripeCustomerId){
+    const customerId =
+      userData?.stripeCustomerId;
+
+
+
+    if(!customerId){
 
       return NextResponse.json(
         {
-          error:"No Stripe customer"
+          error:"Stripe customer nije pronađen"
         },
         {
           status:400
@@ -80,17 +75,29 @@ export async function POST(req:Request){
 
 
 
+
+
+    const origin =
+      req.headers.get("origin") ||
+      "http://localhost:3000";
+
+
+
+
+
     const session =
-    await stripe.billingPortal.sessions.create({
+      await stripe.billingPortal.sessions.create({
 
-      customer:
-      userData.stripeCustomerId,
+        customer: customerId,
 
 
-      return_url:
-      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/trainer/naplata`
+        return_url:
+          `${origin}/dashboard/trainer/naplata`
 
-    });
+      });
+
+
+
 
 
 
@@ -102,8 +109,7 @@ export async function POST(req:Request){
 
 
 
-  }
-  catch(error:any){
+  } catch(error:any){
 
 
     console.error(
@@ -113,12 +119,17 @@ export async function POST(req:Request){
 
 
     return NextResponse.json(
+
       {
-        error:error.message
+        error:
+        error.message ||
+        "Portal failed"
       },
+
       {
         status:500
       }
+
     );
 
 

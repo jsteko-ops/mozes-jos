@@ -3,10 +3,7 @@ import Stripe from "stripe";
 import { adminDb } from "@/lib/firebase-admin";
 
 const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY!,
-  {
-    apiVersion: "2023-10-16",
-  }
+  process.env.STRIPE_SECRET_KEY!
 );
 
 
@@ -17,6 +14,7 @@ export async function POST(req: Request) {
 
 
   if (!signature) {
+
     return NextResponse.json(
       {
         error: "Missing Stripe signature",
@@ -25,6 +23,7 @@ export async function POST(req: Request) {
         status: 400,
       }
     );
+
   }
 
 
@@ -36,15 +35,15 @@ export async function POST(req: Request) {
 
   try {
 
-    event =
-      stripe.webhooks.constructEvent(
-        body,
-        signature,
-        process.env.STRIPE_WEBHOOK_SECRET!
-      );
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
 
 
   } catch (err: any) {
+
 
     console.error(
       "Webhook signature error:",
@@ -60,6 +59,7 @@ export async function POST(req: Request) {
         status: 400,
       }
     );
+
   }
 
 
@@ -68,6 +68,7 @@ export async function POST(req: Request) {
 
 
     switch (event.type) {
+
 
 
       case "checkout.session.completed": {
@@ -85,7 +86,7 @@ export async function POST(req: Request) {
         if (!userId) {
 
           console.log(
-            "Webhook: nema userId"
+            "Nema userId u checkout session"
           );
 
           break;
@@ -95,28 +96,29 @@ export async function POST(req: Request) {
 
 
         await adminDb
-  .collection("users")
-  .doc(userId)
-  .update({
-    isPremium: true,
-  
+          .collection("users")
+          .doc(userId)
+          .update({
 
-    subscriptionStatus: "active",
+            isPremium: true,
 
-    stripeCustomerId:
-      session.customer ?? null,
+            subscriptionStatus: "active",
 
-    stripeSubscriptionId:
-      session.subscription ?? null,
+            stripeCustomerId:
+              session.customer ?? null,
 
-    premiumActivatedAt:
-      new Date(),
-  });
+            stripeSubscriptionId:
+              session.subscription ?? null,
+
+            premiumActivatedAt:
+              new Date(),
+
+          });
 
 
 
         console.log(
-          "✅ Premium aktiviran:",
+          "Premium aktiviran:",
           userId
         );
 
@@ -127,6 +129,81 @@ export async function POST(req: Request) {
 
 
 
+
+
+      case "customer.subscription.updated": {
+
+
+        const subscription =
+          event.data.object as Stripe.Subscription;
+
+
+
+        const customerId =
+          subscription.customer as string;
+
+
+
+        const users =
+          await adminDb
+            .collection("users")
+            .where(
+              "stripeCustomerId",
+              "==",
+              customerId
+            )
+            .get();
+
+
+
+        if (users.empty) {
+
+          console.log(
+            "Korisnik nije pronađen za customer:",
+            customerId
+          );
+
+          break;
+
+        }
+
+
+
+
+        const userDoc =
+          users.docs[0];
+
+
+
+        await userDoc.ref.update({
+
+          subscriptionStatus:
+            subscription.status,
+
+          isPremium:
+            subscription.status === "active",
+
+        });
+
+
+
+        console.log(
+          "Subscription updated:",
+          userDoc.id,
+          subscription.status
+        );
+
+
+
+        break;
+
+      }
+
+
+
+
+
+
       case "customer.subscription.deleted": {
 
 
@@ -134,37 +211,62 @@ export async function POST(req: Request) {
           event.data.object as Stripe.Subscription;
 
 
-        const userId =
-          subscription.metadata?.userId;
+
+        const customerId =
+          subscription.customer as string;
 
 
 
-        if (userId) {
-
+        const users =
           await adminDb
             .collection("users")
-            .doc(userId)
-            .update({
+            .where(
+              "stripeCustomerId",
+              "==",
+              customerId
+            )
+            .get();
 
-              premium: false,
 
-              subscriptionStatus:
-                "canceled",
 
-            });
 
+        if (users.empty) {
 
           console.log(
-            "❌ Premium ugašen:",
-            userId
+            "Korisnik nije pronađen za customer:",
+            customerId
           );
 
+          break;
+
         }
+
+
+
+        await users.docs[0].ref.update({
+
+          isPremium: false,
+
+          subscriptionStatus:
+            "canceled",
+
+        });
+
+
+
+        console.log(
+          "Premium ugašen:",
+          users.docs[0].id
+        );
+
 
 
         break;
 
       }
+
+
+
 
 
 
@@ -179,8 +281,11 @@ export async function POST(req: Request) {
 
 
 
+
     return NextResponse.json({
+
       received: true,
+
     });
 
 
@@ -195,13 +300,16 @@ export async function POST(req: Request) {
 
 
     return NextResponse.json(
+
       {
         error:
           "Webhook processing failed",
       },
+
       {
         status: 500,
       }
+
     );
 
   }
