@@ -22,7 +22,6 @@ export default function OwnerDashboard() {
 
   const loadMembers = async (id: string) => {
     const data = await getGymMembers(id);
-
     setMembers(data);
   };
 
@@ -41,207 +40,290 @@ export default function OwnerDashboard() {
 
         if (data?.gymId) {
           setGymId(data.gymId);
-
           loadMembers(data.gymId);
         }
       }
     );
 
     return () => unsub();
-
   }, []);
 
 
 
-  const addTrainer = async () => {
+  const addMember = async (
+    email: string,
+    role: "trainer" | "client"
+  ) => {
+
     if (!gymId) return;
 
     try {
+
       setLoading(true);
 
       await addGymMember({
         gymId,
-        email: trainerEmail,
-        role: "trainer",
+        email,
+        role,
         addedBy: "owner",
       });
 
-      await loadMembers(gymId);
-
-      setTrainerEmail("");
-
-      alert("Trener dodan.");
-
-    } catch (error: any) {
-      alert(error.message);
-
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-
-  const addClient = async () => {
-    if (!gymId) return;
-
-    try {
-      setLoading(true);
-
-      await addGymMember({
-        gymId,
-        email: clientEmail,
-        role: "client",
-        addedBy: "owner",
-      });
 
       await loadMembers(gymId);
 
-      setClientEmail("");
 
-      alert("Klijent dodan.");
+      alert(
+        role === "trainer"
+          ? "Trener dodan."
+          : "Klijent dodan."
+      );
 
-    } catch (error: any) {
+
+    } catch(error:any){
+
       alert(error.message);
 
     } finally {
+
       setLoading(false);
+
     }
   };
 
 
 
   const trainers = members.filter(
-    (m) => m.gymRole === "trainer"
+    (m)=>m.gymRole==="trainer"
   );
 
 
   const clients = members.filter(
-    (m) => m.gymRole === "client"
+    (m)=>m.gymRole==="client"
   );
 
 
 
   return (
+
     <ProtectedRoute allowedRoles={["gym_owner"]}>
 
-      <div style={{ padding:20 }}>
+      <div className="p-6 space-y-8">
 
-        <h1>
-          🏢 Gym Owner Panel
+
+        <h1 className="text-3xl font-bold">
+          🏢 Moja teretana
         </h1>
 
 
-        <p>
+
+        <p className="text-gray-600">
           Gym ID:
-          <b>
-            {" "}{gymId}
-          </b>
+          {" "}
+          {gymId}
         </p>
 
 
 
-        <hr />
+
+        <div className="grid grid-cols-3 gap-4">
 
 
+          <div className="rounded-xl border bg-white p-5">
+            <h3 className="text-gray-500">
+              Treneri
+            </h3>
 
-        <h3>
-          Dodaj trenera
-        </h3>
-
-        <input
-          placeholder="Email trenera"
-          value={trainerEmail}
-          onChange={(e)=>
-            setTrainerEmail(e.target.value)
-          }
-        />
-
-        <button
-          onClick={addTrainer}
-          disabled={loading}
-        >
-          Dodaj trenera
-        </button>
-
-
-
-
-        <h3>
-          Dodaj klijenta
-        </h3>
-
-        <input
-          placeholder="Email klijenta"
-          value={clientEmail}
-          onChange={(e)=>
-            setClientEmail(e.target.value)
-          }
-        />
-
-        <button
-          onClick={addClient}
-          disabled={loading}
-        >
-          Dodaj klijenta
-        </button>
-
-
-
-
-        <hr />
-
-
-
-        <h2>
-          👨‍🏫 Treneri
-        </h2>
-
-
-        {trainers.length === 0 && (
-          <p>
-            Nema dodanih trenera.
-          </p>
-        )}
-
-
-        {trainers.map((trainer)=>(
-
-          <div key={trainer.uid}>
-            {trainer.name} -
-            {trainer.email}
+            <p className="text-3xl font-bold">
+              {trainers.length}
+            </p>
           </div>
 
-        ))}
 
 
+          <div className="rounded-xl border bg-white p-5">
 
+            <h3 className="text-gray-500">
+              Klijenti
+            </h3>
 
+            <p className="text-3xl font-bold">
+              {clients.length}
+            </p>
 
-        <h2>
-          👤 Klijenti
-        </h2>
-
-
-        {clients.length === 0 && (
-          <p>
-            Nema dodanih klijenata.
-          </p>
-        )}
-
-
-        {clients.map((client)=>(
-
-          <div key={client.uid}>
-            {client.name} -
-            {client.email}
           </div>
 
-        ))}
+
+
+          <div className="rounded-xl border bg-white p-5">
+
+            <h3 className="text-gray-500">
+              Ukupno članova
+            </h3>
+
+            <p className="text-3xl font-bold">
+              {members.length}
+            </p>
+
+          </div>
+
+
+        </div>
+
+
+
+
+        <div className="rounded-xl border bg-white p-5">
+
+          <h2 className="text-xl font-bold mb-3">
+            Dodaj člana
+          </h2>
+
+
+
+          <div className="flex gap-2 mb-4">
+
+            <input
+              className="border rounded p-2"
+              placeholder="Email trenera"
+              value={trainerEmail}
+              onChange={(e)=>
+                setTrainerEmail(e.target.value)
+              }
+            />
+
+            <button
+              className="bg-blue-600 text-white px-4 rounded"
+              disabled={loading}
+              onClick={()=>{
+                addMember(
+                  trainerEmail,
+                  "trainer"
+                );
+
+                setTrainerEmail("");
+              }}
+            >
+              Dodaj trenera
+            </button>
+
+          </div>
+
+
+
+
+          <div className="flex gap-2">
+
+            <input
+              className="border rounded p-2"
+              placeholder="Email klijenta"
+              value={clientEmail}
+              onChange={(e)=>
+                setClientEmail(e.target.value)
+              }
+            />
+
+            <button
+              className="bg-green-600 text-white px-4 rounded"
+              disabled={loading}
+              onClick={()=>{
+                addMember(
+                  clientEmail,
+                  "client"
+                );
+
+                setClientEmail("");
+              }}
+            >
+              Dodaj klijenta
+            </button>
+
+
+          </div>
+
+
+        </div>
+
+
+
+
+        <div className="grid md:grid-cols-2 gap-6">
+
+
+
+          <div className="rounded-xl border bg-white p-5">
+
+            <h2 className="text-xl font-bold mb-3">
+              👨‍🏫 Treneri
+            </h2>
+
+
+            {trainers.map((trainer)=>(
+
+              <div
+                key={trainer.uid}
+                className="border-b py-2"
+              >
+                <b>
+                  {trainer.name}
+                </b>
+
+                <br />
+
+                <span>
+                  {trainer.email}
+                </span>
+
+              </div>
+
+            ))}
+
+
+          </div>
+
+
+
+
+          <div className="rounded-xl border bg-white p-5">
+
+
+            <h2 className="text-xl font-bold mb-3">
+              👤 Klijenti
+            </h2>
+
+
+            {clients.map((client)=>(
+
+              <div
+                key={client.uid}
+                className="border-b py-2"
+              >
+
+                <b>
+                  {client.name}
+                </b>
+
+                <br />
+
+                <span>
+                  {client.email}
+                </span>
+
+
+              </div>
+
+            ))}
+
+
+          </div>
+
+
+        </div>
+
 
 
       </div>
 
     </ProtectedRoute>
+
   );
 }

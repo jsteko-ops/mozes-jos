@@ -18,6 +18,7 @@ export default function Sidebar() {
     router.replace("/login");
   };
 
+
   const linkClass = (href: string) =>
     `block rounded-lg px-3 py-2 transition ${
       pathname === href
@@ -25,15 +26,19 @@ export default function Sidebar() {
         : "text-gray-700 hover:bg-gray-100"
     }`;
 
+
   if (!userProfile) {
     return null;
   }
 
 
+
   return (
     <aside className="w-64 min-h-screen border-r bg-white p-5 flex flex-col">
 
+
       <div className="mb-8">
+
         <h1 className="text-2xl font-bold">
           Možeš Još
         </h1>
@@ -41,21 +46,27 @@ export default function Sidebar() {
         <p className="text-sm text-gray-500 mt-1">
           {userProfile.role}
         </p>
+
       </div>
+
+
 
 
       <nav className="flex flex-col gap-2">
 
 
+
         {/* TRAINER MENU */}
         {userProfile.role === "trainer" && (
           <>
+
             <Link
               href="/dashboard/trainer"
               className={linkClass("/dashboard/trainer")}
             >
               Dashboard
             </Link>
+
 
             <Link
               href="/dashboard/trainer/klijenti"
@@ -64,12 +75,14 @@ export default function Sidebar() {
               Klijenti
             </Link>
 
+
             <Link
               href="/dashboard/trainer/mjerenja"
               className={linkClass("/dashboard/trainer/mjerenja")}
             >
               Mjerenja
             </Link>
+
 
             <Link
               href="/dashboard/trainer/checkin"
@@ -78,6 +91,7 @@ export default function Sidebar() {
               Check-in
             </Link>
 
+
             <Link
               href="/dashboard/trainer/izvjestaji"
               className={linkClass("/dashboard/trainer/izvjestaji")}
@@ -85,26 +99,34 @@ export default function Sidebar() {
               Izvještaji
             </Link>
 
+
             <Link
               href="/dashboard/trainer/naplata"
               className={linkClass("/dashboard/trainer/naplata")}
             >
               Naplata
             </Link>
+
           </>
         )}
+
+
+
 
 
 
         {/* OWNER MENU */}
         {userProfile.role === "gym_owner" && (
           <>
+
             <Link
               href="/dashboard/owner"
               className={linkClass("/dashboard/owner")}
             >
               Moja teretana
             </Link>
+
+
 
             <Link
               href="/dashboard/owner/trainers"
@@ -113,6 +135,17 @@ export default function Sidebar() {
               Moji treneri
             </Link>
 
+
+
+            <Link
+              href="/dashboard/owner/clients"
+              className={linkClass("/dashboard/owner/clients")}
+            >
+              Moji klijenti
+            </Link>
+
+
+
             <Link
               href="/dashboard/reports"
               className={linkClass("/dashboard/reports")}
@@ -120,20 +153,29 @@ export default function Sidebar() {
               Izvještaji
             </Link>
 
+
+
             <Link
               href="/dashboard/settings"
               className={linkClass("/dashboard/settings")}
             >
               Postavke
             </Link>
+
+
           </>
         )}
 
 
 
-        {/* CLIENT MENU */}
+
+
+
+
+               {/* CLIENT MENU */}
         {userProfile.role === "client" && (
           <>
+
             <Link
               href="/dashboard/client"
               className={linkClass("/dashboard/client")}
@@ -161,25 +203,36 @@ export default function Sidebar() {
             >
               Profil
             </Link>
+
           </>
         )}
+
+
+
+
 
 
 
         {/* ADMIN */}
         {userProfile.role === "admin" && (
           <>
+
             <Link
               href="/dashboard"
               className={linkClass("/dashboard")}
             >
               Admin Dashboard
             </Link>
+
           </>
         )}
 
 
+
       </nav>
+
+
+
 
 
       <button
@@ -188,6 +241,7 @@ export default function Sidebar() {
       >
         Odjava
       </button>
+
 
 
     </aside>
