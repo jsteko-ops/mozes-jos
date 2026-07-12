@@ -7,14 +7,25 @@ import { doc, getDoc } from "firebase/firestore";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { addGymMember } from "@/lib/addGymMember";
+import { getGymMembers } from "@/lib/getGymMembers";
 
 export default function OwnerDashboard() {
   const [gymId, setGymId] = useState<string | null>(null);
+
+  const [members, setMembers] = useState<any[]>([]);
 
   const [trainerEmail, setTrainerEmail] = useState("");
   const [clientEmail, setClientEmail] = useState("");
 
   const [loading, setLoading] = useState(false);
+
+
+  const loadMembers = async (id: string) => {
+    const data = await getGymMembers(id);
+
+    setMembers(data);
+  };
+
 
   useEffect(() => {
     const unsub = onAuthStateChanged(
@@ -30,19 +41,20 @@ export default function OwnerDashboard() {
 
         if (data?.gymId) {
           setGymId(data.gymId);
+
+          loadMembers(data.gymId);
         }
       }
     );
 
     return () => unsub();
+
   }, []);
 
 
+
   const addTrainer = async () => {
-    if (!gymId) {
-      alert("Nema gym ID.");
-      return;
-    }
+    if (!gymId) return;
 
     try {
       setLoading(true);
@@ -54,22 +66,24 @@ export default function OwnerDashboard() {
         addedBy: "owner",
       });
 
-      alert("Trener dodan u teretanu.");
+      await loadMembers(gymId);
+
       setTrainerEmail("");
+
+      alert("Trener dodan.");
 
     } catch (error: any) {
       alert(error.message);
+
     } finally {
       setLoading(false);
     }
   };
 
 
+
   const addClient = async () => {
-    if (!gymId) {
-      alert("Nema gym ID.");
-      return;
-    }
+    if (!gymId) return;
 
     try {
       setLoading(true);
@@ -81,98 +95,153 @@ export default function OwnerDashboard() {
         addedBy: "owner",
       });
 
-      alert("Klijent dodan u teretanu.");
+      await loadMembers(gymId);
+
       setClientEmail("");
+
+      alert("Klijent dodan.");
 
     } catch (error: any) {
       alert(error.message);
+
     } finally {
       setLoading(false);
     }
   };
 
 
+
+  const trainers = members.filter(
+    (m) => m.gymRole === "trainer"
+  );
+
+
+  const clients = members.filter(
+    (m) => m.gymRole === "client"
+  );
+
+
+
   return (
     <ProtectedRoute allowedRoles={["gym_owner"]}>
-      <div style={{ padding: 20 }}>
+
+      <div style={{ padding:20 }}>
 
         <h1>
           🏢 Gym Owner Panel
         </h1>
 
 
-        <div style={{ marginBottom: 20 }}>
-          <h3>Gym ID:</h3>
+        <p>
+          Gym ID:
+          <b>
+            {" "}{gymId}
+          </b>
+        </p>
+
+
+
+        <hr />
+
+
+
+        <h3>
+          Dodaj trenera
+        </h3>
+
+        <input
+          placeholder="Email trenera"
+          value={trainerEmail}
+          onChange={(e)=>
+            setTrainerEmail(e.target.value)
+          }
+        />
+
+        <button
+          onClick={addTrainer}
+          disabled={loading}
+        >
+          Dodaj trenera
+        </button>
+
+
+
+
+        <h3>
+          Dodaj klijenta
+        </h3>
+
+        <input
+          placeholder="Email klijenta"
+          value={clientEmail}
+          onChange={(e)=>
+            setClientEmail(e.target.value)
+          }
+        />
+
+        <button
+          onClick={addClient}
+          disabled={loading}
+        >
+          Dodaj klijenta
+        </button>
+
+
+
+
+        <hr />
+
+
+
+        <h2>
+          👨‍🏫 Treneri
+        </h2>
+
+
+        {trainers.length === 0 && (
           <p>
-            {gymId || "Nema dodijeljene teretane"}
+            Nema dodanih trenera.
           </p>
-        </div>
+        )}
 
 
-        <div style={{ marginBottom: 30 }}>
+        {trainers.map((trainer)=>(
 
-          <h3>
-            Dodaj trenera
-          </h3>
+          <div key={trainer.uid}>
+            {trainer.name} -
+            {trainer.email}
+          </div>
 
-          <input
-            placeholder="Email trenera"
-            value={trainerEmail}
-            onChange={(e) =>
-              setTrainerEmail(e.target.value)
-            }
-          />
-
-          <button
-            onClick={addTrainer}
-            disabled={loading}
-          >
-            Dodaj trenera
-          </button>
-
-        </div>
+        ))}
 
 
 
-        <div style={{ marginBottom: 30 }}>
-
-          <h3>
-            Dodaj klijenta
-          </h3>
-
-          <input
-            placeholder="Email klijenta"
-            value={clientEmail}
-            onChange={(e) =>
-              setClientEmail(e.target.value)
-            }
-          />
-
-          <button
-            onClick={addClient}
-            disabled={loading}
-          >
-            Dodaj klijenta
-          </button>
-
-        </div>
 
 
+        <h2>
+          👤 Klijenti
+        </h2>
 
-        <div>
 
-          <h3>
-            Gym Members
-          </h3>
-
+        {clients.length === 0 && (
           <p>
-            Lista članova dolazi u sljedećem koraku.
+            Nema dodanih klijenata.
           </p>
+        )}
 
-        </div>
+
+        {clients.map((client)=>(
+
+          <div key={client.uid}>
+            {client.name} -
+            {client.email}
+          </div>
+
+        ))}
 
 
       </div>
+
     </ProtectedRoute>
   );
 }
