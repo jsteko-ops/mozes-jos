@@ -1,5 +1,14 @@
-export function canAccessFeature(user: any, feature: string) {
-  if (user?.isPremium) return true;
+import { AppUser } from "@/types/appUser";
+
+export function canAccessFeature(
+  user: AppUser | null,
+  feature: string
+) {
+  if (!user) return false;
+
+  if (user.isPremium) {
+    return true;
+  }
 
   const freeLimits: Record<string, boolean> = {
     analytics: false,

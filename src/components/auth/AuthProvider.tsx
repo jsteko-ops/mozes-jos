@@ -1,35 +1,28 @@
 "use client";
 
-import { 
-  createContext, 
-  useContext, 
-  useEffect, 
-  useState 
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 
-import { 
-  onAuthStateChanged, 
-  User 
+import {
+  onAuthStateChanged,
+  User,
 } from "firebase/auth";
 
-import { 
-  doc, 
-  getDoc 
+import {
+  doc,
+  getDoc,
 } from "firebase/firestore";
 
 import { auth, db } from "@/lib/firebase";
-
-type UserProfile = {
-  uid: string;
-  name: string;
-  email: string;
-  role: "admin" | "trainer" | "gymOwner" | "client";
-  premium: boolean;
-};
+import { AppUser } from "@/types/appUser";
 
 type AuthContextType = {
   user: User | null;
-  userProfile: UserProfile | null;
+  userProfile: AppUser | null;
   loading: boolean;
 };
 
@@ -45,10 +38,12 @@ export function AuthProvider({
   children: React.ReactNode;
 }) {
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] =
-    useState<UserProfile | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] =
+    useState<AppUser | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(
@@ -57,19 +52,38 @@ export function AuthProvider({
         setUser(firebaseUser);
 
         if (firebaseUser) {
-          const ref = doc(
-            db,
-            "users",
-            firebaseUser.uid
-          );
-
-          const snapshot = await getDoc(ref);
-
-          if (snapshot.exists()) {
-            setUserProfile(
-              snapshot.data() as UserProfile
+          try {
+            const ref = doc(
+              db,
+              "users",
+              firebaseUser.uid
             );
-          } else {
+
+            const snapshot = await getDoc(ref);
+
+            if (snapshot.exists()) {
+              const data =
+                snapshot.data() as AppUser;
+
+              setUserProfile(data);
+
+              console.log(
+                "USER PROFILE:",
+                JSON.stringify(data, null, 2)
+              );
+            } else {
+              console.warn(
+                "User document ne postoji"
+              );
+
+              setUserProfile(null);
+            }
+          } catch (error) {
+            console.error(
+              "Greška kod učitavanja user profila:",
+              error
+            );
+
             setUserProfile(null);
           }
         } else {
@@ -96,4 +110,5 @@ export function AuthProvider({
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () =>
+  useContext(AuthContext);

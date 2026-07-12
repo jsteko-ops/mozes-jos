@@ -10,19 +10,19 @@ export default function ReportsPage() {
     return <p>Loading...</p>;
   }
 
-  if (!canAccessFeature(user, "analytics")) {
+  if (!canAccessFeature(user, "reports")) {
     return (
       <div style={{ padding: 20 }}>
-        <h2>🔒 Analytics locked</h2>
-        <p>Upgrade to Pro to unlock analytics.</p>
+        <h2>🔒 Reports locked</h2>
+        <p>Upgrade to Pro to unlock reports.</p>
       </div>
     );
   }
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>📊 Analytics</h1>
-      <p>Full dashboard content here...</p>
+      <h1>📄 Reports</h1>
+      <p>Premium izvještaji za napredak klijenata.</p>
     </div>
   );
 }

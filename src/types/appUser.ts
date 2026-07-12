@@ -10,7 +10,7 @@ export interface AppUser {
 
   role: UserRole;
 
-  premium: boolean;
+  isPremium: boolean;
 
   subscriptionStatus?: string;
 
