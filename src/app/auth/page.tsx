@@ -73,10 +73,17 @@ export default function AuthPage() {
         ),
         {
           uid: userCredential.user.uid,
+
           email: email,
+
           name: "",
+
           role: "trainer",
-          premium: false,
+
+          isPremium: false,
+
+          subscriptionStatus: "inactive",
+
           createdAt: serverTimestamp(),
         }
       );

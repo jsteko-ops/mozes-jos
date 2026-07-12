@@ -15,7 +15,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
 
   const [role, setRole] = useState<
-    "client" | "trainer" | "gymOwner"
+    "client" | "trainer" | "gym_owner"
   >("client");
 
   const [loading, setLoading] = useState(false);
@@ -47,14 +47,22 @@ export default function SignupPage() {
 
       await setDoc(doc(db, "users", result.user.uid), {
         uid: result.user.uid,
+
         name: name.trim(),
+
         email: result.user.email,
+
         role: role,
-        premium: false,
+
+        isPremium: false,
+
+        subscriptionStatus: "inactive",
+
         createdAt: serverTimestamp(),
       });
 
       router.replace("/dashboard");
+
     } catch (error: any) {
       console.error(error);
 
@@ -74,6 +82,7 @@ export default function SignupPage() {
         default:
           alert(error.message);
       }
+
     } finally {
       setLoading(false);
     }
@@ -94,21 +103,27 @@ export default function SignupPage() {
       <input
         placeholder="Ime i prezime"
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={(e) =>
+          setName(e.target.value)
+        }
       />
 
       <input
         type="email"
         placeholder="E-mail"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e) =>
+          setEmail(e.target.value)
+        }
       />
 
       <input
         type="password"
         placeholder="Lozinka"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) =>
+          setPassword(e.target.value)
+        }
       />
 
       <label>
@@ -122,7 +137,7 @@ export default function SignupPage() {
             e.target.value as
               | "client"
               | "trainer"
-              | "gymOwner"
+              | "gym_owner"
           )
         }
       >
@@ -134,16 +149,21 @@ export default function SignupPage() {
           Trener
         </option>
 
-        <option value="gymOwner">
+        <option value="gym_owner">
           Vlasnik teretane
         </option>
+
       </select>
 
-      <button onClick={signup} disabled={loading}>
+      <button
+        onClick={signup}
+        disabled={loading}
+      >
         {loading
           ? "Registracija..."
           : "Registriraj se"}
       </button>
+
     </main>
   );
 }
