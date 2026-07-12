@@ -21,10 +21,18 @@ export async function findUserByEmail(
     return null;
   }
 
-  const user = snap.docs[0];
+  const userDoc = snap.docs[0];
+
+  const data = userDoc.data();
 
   return {
-    uid: user.id,
-    ...user.data(),
+    uid: userDoc.id,
+    email: data.email,
+    name: data.name,
+    role: data.role,
+    gymId: data.gymId ?? null,
+    isPremium: data.isPremium ?? false,
+    subscriptionStatus:
+      data.subscriptionStatus ?? "inactive",
   };
 }

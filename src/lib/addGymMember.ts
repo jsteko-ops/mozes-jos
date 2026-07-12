@@ -1,29 +1,66 @@
 import { db } from "@/lib/firebase";
-import { doc, setDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
+
+import { findUserByEmail } from "@/lib/findUserByEmail";
 
 export async function addGymMember({
   gymId,
-  userId,
+  email,
   role,
   addedBy,
 }: {
   gymId: string;
-  userId: string;
+  email: string;
   role: "trainer" | "client";
   addedBy: string;
 }) {
-  // 1. dodaj u gymMembers kolekciju
-  await setDoc(doc(db, "gymMembers", gymId, "members", userId), {
-    role,
-    addedBy,
-    createdAt: serverTimestamp(),
-  });
+  const user = await findUserByEmail(email);
 
-  // 2. update user (link na gym)
-  await updateDoc(doc(db, "users", userId), {
-    gymId,
-    role,
-  });
+  if (!user) {
+    throw new Error("Korisnik nije pronađen.");
+  }
 
-  console.log("Member added to gym:", userId);
+  if (user.role !== role) {
+    throw new Error(
+      `Korisnik nije ${role}.`
+    );
+  }
+
+  // 1. dodaj člana u teretanu
+  await setDoc(
+    doc(
+      db,
+      "gymMembers",
+      gymId,
+      "members",
+      user.uid
+    ),
+    {
+      role,
+      email: user.email,
+      name: user.name,
+      addedBy,
+      createdAt: serverTimestamp(),
+    }
+  );
+
+  // 2. poveži korisnika s teretanom
+  await updateDoc(
+    doc(db, "users", user.uid),
+    {
+      gymId,
+    }
+  );
+
+  console.log(
+    "Member added to gym:",
+    user.uid
+  );
+
+  return user;
 }

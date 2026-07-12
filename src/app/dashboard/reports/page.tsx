@@ -1,20 +1,26 @@
 "use client";
 
-import { useUser } from "@/lib/hooks/useUser";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { canAccessFeature } from "@/lib/auth/checkPremium";
 
 export default function ReportsPage() {
-  const { user } = useUser();
+  const { userProfile, loading } = useAuth();
 
-  if (!user) {
+  if (loading) {
     return <p>Loading...</p>;
   }
 
-  if (!canAccessFeature(user, "reports")) {
+  if (!userProfile) {
+    return <p>Nema korisnika.</p>;
+  }
+
+  if (!canAccessFeature(userProfile, "reports")) {
     return (
       <div style={{ padding: 20 }}>
         <h2>🔒 Reports locked</h2>
-        <p>Upgrade to Pro to unlock reports.</p>
+        <p>
+          Upgrade to Pro to unlock reports.
+        </p>
       </div>
     );
   }
@@ -22,7 +28,9 @@ export default function ReportsPage() {
   return (
     <div style={{ padding: 20 }}>
       <h1>📄 Reports</h1>
-      <p>Premium izvještaji za napredak klijenata.</p>
+      <p>
+        Premium izvještaji za napredak klijenata.
+      </p>
     </div>
   );
 }

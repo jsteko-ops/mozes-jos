@@ -3,35 +3,60 @@
 import { addGymMember } from "@/lib/addGymMember";
 
 export default function TestMembersPage() {
-  const addTrainer = async () => {
+
+
+  const addTrainerTest = async () => {
+
     await addGymMember({
-      gymId: "gym_1",
-      userId: "trainer_123",
+      gymId: "gym_test",
+      email: "trainer@test.com",
       role: "trainer",
-      addedBy: "owner_123",
+      addedBy: "test",
     });
+
+    alert("Trainer test added");
   };
 
-  const addClient = async () => {
+
+  const addClientTest = async () => {
+
     await addGymMember({
-      gymId: "gym_1",
-      userId: "client_123",
+      gymId: "gym_test",
+      email: "client@test.com",
       role: "client",
-      addedBy: "trainer_123",
+      addedBy: "test",
     });
+
+    alert("Client test added");
   };
+
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Gym Members Test</h1>
 
-      <button onClick={addTrainer}>
-        Add Trainer
+      <h1>
+        Test Gym Members
+      </h1>
+
+
+      <button
+        onClick={addTrainerTest}
+      >
+        Add Trainer Test
       </button>
 
-      <button onClick={addClient} style={{ marginLeft: 10 }}>
-        Add Client
+
+      <br />
+      <br />
+
+
+      <button
+        onClick={addClientTest}
+      >
+        Add Client Test
       </button>
+
+
     </div>
   );
 }

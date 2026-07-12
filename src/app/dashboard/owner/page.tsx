@@ -5,7 +5,7 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-import RoleGuard from "@/components/auth/RoleGuard";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { addGymMember } from "@/lib/addGymMember";
 
 export default function OwnerDashboard() {
@@ -13,6 +13,8 @@ export default function OwnerDashboard() {
 
   const [trainerEmail, setTrainerEmail] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(
@@ -38,65 +40,83 @@ export default function OwnerDashboard() {
 
   const addTrainer = async () => {
     if (!gymId) {
-      alert("Owner nema dodijeljen gymId");
+      alert("Nema gym ID.");
       return;
     }
 
-    await addGymMember({
-      gymId,
-      userId: trainerEmail,
-      role: "trainer",
-      addedBy: "owner",
-    });
+    try {
+      setLoading(true);
 
-    alert("Trainer added");
+      await addGymMember({
+        gymId,
+        email: trainerEmail,
+        role: "trainer",
+        addedBy: "owner",
+      });
+
+      alert("Trener dodan u teretanu.");
+      setTrainerEmail("");
+
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
 
   const addClient = async () => {
     if (!gymId) {
-      alert("Owner nema dodijeljen gymId");
+      alert("Nema gym ID.");
       return;
     }
 
-    await addGymMember({
-      gymId,
-      userId: clientEmail,
-      role: "client",
-      addedBy: "owner",
-    });
+    try {
+      setLoading(true);
 
-    alert("Client added");
+      await addGymMember({
+        gymId,
+        email: clientEmail,
+        role: "client",
+        addedBy: "owner",
+      });
+
+      alert("Klijent dodan u teretanu.");
+      setClientEmail("");
+
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
 
   return (
-    <RoleGuard allowedRoles={["gym_owner"]}>
+    <ProtectedRoute allowedRoles={["gym_owner"]}>
       <div style={{ padding: 20 }}>
 
-        <h1 className="text-2xl font-bold">
+        <h1>
           🏢 Gym Owner Panel
         </h1>
 
 
-        <div style={{ marginTop: 20 }}>
-          <h3>
-            Gym ID:
-          </h3>
-
+        <div style={{ marginBottom: 20 }}>
+          <h3>Gym ID:</h3>
           <p>
-            {gymId || "No gym assigned"}
+            {gymId || "Nema dodijeljene teretane"}
           </p>
         </div>
 
 
-        <div style={{ marginTop: 30 }}>
+        <div style={{ marginBottom: 30 }}>
+
           <h3>
-            Add Trainer
+            Dodaj trenera
           </h3>
 
           <input
-            placeholder="Trainer UID or Email"
+            placeholder="Email trenera"
             value={trainerEmail}
             onChange={(e) =>
               setTrainerEmail(e.target.value)
@@ -105,19 +125,23 @@ export default function OwnerDashboard() {
 
           <button
             onClick={addTrainer}
+            disabled={loading}
           >
-            Add Trainer
+            Dodaj trenera
           </button>
+
         </div>
 
 
-        <div style={{ marginTop: 30 }}>
+
+        <div style={{ marginBottom: 30 }}>
+
           <h3>
-            Add Client
+            Dodaj klijenta
           </h3>
 
           <input
-            placeholder="Client UID or Email"
+            placeholder="Email klijenta"
             value={clientEmail}
             onChange={(e) =>
               setClientEmail(e.target.value)
@@ -126,13 +150,17 @@ export default function OwnerDashboard() {
 
           <button
             onClick={addClient}
+            disabled={loading}
           >
-            Add Client
+            Dodaj klijenta
           </button>
+
         </div>
 
 
-        <div style={{ marginTop: 30 }}>
+
+        <div>
+
           <h3>
             Gym Members
           </h3>
@@ -140,9 +168,11 @@ export default function OwnerDashboard() {
           <p>
             Lista članova dolazi u sljedećem koraku.
           </p>
+
         </div>
 
+
       </div>
-    </RoleGuard>
+    </ProtectedRoute>
   );
 }
