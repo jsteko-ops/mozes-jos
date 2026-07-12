@@ -9,27 +9,29 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && userProfile) {
-      switch (userProfile.role) {
-        case "trainer":
-          router.replace("/dashboard/trainer");
-          break;
+    if (loading || !userProfile) return;
 
-        case "gymOwner":
-          router.replace("/dashboard/gym-owner");
-          break;
+    switch (userProfile.role) {
+      case "trainer":
+        router.replace("/dashboard/trainer");
+        break;
 
-        case "admin":
-          router.replace("/dashboard/admin");
-          break;
+      case "gym_owner":
+        router.replace("/dashboard/owner");
+        break;
 
-        case "client":
-        default:
-          router.replace("/dashboard/client");
-          break;
-      }
+      case "admin":
+        router.replace("/dashboard");
+        break;
+
+      case "client":
+        router.replace("/dashboard/client");
+        break;
+
+      default:
+        router.replace("/login");
     }
-  }, [userProfile, loading, router]);
+  }, [loading, userProfile, router]);
 
   return (
     <div className="p-6">

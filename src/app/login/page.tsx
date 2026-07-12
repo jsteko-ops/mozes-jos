@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -23,9 +24,7 @@ export default function LoginPage() {
   const [loginLoading, setLoginLoading] =
     useState(false);
 
-
   useEffect(() => {
-
     if (
       !loading &&
       user &&
@@ -36,7 +35,6 @@ export default function LoginPage() {
         router
       );
     }
-
   }, [
     user,
     userProfile,
@@ -44,12 +42,8 @@ export default function LoginPage() {
     router,
   ]);
 
-
-
   const login = async () => {
-
     try {
-
       setLoginLoading(true);
 
       await signInWithEmailAndPassword(
@@ -57,83 +51,51 @@ export default function LoginPage() {
         email.trim(),
         password
       );
-
-
     } catch (error: any) {
-
       console.error(
         "Login error:",
         error
       );
 
-
       switch (error.code) {
-
         case "auth/invalid-email":
-          alert(
-            "Neispravna e-mail adresa."
-          );
+          alert("Neispravna e-mail adresa.");
           break;
-
 
         case "auth/user-not-found":
-          alert(
-            "Korisnik ne postoji."
-          );
+          alert("Korisnik ne postoji.");
           break;
-
 
         case "auth/wrong-password":
-          alert(
-            "Pogrešna lozinka."
-          );
+          alert("Pogrešna lozinka.");
           break;
-
 
         case "auth/invalid-credential":
-          alert(
-            "Neispravan e-mail ili lozinka."
-          );
+          alert("Neispravan e-mail ili lozinka.");
           break;
 
-
         default:
-          alert(
-            error.message
-          );
+          alert(error.message);
       }
-
-
     } finally {
-
       setLoginLoading(false);
-
     }
-
   };
 
-
-
   if (loading) {
-
     return (
-      <p>
+      <p className="p-6">
         Učitavanje...
       </p>
     );
-
   }
 
-
-
   return (
-
     <form
       onSubmit={(e) => {
         e.preventDefault();
         login();
       }}
-
       style={{
         maxWidth: 400,
         margin: "80px auto",
@@ -142,13 +104,9 @@ export default function LoginPage() {
         gap: 12,
       }}
     >
-
-
-      <h1>
+      <h1 className="text-3xl font-bold">
         Prijava
       </h1>
-
-
 
       <input
         type="email"
@@ -159,8 +117,6 @@ export default function LoginPage() {
         }
       />
 
-
-
       <input
         type="password"
         placeholder="Lozinka"
@@ -170,21 +126,32 @@ export default function LoginPage() {
         }
       />
 
-
-
       <button
         type="submit"
         disabled={loginLoading}
       >
-
         {loginLoading
           ? "Prijava..."
           : "Login"}
-
       </button>
 
+      <div
+        style={{
+          marginTop: 16,
+          textAlign: "center",
+        }}
+      >
+        <p>
+          Nemaš račun?
+        </p>
 
+        <Link
+          href="/signup"
+          className="text-blue-600 hover:underline"
+        >
+          Registriraj se
+        </Link>
+      </div>
     </form>
-
   );
 }

@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
-import { auth, db } from "@/lib/firebase";
+import { registerUser } from "@/lib/registerUser";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -39,30 +37,14 @@ export default function SignupPage() {
     try {
       setLoading(true);
 
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
-
-      await setDoc(doc(db, "users", result.user.uid), {
-        uid: result.user.uid,
-
-        name: name.trim(),
-
-        email: result.user.email,
-
-        role: role,
-
-        isPremium: false,
-
-        subscriptionStatus: "inactive",
-
-        createdAt: serverTimestamp(),
+      await registerUser({
+        name,
+        email,
+        password,
+        role,
       });
 
       router.replace("/dashboard");
-
     } catch (error: any) {
       console.error(error);
 
@@ -82,7 +64,6 @@ export default function SignupPage() {
         default:
           alert(error.message);
       }
-
     } finally {
       setLoading(false);
     }
@@ -152,7 +133,6 @@ export default function SignupPage() {
         <option value="gym_owner">
           Vlasnik teretane
         </option>
-
       </select>
 
       <button
@@ -163,7 +143,6 @@ export default function SignupPage() {
           ? "Registracija..."
           : "Registriraj se"}
       </button>
-
     </main>
   );
 }
