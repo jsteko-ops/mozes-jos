@@ -41,7 +41,7 @@ export default function ClientPlans({
           db,
           "clients",
           clientId,
-          "plans"
+          "workouts"
         ),
 
         orderBy(
@@ -71,7 +71,7 @@ export default function ClientPlans({
     } catch(error) {
 
       console.error(
-        "Greška planovi:",
+        "Greška trening planovi:",
         error
       );
 
@@ -88,7 +88,7 @@ export default function ClientPlans({
 
     return (
       <p>
-        Učitavanje planova...
+        Učitavanje treninga...
       </p>
     );
 
@@ -129,12 +129,22 @@ export default function ClientPlans({
               >
 
                 <h3 className="font-bold">
-                  {plan.name}
+                  {plan.title}
                 </h3>
 
 
-                <p className="text-gray-600">
-                  {plan.description || "-"}
+                <p className="text-gray-600 mt-2">
+                  {plan.exercises || "-"}
+                </p>
+
+
+                <p className="text-sm text-gray-400 mt-2">
+                  Dodano:{" "}
+                  {plan.createdAt?.toDate
+                    ? plan.createdAt
+                        .toDate()
+                        .toLocaleDateString("hr-HR")
+                    : "-"}
                 </p>
 
 
