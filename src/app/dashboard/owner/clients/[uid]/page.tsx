@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ClientMeasurements from "@/components/owner/ClientMeasurements";
 
 import { db } from "@/lib/firebase";
 
@@ -25,17 +26,22 @@ type Client = {
 };
 
 
+
 export default function OwnerClientProfile() {
 
   const params = useParams();
 
-  const [client, setClient] = useState<Client | null>(null);
+  const [client, setClient] =
+    useState<Client | null>(null);
 
-  const [trainer, setTrainer] = useState<any>(null);
+  const [trainer, setTrainer] =
+    useState<any>(null);
 
-  const [gym, setGym] = useState<any>(null);
+  const [gym, setGym] =
+    useState<any>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
 
 
@@ -50,6 +56,7 @@ export default function OwnerClientProfile() {
   async function loadClient() {
 
     try {
+
 
       const id = params.uid as string;
 
@@ -88,17 +95,21 @@ export default function OwnerClientProfile() {
 
 
 
+      // =====================
       // TRENER
+      // =====================
 
       if (clientData.trainerId) {
 
-        const trainerSnap = await getDoc(
-          doc(
-            db,
-            "users",
-            clientData.trainerId
-          )
-        );
+
+        const trainerSnap =
+          await getDoc(
+            doc(
+              db,
+              "users",
+              clientData.trainerId
+            )
+          );
 
 
         if (trainerSnap.exists()) {
@@ -113,17 +124,22 @@ export default function OwnerClientProfile() {
 
 
 
+
+      // =====================
       // GYM
+      // =====================
 
       if (clientData.gymId) {
 
-        const gymSnap = await getDoc(
-          doc(
-            db,
-            "gyms",
-            clientData.gymId
-          )
-        );
+
+        const gymSnap =
+          await getDoc(
+            doc(
+              db,
+              "gyms",
+              clientData.gymId
+            )
+          );
 
 
         if (gymSnap.exists()) {
@@ -140,13 +156,14 @@ export default function OwnerClientProfile() {
 
     } catch(error) {
 
+
       console.error(
         "Greška kod profila:",
         error
       );
 
-    }
 
+    }
 
 
     setLoading(false);
@@ -159,6 +176,7 @@ export default function OwnerClientProfile() {
   return (
 
     <ProtectedRoute allowedRoles={["gym_owner"]}>
+
 
       <div className="p-6">
 
@@ -179,13 +197,13 @@ export default function OwnerClientProfile() {
 
         ) : (
 
-
           <>
 
 
             <h1 className="text-3xl font-bold mb-6">
               👤 Profil klijenta
             </h1>
+
 
 
 
@@ -229,7 +247,9 @@ export default function OwnerClientProfile() {
 
               <div>
                 <b>Trener:</b>{" "}
-                {trainer?.name || trainer?.email || "-"}
+                {trainer?.name ||
+                trainer?.email ||
+                "-"}
               </div>
 
 
@@ -253,13 +273,23 @@ export default function OwnerClientProfile() {
             </div>
 
 
-          </>
 
+
+            {/* MJERENJA */}
+
+            <ClientMeasurements
+              clientId={client.id}
+            />
+
+
+
+          </>
 
         )}
 
 
       </div>
+
 
     </ProtectedRoute>
 
