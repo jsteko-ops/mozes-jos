@@ -19,6 +19,10 @@ export default function OwnerClientProfile() {
 
   const [client, setClient] = useState<any>(null);
 
+  const [trainer, setTrainer] = useState<any>(null);
+
+  const [gym, setGym] = useState<any>(null);
+
   const [loading, setLoading] = useState(true);
 
 
@@ -35,11 +39,10 @@ export default function OwnerClientProfile() {
 
     try {
 
+
       const id = params.uid as string;
 
 
-
-      // 1. prvo pokušaj clients kolekciju
 
       const clientSnap = await getDoc(
         doc(
@@ -51,59 +54,92 @@ export default function OwnerClientProfile() {
 
 
 
-      if (clientSnap.exists()) {
-
-        setClient({
-
-          id: clientSnap.id,
-
-          ...clientSnap.data(),
-
-        });
-
+      if (!clientSnap.exists()) {
 
         setLoading(false);
-
         return;
 
       }
 
 
 
+      const clientData = {
 
+        id: clientSnap.id,
 
-      // 2. ako nije client, probaj users
+        ...clientSnap.data(),
 
-      const userSnap = await getDoc(
-        doc(
-          db,
-          "users",
-          id
-        )
-      );
+      };
 
 
 
-      if (userSnap.exists()) {
+      setClient(clientData);
 
-        setClient({
 
-          id: userSnap.id,
 
-          ...userSnap.data(),
+      // TRENER
 
-        });
+      if (clientData.trainerId) {
+
+
+        const trainerSnap = await getDoc(
+          doc(
+            db,
+            "users",
+            clientData.trainerId
+          )
+        );
+
+
+
+        if (trainerSnap.exists()) {
+
+          setTrainer(
+            trainerSnap.data()
+          );
+
+        }
 
       }
 
 
 
-    } catch (error) {
+
+      // GYM
+
+      if (clientData.gymId) {
+
+
+        const gymSnap = await getDoc(
+          doc(
+            db,
+            "gyms",
+            clientData.gymId
+          )
+        );
+
+
+
+        if (gymSnap.exists()) {
+
+          setGym(
+            gymSnap.data()
+          );
+
+        }
+
+      }
+
+
+
+    } catch(error) {
+
 
       console.error(
-        "Greška kod učitavanja profila:",
+        "Greška kod profila:",
         error
       );
+
 
     }
 
@@ -116,10 +152,10 @@ export default function OwnerClientProfile() {
 
 
 
-
   return (
 
     <ProtectedRoute allowedRoles={["gym_owner"]}>
+
 
       <div className="p-6">
 
@@ -140,6 +176,7 @@ export default function OwnerClientProfile() {
 
         ) : (
 
+
           <>
 
 
@@ -149,59 +186,64 @@ export default function OwnerClientProfile() {
 
 
 
+
             <div className="rounded-xl border bg-white p-6 space-y-3">
 
 
               <div>
-                <span className="font-semibold">
-                  Ime:
-                </span>{" "}
+                <b>Ime:</b>{" "}
                 {client.name || "-"}
               </div>
 
 
-
               <div>
-                <span className="font-semibold">
-                  Email:
-                </span>{" "}
+                <b>Email:</b>{" "}
                 {client.email || "-"}
               </div>
 
 
+              <div>
+                <b>Telefon:</b>{" "}
+                {client.phone || "-"}
+              </div>
+
 
               <div>
-                <span className="font-semibold">
-                  Cilj:
-                </span>{" "}
+                <b>Napomena:</b>{" "}
+                {client.note || "-"}
+              </div>
+
+
+              <div>
+                <b>Cilj:</b>{" "}
                 {client.goal || "-"}
               </div>
 
 
 
+              <hr />
+
+
+
               <div>
-                <span className="font-semibold">
-                  Trener ID:
-                </span>{" "}
-                {client.trainerId || "-"}
+                <b>Trener:</b>{" "}
+                {trainer?.name || trainer?.email || "-"}
               </div>
 
 
 
               <div>
-                <span className="font-semibold">
-                  Gym ID:
-                </span>{" "}
-                {client.gymId || "-"}
+                <b>Teretana:</b>{" "}
+                {gym?.name || "-"}
               </div>
 
 
 
               <div>
-                <span className="font-semibold">
-                  Client ID:
-                </span>{" "}
-                {client.id}
+                <b>Client ID:</b>{" "}
+                <span className="text-xs">
+                  {client.id}
+                </span>
               </div>
 
 
@@ -209,7 +251,9 @@ export default function OwnerClientProfile() {
             </div>
 
 
+
           </>
+
 
         )}
 
