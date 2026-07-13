@@ -3,73 +3,143 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
+
 import { getGymMembers } from "@/lib/getGymMembers";
 
+
 export default function OwnerClientsPage() {
+
+  const { userProfile, loading } = useAuth();
+
   const [clients, setClients] = useState<any[]>([]);
+
   const router = useRouter();
 
+
+
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
 
-      const snap = await getDoc(doc(db, "users", user.uid));
-      const data = snap.data();
+    async function loadClients() {
 
-      if (data?.gymId) {
-        const members = await getGymMembers(data.gymId);
+      if (!userProfile) return;
 
-        const onlyClients = members.filter(
-          (m) => m.gymRole === "client"
-        );
 
-        setClients(onlyClients);
+      if (!userProfile.gymId) {
+        return;
       }
-    });
 
-    return () => unsub();
-  }, []);
+
+      const members = await getGymMembers(
+        userProfile.gymId
+      );
+
+
+      const onlyClients = members.filter(
+        (member) =>
+          member.gymRole === "client"
+      );
+
+
+      setClients(onlyClients);
+
+    }
+
+
+    if (!loading) {
+      loadClients();
+    }
+
+
+  }, [
+    userProfile,
+    loading
+  ]);
+
+
+
 
   return (
+
     <ProtectedRoute allowedRoles={["gym_owner"]}>
+
       <div className="p-6">
+
+
         <h1 className="text-3xl font-bold mb-6">
           👤 Moji klijenti
         </h1>
 
+
+
         {clients.length === 0 && (
-          <p>Nema dodanih klijenata.</p>
+
+          <p>
+            Nema dodanih klijenata.
+          </p>
+
         )}
 
+
+
         <div className="space-y-3">
+
+
           {clients.map((client) => (
+
+
             <div
               key={client.uid}
+
               onClick={() =>
-                router.push(`/dashboard/owner/clients/${client.uid}`)
+                router.push(
+                  `/dashboard/owner/clients/${client.uid}`
+                )
               }
-              className="border rounded-xl bg-white p-4 cursor-pointer hover:bg-gray-50 transition hover:shadow-md"
+
+              className="
+              border
+              rounded-xl
+              bg-white
+              p-4
+              cursor-pointer
+              hover:bg-gray-50
+              transition
+              "
             >
+
+
               <h2 className="font-bold text-lg">
-                {client.name}
+                {client.name || "Bez imena"}
               </h2>
+
 
               <p className="text-gray-600">
                 {client.email}
               </p>
 
-              <div className="mt-3 text-sm text-blue-600 font-medium">
+
+              <p className="text-blue-600 text-sm mt-3">
                 Otvori profil →
-              </div>
+              </p>
+
+
             </div>
+
+
           ))}
+
+
         </div>
+
+
       </div>
+
+
     </ProtectedRoute>
+
   );
+
 }

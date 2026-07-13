@@ -12,49 +12,145 @@ import {
   getDoc,
 } from "firebase/firestore";
 
+
 export default function OwnerClientProfile() {
+
   const params = useParams();
 
   const [client, setClient] = useState<any>(null);
+
   const [loading, setLoading] = useState(true);
 
+
+
   useEffect(() => {
+
     loadClient();
+
   }, []);
 
+
+
   async function loadClient() {
+
     try {
-      const snap = await getDoc(
-        doc(db, "users", params.uid as string)
+
+      const id = params.uid as string;
+
+
+
+      // 1. prvo pokušaj clients kolekciju
+
+      const clientSnap = await getDoc(
+        doc(
+          db,
+          "clients",
+          id
+        )
       );
 
-      if (snap.exists()) {
+
+
+      if (clientSnap.exists()) {
+
         setClient({
-          uid: snap.id,
-          ...snap.data(),
+
+          id: clientSnap.id,
+
+          ...clientSnap.data(),
+
         });
+
+
+        setLoading(false);
+
+        return;
+
       }
-    } catch (err) {
-      console.error(err);
+
+
+
+
+
+      // 2. ako nije client, probaj users
+
+      const userSnap = await getDoc(
+        doc(
+          db,
+          "users",
+          id
+        )
+      );
+
+
+
+      if (userSnap.exists()) {
+
+        setClient({
+
+          id: userSnap.id,
+
+          ...userSnap.data(),
+
+        });
+
+      }
+
+
+
+    } catch (error) {
+
+      console.error(
+        "Greška kod učitavanja profila:",
+        error
+      );
+
     }
 
+
+
     setLoading(false);
+
   }
 
+
+
+
+
   return (
+
     <ProtectedRoute allowedRoles={["gym_owner"]}>
+
       <div className="p-6">
+
+
         {loading ? (
-          <p>Učitavanje...</p>
+
+          <p>
+            Učitavanje...
+          </p>
+
+
         ) : !client ? (
-          <p>Klijent nije pronađen.</p>
+
+          <p>
+            Klijent nije pronađen.
+          </p>
+
+
         ) : (
+
           <>
+
+
             <h1 className="text-3xl font-bold mb-6">
               👤 Profil klijenta
             </h1>
 
+
+
             <div className="rounded-xl border bg-white p-6 space-y-3">
+
 
               <div>
                 <span className="font-semibold">
@@ -63,6 +159,8 @@ export default function OwnerClientProfile() {
                 {client.name || "-"}
               </div>
 
+
+
               <div>
                 <span className="font-semibold">
                   Email:
@@ -70,40 +168,57 @@ export default function OwnerClientProfile() {
                 {client.email || "-"}
               </div>
 
-              <div>
-                <span className="font-semibold">
-                  Uloga:
-                </span>{" "}
-                {client.gymRole || "-"}
-              </div>
+
 
               <div>
                 <span className="font-semibold">
-                  Trener:
+                  Cilj:
                 </span>{" "}
-                {client.trainerName || "-"}
+                {client.goal || "-"}
               </div>
+
+
 
               <div>
                 <span className="font-semibold">
-                  Gym:
+                  Trener ID:
                 </span>{" "}
-                {client.gymName || "-"}
+                {client.trainerId || "-"}
               </div>
+
+
 
               <div>
                 <span className="font-semibold">
-                  UID:
+                  Gym ID:
                 </span>{" "}
-                <span className="text-xs break-all">
-                  {client.uid}
-                </span>
+                {client.gymId || "-"}
               </div>
+
+
+
+              <div>
+                <span className="font-semibold">
+                  Client ID:
+                </span>{" "}
+                {client.id}
+              </div>
+
+
 
             </div>
+
+
           </>
+
         )}
+
+
       </div>
+
+
     </ProtectedRoute>
+
   );
+
 }
