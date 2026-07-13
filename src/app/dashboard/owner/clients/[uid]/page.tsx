@@ -13,11 +13,23 @@ import {
 } from "firebase/firestore";
 
 
+type Client = {
+  id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  note?: string;
+  goal?: string;
+  trainerId?: string;
+  gymId?: string;
+};
+
+
 export default function OwnerClientProfile() {
 
   const params = useParams();
 
-  const [client, setClient] = useState<any>(null);
+  const [client, setClient] = useState<Client | null>(null);
 
   const [trainer, setTrainer] = useState<any>(null);
 
@@ -38,7 +50,6 @@ export default function OwnerClientProfile() {
   async function loadClient() {
 
     try {
-
 
       const id = params.uid as string;
 
@@ -63,7 +74,7 @@ export default function OwnerClientProfile() {
 
 
 
-      const clientData = {
+      const clientData: Client = {
 
         id: clientSnap.id,
 
@@ -81,7 +92,6 @@ export default function OwnerClientProfile() {
 
       if (clientData.trainerId) {
 
-
         const trainerSnap = await getDoc(
           doc(
             db,
@@ -89,7 +99,6 @@ export default function OwnerClientProfile() {
             clientData.trainerId
           )
         );
-
 
 
         if (trainerSnap.exists()) {
@@ -104,11 +113,9 @@ export default function OwnerClientProfile() {
 
 
 
-
       // GYM
 
       if (clientData.gymId) {
-
 
         const gymSnap = await getDoc(
           doc(
@@ -117,7 +124,6 @@ export default function OwnerClientProfile() {
             clientData.gymId
           )
         );
-
 
 
         if (gymSnap.exists()) {
@@ -134,12 +140,10 @@ export default function OwnerClientProfile() {
 
     } catch(error) {
 
-
       console.error(
         "Greška kod profila:",
         error
       );
-
 
     }
 
@@ -155,7 +159,6 @@ export default function OwnerClientProfile() {
   return (
 
     <ProtectedRoute allowedRoles={["gym_owner"]}>
-
 
       <div className="p-6">
 
@@ -183,7 +186,6 @@ export default function OwnerClientProfile() {
             <h1 className="text-3xl font-bold mb-6">
               👤 Profil klijenta
             </h1>
-
 
 
 
@@ -241,7 +243,7 @@ export default function OwnerClientProfile() {
 
               <div>
                 <b>Client ID:</b>{" "}
-                <span className="text-xs">
+                <span className="text-xs break-all">
                   {client.id}
                 </span>
               </div>
@@ -251,7 +253,6 @@ export default function OwnerClientProfile() {
             </div>
 
 
-
           </>
 
 
@@ -259,7 +260,6 @@ export default function OwnerClientProfile() {
 
 
       </div>
-
 
     </ProtectedRoute>
 
