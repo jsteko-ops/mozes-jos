@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
+
 import ClientMeasurements from "@/components/owner/ClientMeasurements";
+import ClientPlans from "@/components/owner/ClientPlans";
 
 import { db } from "@/lib/firebase";
 
@@ -31,14 +33,18 @@ export default function OwnerClientProfile() {
 
   const params = useParams();
 
+
   const [client, setClient] =
     useState<Client | null>(null);
+
 
   const [trainer, setTrainer] =
     useState<any>(null);
 
+
   const [gym, setGym] =
     useState<any>(null);
+
 
   const [loading, setLoading] =
     useState(true);
@@ -62,6 +68,10 @@ export default function OwnerClientProfile() {
 
 
 
+      // =====================
+      // KLIJENT
+      // =====================
+
       const clientSnap = await getDoc(
         doc(
           db,
@@ -81,17 +91,18 @@ export default function OwnerClientProfile() {
 
 
 
-      const clientData: Client = {
+      const clientData = {
 
         id: clientSnap.id,
 
         ...clientSnap.data(),
 
-      };
+      } as Client;
 
 
 
       setClient(clientData);
+
 
 
 
@@ -102,14 +113,13 @@ export default function OwnerClientProfile() {
       if (clientData.trainerId) {
 
 
-        const trainerSnap =
-          await getDoc(
-            doc(
-              db,
-              "users",
-              clientData.trainerId
-            )
-          );
+        const trainerSnap = await getDoc(
+          doc(
+            db,
+            "users",
+            clientData.trainerId
+          )
+        );
 
 
         if (trainerSnap.exists()) {
@@ -126,20 +136,19 @@ export default function OwnerClientProfile() {
 
 
       // =====================
-      // GYM
+      // TERETANA
       // =====================
 
       if (clientData.gymId) {
 
 
-        const gymSnap =
-          await getDoc(
-            doc(
-              db,
-              "gyms",
-              clientData.gymId
-            )
-          );
+        const gymSnap = await getDoc(
+          doc(
+            db,
+            "gyms",
+            clientData.gymId
+          )
+        );
 
 
         if (gymSnap.exists()) {
@@ -158,7 +167,7 @@ export default function OwnerClientProfile() {
 
 
       console.error(
-        "Greška kod profila:",
+        "Greška kod učitavanja profila:",
         error
       );
 
@@ -216,10 +225,12 @@ export default function OwnerClientProfile() {
               </div>
 
 
+
               <div>
                 <b>Email:</b>{" "}
                 {client.email || "-"}
               </div>
+
 
 
               <div>
@@ -228,10 +239,12 @@ export default function OwnerClientProfile() {
               </div>
 
 
+
               <div>
                 <b>Napomena:</b>{" "}
                 {client.note || "-"}
               </div>
+
 
 
               <div>
@@ -241,23 +254,31 @@ export default function OwnerClientProfile() {
 
 
 
+
               <hr />
 
 
 
               <div>
                 <b>Trener:</b>{" "}
-                {trainer?.name ||
-                trainer?.email ||
-                "-"}
+                {
+                  trainer?.name ||
+                  trainer?.email ||
+                  "-"
+                }
               </div>
+
 
 
 
               <div>
                 <b>Teretana:</b>{" "}
-                {gym?.name || "-"}
+                {
+                  gym?.name ||
+                  "-"
+                }
               </div>
+
 
 
 
@@ -275,9 +296,14 @@ export default function OwnerClientProfile() {
 
 
 
-            {/* MJERENJA */}
-
             <ClientMeasurements
+              clientId={client.id}
+            />
+
+
+
+
+            <ClientPlans
               clientId={client.id}
             />
 

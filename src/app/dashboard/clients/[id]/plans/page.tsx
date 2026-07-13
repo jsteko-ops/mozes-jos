@@ -19,57 +19,97 @@ type Plan = {
 };
 
 
+
 export default function PlansPage() {
+
+
   const { user, loading } = useAuth();
 
   const params = useParams();
+
   const clientId = params.id as string;
+
 
 
   const [plans, setPlans] = useState<Plan[]>([]);
 
 
+
   const fetchPlans = async () => {
-    if (!user || !clientId) return;
+
+
+    if (!clientId) return;
+
 
 
     const ref = collection(
       db,
-      "users",
-      user.uid,
       "clients",
       clientId,
       "plans"
     );
 
 
+
     const snap = await getDocs(ref);
 
 
+
     setPlans(
+
       snap.docs.map((doc) => ({
+
         id: doc.id,
+
         ...doc.data(),
+
       })) as Plan[]
+
     );
+
   };
 
 
+
+
+
   useEffect(() => {
-    if (!loading && user) {
+
+
+    if (!loading && user && clientId) {
+
       fetchPlans();
+
     }
-  }, [user, loading, clientId]);
+
+
+  }, [
+    user,
+    loading,
+    clientId
+  ]);
+
+
+
 
 
 
   if (loading) {
-    return <p>Loading...</p>;
+
+    return (
+      <p>
+        Loading...
+      </p>
+    );
+
   }
 
 
 
+
+
   return (
+
     <div className="space-y-6">
 
 
@@ -79,27 +119,42 @@ export default function PlansPage() {
           Trening planovi
         </h1>
 
+
         <p className="text-gray-600 mt-1">
           Planovi ovog klijenta
         </p>
+
 
       </Card>
 
 
 
+
+
       <PlanForm
+
         clientId={clientId}
+
         onCreated={fetchPlans}
+
       />
 
 
 
+
+
       <PlanList
-  plans={plans}
-  clientId={clientId}
-/>
+
+        plans={plans}
+
+        clientId={clientId}
+
+      />
+
 
 
     </div>
+
   );
+
 }

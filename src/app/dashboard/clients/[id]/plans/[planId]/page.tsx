@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+} from "firebase/firestore";
+
 import { useParams } from "next/navigation";
 
 import { db } from "@/lib/firebase";
@@ -13,11 +20,13 @@ import ExerciseForm from "@/components/plans/ExerciseForm";
 import ExerciseItem from "@/components/plans/ExerciseItem";
 
 
+
 type Plan = {
   id: string;
   name: string;
   description?: string;
 };
+
 
 
 type Exercise = {
@@ -31,37 +40,50 @@ type Exercise = {
 
 
 
+
+
 export default function PlanDetailPage() {
+
 
   const { user, loading } = useAuth();
 
   const params = useParams();
 
+
   const clientId = params.id as string;
+
   const planId = params.planId as string;
 
 
-  const [plan, setPlan] = useState<Plan | null>(null);
 
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [plan, setPlan] =
+    useState<Plan | null>(null);
+
+
+  const [exercises, setExercises] =
+    useState<Exercise[]>([]);
+
+
 
 
 
   const fetchData = async () => {
 
-    if (!user || !clientId || !planId) return;
+
+    if (!clientId || !planId) return;
 
 
+
+    // PLAN
 
     const planRef = doc(
       db,
-      "users",
-      user.uid,
       "clients",
       clientId,
       "plans",
       planId
     );
+
 
 
     const planSnap = await getDoc(planRef);
@@ -70,19 +92,26 @@ export default function PlanDetailPage() {
 
     if (planSnap.exists()) {
 
+
       setPlan({
+
         id: planSnap.id,
+
         ...planSnap.data(),
+
       } as Plan);
+
 
     }
 
 
 
+
+
+    // VJEŽBE
+
     const exerciseRef = collection(
       db,
-      "users",
-      user.uid,
       "clients",
       clientId,
       "plans",
@@ -91,41 +120,79 @@ export default function PlanDetailPage() {
     );
 
 
-    const exerciseSnap = await getDocs(exerciseRef);
+
+    const exerciseSnap =
+      await getDocs(exerciseRef);
 
 
 
     setExercises(
+
       exerciseSnap.docs.map((doc) => ({
+
         id: doc.id,
+
         ...doc.data(),
+
       })) as Exercise[]
+
     );
+
 
   };
 
 
 
+
+
+
   useEffect(() => {
 
+
     if (!loading && user) {
+
       fetchData();
+
     }
 
-  }, [user, loading, clientId, planId]);
+
+  }, [
+    user,
+    loading,
+    clientId,
+    planId
+  ]);
+
+
 
 
 
 
   if (loading) {
-    return <p>Loading...</p>;
+
+    return (
+      <p>
+        Loading...
+      </p>
+    );
+
   }
+
+
 
 
 
   if (!plan) {
-    return <p>Plan ne postoji</p>;
+
+    return (
+      <p>
+        Plan ne postoji
+      </p>
+    );
+
   }
+
+
 
 
 
@@ -145,15 +212,25 @@ export default function PlanDetailPage() {
           {plan.description || "Bez opisa"}
         </p>
 
+
       </Card>
 
 
 
+
+
       <ExerciseForm
+
         clientId={clientId}
+
         planId={planId}
+
         onCreated={fetchData}
+
       />
+
+
+
 
 
 
@@ -166,32 +243,50 @@ export default function PlanDetailPage() {
 
 
 
+
         {exercises.length === 0 ? (
 
+
           <Card>
+
             <p className="text-gray-500">
               Nema dodanih vježbi.
             </p>
+
+
           </Card>
+
+
 
         ) : (
 
+
           exercises.map((exercise) => (
 
+
             <ExerciseItem
+
               key={exercise.id}
+
               exercise={exercise}
+
             />
+
 
           ))
 
+
         )}
+
+
 
 
       </div>
 
 
+
     </div>
 
   );
+
 }
