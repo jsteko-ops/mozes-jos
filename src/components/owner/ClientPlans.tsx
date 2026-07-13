@@ -2,14 +2,24 @@
 
 import { useEffect, useState } from "react";
 
-import { db } from "@/lib/firebase";
-
 import {
   collection,
   getDocs,
   query,
   orderBy,
 } from "firebase/firestore";
+
+import { db } from "@/lib/firebase";
+
+
+
+type Plan = {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt?: any;
+};
+
 
 
 export default function ClientPlans({
@@ -18,8 +28,11 @@ export default function ClientPlans({
   clientId: string;
 }) {
 
-  const [plans, setPlans] = useState<any[]>([]);
+
+  const [plans, setPlans] = useState<Plan[]>([]);
+
   const [loading, setLoading] = useState(true);
+
 
 
 
@@ -31,18 +44,23 @@ export default function ClientPlans({
 
 
 
-  async function loadPlans() {
+
+
+  async function loadPlans(){
+
 
     try {
 
+      console.log("CLIENT ID U KOMPONENTI:", clientId);
+
       const q = query(
 
-        collection(
-          db,
-          "clients",
-          clientId,
-          "workouts"
-        ),
+       collection(
+  db,
+  "clients",
+  clientId,
+  "workouts"
+),
 
         orderBy(
           "createdAt",
@@ -52,26 +70,30 @@ export default function ClientPlans({
       );
 
 
+
       const snap = await getDocs(q);
 
+console.log("BROJ WORKOUTA:", snap.docs.length);
+console.log("WORKOUT PODACI:", snap.docs.map(doc => doc.data()));
 
       setPlans(
 
-        snap.docs.map((doc) => ({
+        snap.docs.map((doc)=>({
 
           id: doc.id,
 
           ...doc.data(),
 
-        }))
+        })) as Plan[]
 
       );
 
 
-    } catch(error) {
+
+    } catch(error){
 
       console.error(
-        "Greška trening planovi:",
+        "Greška planovi:",
         error
       );
 
@@ -80,19 +102,24 @@ export default function ClientPlans({
 
     setLoading(false);
 
+
   }
 
 
 
-  if (loading) {
+
+
+  if(loading){
 
     return (
       <p>
-        Učitavanje treninga...
+        Učitavanje planova...
       </p>
     );
 
   }
+
+
 
 
 
@@ -121,36 +148,55 @@ export default function ClientPlans({
           <div className="space-y-3">
 
 
-            {plans.map((plan) => (
-
-              <div
-                key={plan.id}
-                className="border rounded-lg p-4"
-              >
-
-                <h3 className="font-bold">
-                  {plan.title}
-                </h3>
+            {
+              plans.map((plan)=>(
 
 
-                <p className="text-gray-600 mt-2">
-                  {plan.exercises || "-"}
-                </p>
+                <div
+
+                  key={plan.id}
+
+                  className="border rounded-lg p-4"
+
+                >
 
 
-                <p className="text-sm text-gray-400 mt-2">
-                  Dodano:{" "}
-                  {plan.createdAt?.toDate
-                    ? plan.createdAt
-                        .toDate()
-                        .toLocaleDateString("hr-HR")
-                    : "-"}
-                </p>
+                  <h3 className="font-bold text-lg">
+                    {plan.name}
+                  </h3>
 
 
-              </div>
 
-            ))}
+                  <p className="text-gray-600">
+                    {plan.description || "Bez opisa"}
+                  </p>
+
+
+
+                  <p className="text-sm text-gray-400 mt-2">
+
+                    Dodano:{" "}
+
+                    {
+                      plan.createdAt?.toDate
+                      ?
+                      plan.createdAt
+                      .toDate()
+                      .toLocaleDateString("hr-HR")
+                      :
+                      "-"
+                    }
+
+                  </p>
+
+
+
+                </div>
+
+
+              ))
+
+            }
 
 
           </div>
@@ -158,6 +204,7 @@ export default function ClientPlans({
 
         )
       }
+
 
 
     </div>

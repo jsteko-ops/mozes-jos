@@ -13,6 +13,7 @@ import {
 } from "recharts";
 
 import RoleGuard from "@/components/auth/RoleGuard";
+import ClientPlans from "@/components/owner/ClientPlans";
 
 import {
   getClient,
@@ -21,15 +22,12 @@ import {
   getMeasurements,
   updateMeasurement,
   deleteMeasurement,
-  addWorkout,
-  getWorkouts,
-  updateWorkout,
-  deleteWorkout,
 } from "@/lib/services/klijentiService";
 
 
 
-function toNumber(value:string){
+
+function toNumber(value: string) {
 
   return Number(
     value.replace(",", ".")
@@ -42,11 +40,11 @@ function toNumber(value:string){
 
 type Client = {
 
-id:string;
-name:string;
-email:string;
-phone:string;
-note:string;
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  note: string;
 
 };
 
@@ -54,22 +52,12 @@ note:string;
 
 type Measurement = {
 
-id:string;
-weight:number;
-height:number;
-waist:number;
-chest:number;
-arm:number;
-
-};
-
-
-
-type Workout = {
-
-id:string;
-title:string;
-exercises:string;
+  id: string;
+  weight: number;
+  height: number;
+  waist: number;
+  chest: number;
+  arm: number;
 
 };
 
@@ -77,1114 +65,870 @@ exercises:string;
 
 
 
-export default function KlijentProfilPage(){
 
+export default function KlijentProfilPage() {
 
-const params = useParams();
 
-const id = params.id as string;
+  const params = useParams();
 
+  const id = params.id as string;
 
 
 
 
-const [client,setClient] =
-useState<Client | null>(null);
 
+  const [client, setClient] =
+    useState<Client | null>(null);
 
 
-const [measurements,setMeasurements] =
-useState<Measurement[]>([]);
 
+  const [measurements, setMeasurements] =
+    useState<Measurement[]>([]);
 
-const [chartData,setChartData] =
-useState<any[]>([]);
 
+  const [chartData, setChartData] =
+    useState<any[]>([]);
 
-const [workouts,setWorkouts] =
-useState<Workout[]>([]);
 
 
 
-const [loading,setLoading] =
-useState(true);
 
 
+  const [loading, setLoading] =
+    useState(true);
 
 
 
-// KLIJENT EDIT
 
-const [editingClient,setEditingClient] =
-useState(false);
 
+  // KLIJENT EDIT
 
-const [editName,setEditName] =
-useState("");
+  const [editingClient, setEditingClient] =
+    useState(false);
 
-const [editEmail,setEditEmail] =
-useState("");
 
-const [editPhone,setEditPhone] =
-useState("");
+  const [editName, setEditName] =
+    useState("");
 
-const [editNote,setEditNote] =
-useState("");
+  const [editEmail, setEditEmail] =
+    useState("");
 
+  const [editPhone, setEditPhone] =
+    useState("");
 
+  const [editNote, setEditNote] =
+    useState("");
 
 
 
 
 
-// MJERENJE
 
-const [weight,setWeight] =
-useState("");
 
-const [height,setHeight] =
-useState("");
+  // MJERENJE
 
-const [waist,setWaist] =
-useState("");
+  const [weight, setWeight] =
+    useState("");
 
-const [chest,setChest] =
-useState("");
+  const [height, setHeight] =
+    useState("");
 
-const [arm,setArm] =
-useState("");
+  const [waist, setWaist] =
+    useState("");
 
+  const [chest, setChest] =
+    useState("");
 
+  const [arm, setArm] =
+    useState("");
 
 
 
-const [editingMeasurement,setEditingMeasurement] =
-useState<string|null>(null);
 
 
+  const [editingMeasurement, setEditingMeasurement] =
+    useState<string | null>(null);
 
-const [editMeasurementData,setEditMeasurementData] =
-useState({
 
-weight:"",
-height:"",
-waist:"",
-chest:"",
-arm:""
 
-});
+  const [editMeasurementData, setEditMeasurementData] =
+    useState({
 
+      weight: "",
+      height: "",
+      waist: "",
+      chest: "",
+      arm: ""
 
+    });
 
 
 
 
 
-// TRENING
 
-const [workoutTitle,setWorkoutTitle] =
-useState("");
 
-const [exercises,setExercises] =
-useState("");
+  // TRENING
 
+  const [workoutTitle, setWorkoutTitle] =
+    useState("");
 
+  const [exercises, setExercises] =
+    useState("");
 
-const [editingWorkout,setEditingWorkout] =
-useState<string|null>(null);
 
 
+  const [editingWorkout, setEditingWorkout] =
+    useState<string | null>(null);
 
-const [editWorkoutData,setEditWorkoutData] =
-useState({
 
-title:"",
-exercises:""
 
-});
+  const [editWorkoutData, setEditWorkoutData] =
+    useState({
 
+      title: "",
+      exercises: ""
 
+    });
 
 
 
 
 
 
-async function loadData(){
 
 
-if(!id)return;
+  async function loadData() {
 
 
+    if (!id) return;
 
-const c =
-await getClient(id);
 
 
-setClient(
-c as Client
-);
+    const c =
+      await getClient(id);
 
 
+    setClient(
+      c as Client
+    );
 
-const m =
-await getMeasurements(id);
 
 
-setMeasurements(
-m as Measurement[]
-);
+    const m =
+      await getMeasurements(id);
 
-const chart = (m as any[])
-.map((item)=>({
 
-date:
-item.createdAt?.toDate
-?
-item.createdAt.toDate().toLocaleDateString("hr-HR")
-:
-"",
+    setMeasurements(
+      m as Measurement[]
+    );
 
-weight:item.weight
+    const chart = (m as any[])
+      .map((item) => ({
 
-}))
-.reverse();
+        date:
+          item.createdAt?.toDate
+            ?
+            item.createdAt.toDate().toLocaleDateString("hr-HR")
+            :
+            "",
 
+        weight: item.weight
 
+      }))
+      .reverse();
 
-setChartData(chart);
 
 
-const w =
-await getWorkouts(id);
+    setChartData(chart);
 
 
-setWorkouts(
-w as Workout[]
-);
 
 
+    setLoading(false);
 
-setLoading(false);
 
+  }
 
-}
 
 
 
 
 
 
+  useEffect(() => {
 
-useEffect(()=>{
+    loadData();
 
-loadData();
+  }, [id]);
 
-},[id]);
 
 
 
 
 
 
+  async function saveClientChanges() {
 
-async function saveClientChanges(){
 
+    await updateClient(
 
-await updateClient(
+      id,
 
-id,
+      {
+        name: editName,
+        email: editEmail,
+        phone: editPhone,
+        note: editNote
+      }
 
-{
-name:editName,
-email:editEmail,
-phone:editPhone,
-note:editNote
-}
+    );
 
-);
 
 
+    setEditingClient(false);
 
-setEditingClient(false);
 
+    await loadData();
 
-await loadData();
 
+    alert("Podaci spremljeni ✅");
 
-alert("Podaci spremljeni ✅");
 
+  }
 
-}
 
 
 
 
 
 
+  async function saveMeasurement() {
 
-async function saveMeasurement(){
 
+    await addMeasurement(
 
-await addMeasurement(
+      id,
 
-id,
+      {
+        weight: toNumber(weight),
+        height: toNumber(height),
+        waist: toNumber(waist),
+        chest: toNumber(chest),
+        arm: toNumber(arm)
+      }
 
-{
-weight:toNumber(weight),
-height:toNumber(height),
-waist:toNumber(waist),
-chest:toNumber(chest),
-arm:toNumber(arm)
-}
+    );
 
-);
 
 
+    setWeight("");
+    setHeight("");
+    setWaist("");
+    setChest("");
+    setArm("");
 
-setWeight("");
-setHeight("");
-setWaist("");
-setChest("");
-setArm("");
 
 
+    await loadData();
 
-await loadData();
 
+    alert("Mjerenje spremljeno ✅");
 
-alert("Mjerenje spremljeno ✅");
 
+  }
 
-}
 
 
 
 
 
 
+  async function saveEditedMeasurement(
+    measurementId: string
+  ) {
 
-async function saveEditedMeasurement(
-measurementId:string
-){
 
+    await updateMeasurement(
 
-await updateMeasurement(
+      id,
 
-id,
+      measurementId,
 
-measurementId,
+      {
+        weight: toNumber(editMeasurementData.weight),
+        height: toNumber(editMeasurementData.height),
+        waist: toNumber(editMeasurementData.waist),
+        chest: toNumber(editMeasurementData.chest),
+        arm: toNumber(editMeasurementData.arm)
+      }
 
-{
-weight:toNumber(editMeasurementData.weight),
-height:toNumber(editMeasurementData.height),
-waist:toNumber(editMeasurementData.waist),
-chest:toNumber(editMeasurementData.chest),
-arm:toNumber(editMeasurementData.arm)
-}
+    );
 
-);
 
 
+    setEditingMeasurement(null);
 
-setEditingMeasurement(null);
 
+    await loadData();
 
-await loadData();
 
+    alert("Mjerenje izmijenjeno ✅");
 
-alert("Mjerenje izmijenjeno ✅");
 
+  }
+  async function removeMeasurement(
+    measurementId: string
+  ) {
 
-}
-async function removeMeasurement(
-  measurementId:string
-){
+    const ok =
+      confirm(
+        "Obrisati mjerenje?"
+      );
 
-const ok =
-confirm(
-"Obrisati mjerenje?"
-);
 
+    if (!ok) return;
 
-if(!ok)return;
 
+    await deleteMeasurement(
+      id,
+      measurementId
+    );
 
-await deleteMeasurement(
-id,
-measurementId
-);
 
+    await loadData();
 
-await loadData();
 
+    alert("Mjerenje obrisano ✅");
 
-alert("Mjerenje obrisano ✅");
+  }
 
-}
 
 
 
 
 
-async function saveWorkout(){
 
 
-await addWorkout(
 
-id,
 
-{
-title:workoutTitle,
-exercises
-}
 
-);
 
 
-setWorkoutTitle("");
 
-setExercises("");
 
 
-await loadData();
 
 
-alert("Trening spremljen ✅");
 
 
-}
 
 
 
 
 
-async function saveEditedWorkout(
-workoutId:string
-){
+  return (
 
+    <RoleGuard allowedRoles={["trainer"]}>
 
-await updateWorkout(
 
-id,
+      <div className="p-6 space-y-6">
 
-workoutId,
 
-{
-title:editWorkoutData.title,
-exercises:editWorkoutData.exercises
-}
+        <h1 className="text-3xl font-bold">
+          Profil klijenta
+        </h1>
 
-);
 
 
 
-setEditingWorkout(null);
+        {loading &&
 
+          <p>
+            Učitavanje...
+          </p>
 
-await loadData();
+        }
 
 
-alert("Trening izmijenjen ✅");
 
 
-}
 
+        {client && (
 
+          <>
 
+            <div className="border rounded-xl p-5">
 
 
+              {!editingClient &&
 
+                <>
 
-async function removeWorkout(
-workoutId:string
-){
 
+                  <h2 className="text-2xl font-bold">
+                    👤 {client.name}
+                  </h2>
 
-const ok =
-confirm(
-"Obrisati trening plan?"
-);
 
+                  <p>
+                    Email: {client.email}
+                  </p>
 
 
-if(!ok)return;
+                  <p>
+                    Telefon: {client.phone}
+                  </p>
 
 
+                  <p>
+                    Napomena: {client.note}
+                  </p>
 
-await deleteWorkout(
 
-id,
 
-workoutId
+                  <button
 
-);
+                    className="bg-black text-white px-4 py-2 rounded mt-3"
 
+                    onClick={() => {
 
+                      setEditName(client.name);
+                      setEditEmail(client.email);
+                      setEditPhone(client.phone);
+                      setEditNote(client.note);
 
-await loadData();
+                      setEditingClient(true);
 
+                    }}
 
-alert("Trening obrisan ✅");
+                  >
+                    ✏️ Uredi podatke
+                  </button>
 
 
-}
+                </>
 
+              }
 
 
 
 
 
+              {editingClient &&
 
+                <div className="space-y-2">
 
-return (
 
-<RoleGuard allowedRoles={["trainer"]}>
+                  <input
+                    className="border p-2 w-full"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
 
 
-<div className="p-6 space-y-6">
+                  <input
+                    className="border p-2 w-full"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                  />
 
 
-<h1 className="text-3xl font-bold">
-Profil klijenta
-</h1>
+                  <input
+                    className="border p-2 w-full"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                  />
 
 
+                  <textarea
+                    className="border p-2 w-full"
+                    value={editNote}
+                    onChange={(e) => setEditNote(e.target.value)}
+                  />
 
 
-{loading &&
 
-<p>
-Učitavanje...
-</p>
+                  <button
 
-}
+                    className="bg-black text-white px-4 py-2 rounded"
 
+                    onClick={saveClientChanges}
 
+                  >
+                    Spremi promjene
+                  </button>
 
 
+                </div>
 
-{client &&
+              }
 
-<>
 
 
+            </div>
 
-<div className="border rounded-xl p-5">
 
 
-{!editingClient &&
 
-<>
 
 
-<h2 className="text-2xl font-bold">
-👤 {client.name}
-</h2>
 
 
-<p>
-Email: {client.email}
-</p>
+            <div className="border rounded-xl p-5">
 
 
-<p>
-Telefon: {client.phone}
-</p>
+              <h2 className="font-bold text-xl">
+                ⚖️ Dodaj mjerenje
+              </h2>
 
 
-<p>
-Napomena: {client.note}
-</p>
 
+              <input
+                className="border p-2 w-full mt-2"
+                placeholder="Težina kg"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+              />
 
 
-<button
 
-className="bg-black text-white px-4 py-2 rounded mt-3"
+              <input
+                className="border p-2 w-full mt-2"
+                placeholder="Visina cm"
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+              />
 
-onClick={()=>{
 
-setEditName(client.name);
-setEditEmail(client.email);
-setEditPhone(client.phone);
-setEditNote(client.note);
 
-setEditingClient(true);
+              <input
+                className="border p-2 w-full mt-2"
+                placeholder="Struk"
+                value={waist}
+                onChange={(e) => setWaist(e.target.value)}
+              />
 
-}}
 
->
-✏️ Uredi podatke
-</button>
 
+              <input
+                className="border p-2 w-full mt-2"
+                placeholder="Prsa"
+                value={chest}
+                onChange={(e) => setChest(e.target.value)}
+              />
 
-</>
 
-}
 
+              <input
+                className="border p-2 w-full mt-2"
+                placeholder="Ruka"
+                value={arm}
+                onChange={(e) => setArm(e.target.value)}
+              />
 
 
 
+              <button
 
-{editingClient &&
+                className="bg-black text-white px-5 py-2 rounded mt-3"
 
-<div className="space-y-2">
+                onClick={saveMeasurement}
 
+              >
+                Spremi mjerenje
+              </button>
 
-<input
-className="border p-2 w-full"
-value={editName}
-onChange={(e)=>setEditName(e.target.value)}
-/>
 
+            </div>
 
-<input
-className="border p-2 w-full"
-value={editEmail}
-onChange={(e)=>setEditEmail(e.target.value)}
-/>
 
 
-<input
-className="border p-2 w-full"
-value={editPhone}
-onChange={(e)=>setEditPhone(e.target.value)}
-/>
 
 
-<textarea
-className="border p-2 w-full"
-value={editNote}
-onChange={(e)=>setEditNote(e.target.value)}
-/>
 
 
 
-<button
 
-className="bg-black text-white px-4 py-2 rounded"
+            <div className="border rounded-xl p-5">
 
-onClick={saveClientChanges}
 
->
-Spremi promjene
-</button>
+              <h2 className="font-bold text-xl">
+                📋 Mjerenja
+              </h2>
 
 
-</div>
 
-}
+              {measurements.map((m) => (
 
 
+                <div
 
-</div>
 
+                  key={m.id}
 
+                  className="border rounded p-3 mt-3"
 
+                >
 
 
+                  {editingMeasurement === m.id ?
 
 
+                    <>
 
-<div className="border rounded-xl p-5">
+                      <input
 
+                        className="border p-2 w-full"
 
-<h2 className="font-bold text-xl">
-⚖️ Dodaj mjerenje
-</h2>
+                        value={editMeasurementData.weight}
 
+                        onChange={(e) =>
 
+                          setEditMeasurementData({
 
-<input
-className="border p-2 w-full mt-2"
-placeholder="Težina kg"
-value={weight}
-onChange={(e)=>setWeight(e.target.value)}
-/>
+                            ...editMeasurementData,
 
+                            weight: e.target.value
 
+                          })
 
-<input
-className="border p-2 w-full mt-2"
-placeholder="Visina cm"
-value={height}
-onChange={(e)=>setHeight(e.target.value)}
-/>
+                        }
 
+                      />
 
 
-<input
-className="border p-2 w-full mt-2"
-placeholder="Struk"
-value={waist}
-onChange={(e)=>setWaist(e.target.value)}
-/>
 
+                      <button
 
+                        className="bg-black text-white px-3 py-2 rounded mt-2"
 
-<input
-className="border p-2 w-full mt-2"
-placeholder="Prsa"
-value={chest}
-onChange={(e)=>setChest(e.target.value)}
-/>
+                        onClick={() => saveEditedMeasurement(m.id)}
 
+                      >
+                        Spremi
+                      </button>
 
 
-<input
-className="border p-2 w-full mt-2"
-placeholder="Ruka"
-value={arm}
-onChange={(e)=>setArm(e.target.value)}
-/>
+                    </>
 
 
+                    :
 
-<button
 
-className="bg-black text-white px-5 py-2 rounded mt-3"
+                    <>
 
-onClick={saveMeasurement}
 
->
-Spremi mjerenje
-</button>
+                      <p>
+                        ⚖️ {String(m.weight).replace(".", ",")} kg
+                      </p>
 
 
-</div>
+                      <p>
+                        📏 {m.height} cm
+                      </p>
 
 
+                      <p>
+                        📐 Struk: {m.waist} cm
+                      </p>
 
 
 
 
+                      <button
 
+                        className="mr-3 mt-2"
 
+                        onClick={() => {
 
-<div className="border rounded-xl p-5">
+                          setEditingMeasurement(m.id);
 
 
-<h2 className="font-bold text-xl">
-📋 Mjerenja
-</h2>
+                          setEditMeasurementData({
 
+                            weight: String(m.weight).replace(".", ","),
+                            height: String(m.height),
+                            waist: String(m.waist),
+                            chest: String(m.chest),
+                            arm: String(m.arm)
 
+                          });
 
-{measurements.map((m)=>(
+                        }}
 
+                      >
+                        ✏️ Uredi
+                      </button>
 
-<div
 
 
-key={m.id}
+                      <button
 
-className="border rounded p-3 mt-3"
+                        onClick={() => removeMeasurement(m.id)}
 
->
+                      >
+                        🗑️ Obriši
+                      </button>
 
 
-{editingMeasurement===m.id ?
 
+                    </>
 
-<>
 
-<input
+                  }
 
-className="border p-2 w-full"
 
-value={editMeasurementData.weight}
 
-onChange={(e)=>
+                </div>
 
-setEditMeasurementData({
 
-...editMeasurementData,
+              ))}
 
-weight:e.target.value
 
-})
 
-}
+            </div>
 
-/>
 
 
 
-<button
 
-className="bg-black text-white px-3 py-2 rounded mt-2"
 
-onClick={()=>saveEditedMeasurement(m.id)}
 
->
-Spremi
-</button>
+            <div className="border rounded-xl p-5">
 
 
-</>
+              <h2 className="font-bold text-xl mb-4">
+                📈 Napredak težine
+              </h2>
 
 
-:
+              <ResponsiveContainer
+                width="100%"
+                height={300}
+              >
 
 
-<>
+                <LineChart data={chartData}>
 
 
-<p>
-⚖️ {String(m.weight).replace(".",",")} kg
-</p>
+                  <CartesianGrid />
 
 
-<p>
-📏 {m.height} cm
-</p>
+                  <XAxis
+                    dataKey="date"
+                  />
 
 
-<p>
-📐 Struk: {m.waist} cm
-</p>
+                  <YAxis />
 
 
+                  <Tooltip />
 
 
-<button
+                  <Line
 
-className="mr-3 mt-2"
+                    type="monotone"
 
-onClick={()=>{
+                    dataKey="weight"
 
-setEditingMeasurement(m.id);
+                    strokeWidth={3}
 
+                  />
 
-setEditMeasurementData({
 
-weight:String(m.weight).replace(".",","),
-height:String(m.height),
-waist:String(m.waist),
-chest:String(m.chest),
-arm:String(m.arm)
+                </LineChart>
 
-});
 
-}}
+              </ResponsiveContainer>
 
->
-✏️ Uredi
-</button>
 
+            </div>
 
 
-<button
 
-onClick={()=>removeMeasurement(m.id)}
 
->
-🗑️ Obriši
-</button>
 
 
 
-</>
+            <div className="border rounded-xl p-5">
 
 
-}
+              <h2 className="font-bold text-xl">
+                🏋️ Trening plan
+              </h2>
 
 
 
-</div>
+              <input
 
+                className="border p-2 w-full mt-2"
 
-))}
+                placeholder="Naziv plana"
 
+                value={workoutTitle}
 
+                onChange={(e) => setWorkoutTitle(e.target.value)}
 
-</div>
+              />
 
 
 
 
+              <textarea
 
+                className="border p-2 w-full mt-2"
 
+                placeholder="Vježbe"
 
-<div className="border rounded-xl p-5">
+                value={exercises}
 
+                onChange={(e) => setExercises(e.target.value)}
 
-<h2 className="font-bold text-xl mb-4">
-📈 Napredak težine
-</h2>
+              />
 
 
-<ResponsiveContainer
-width="100%"
-height={300}
->
 
+              <button
 
-<LineChart data={chartData}>
+                className="bg-black text-white px-5 py-2 rounded mt-2"
 
+                onClick={() => { }}
 
-<CartesianGrid />
+              >
+                Spremi trening
+              </button>
 
 
-<XAxis
-dataKey="date"
-/>
+            </div>
 
 
-<YAxis />
 
 
-<Tooltip />
 
 
-<Line
 
-type="monotone"
 
-dataKey="weight"
+            <div className="border rounded-xl p-5">
 
-strokeWidth={3}
 
-/>
+              <h2 className="font-bold text-xl">
+                📋 Trening planovi
+              </h2>
 
 
-</LineChart>
+              <ClientPlans clientId={id} />
 
+            </div>
 
-</ResponsiveContainer>
+          </>
 
+        )}
 
-</div>
+      </div>
 
+    </RoleGuard>
 
-
-
-
-
-
-<div className="border rounded-xl p-5">
-
-
-<h2 className="font-bold text-xl">
-🏋️ Trening plan
-</h2>
-
-
-
-<input
-
-className="border p-2 w-full mt-2"
-
-placeholder="Naziv plana"
-
-value={workoutTitle}
-
-onChange={(e)=>setWorkoutTitle(e.target.value)}
-
-/>
-
-
-
-
-<textarea
-
-className="border p-2 w-full mt-2"
-
-placeholder="Vježbe"
-
-value={exercises}
-
-onChange={(e)=>setExercises(e.target.value)}
-
-/>
-
-
-
-<button
-
-className="bg-black text-white px-5 py-2 rounded mt-2"
-
-onClick={saveWorkout}
-
->
-Spremi trening
-</button>
-
-
-</div>
-
-
-
-
-
-
-
-
-<div className="border rounded-xl p-5">
-
-
-<h2 className="font-bold text-xl">
-📋 Trening planovi
-</h2>
-
-
-
-{workouts.map((w)=>(
-
-
-<div
-
-key={w.id}
-
-className="border rounded p-3 mt-3"
-
->
-
-
-
-{editingWorkout===w.id ?
-
-
-<>
-
-<input
-
-className="border p-2 w-full"
-
-value={editWorkoutData.title}
-
-onChange={(e)=>
-
-setEditWorkoutData({
-
-...editWorkoutData,
-
-title:e.target.value
-
-})
-
-}
-
-/>
-
-
-
-<textarea
-
-className="border p-2 w-full mt-2"
-
-value={editWorkoutData.exercises}
-
-onChange={(e)=>
-
-setEditWorkoutData({
-
-...editWorkoutData,
-
-exercises:e.target.value
-
-})
-
-}
-
-/>
-
-
-
-<button
-
-className="bg-black text-white px-3 py-2 rounded mt-2"
-
-onClick={()=>saveEditedWorkout(w.id)}
-
->
-Spremi izmjenu
-</button>
-
-
-</>
-
-
-:
-
-
-<>
-
-
-<b>
-{w.title}
-</b>
-
-
-<p>
-{w.exercises}
-</p>
-
-
-
-<button
-
-className="mr-3 mt-2"
-
-onClick={()=>{
-
-setEditingWorkout(w.id);
-
-setEditWorkoutData({
-
-title:w.title,
-
-exercises:w.exercises
-
-});
-
-}}
-
->
-✏️ Uredi
-</button>
-
-
-
-
-<button
-
-onClick={()=>removeWorkout(w.id)}
-
->
-🗑️ Obriši
-</button>
-
-
-</>
-
-
-}
-
-
-</div>
-
-
-))}
-
-
-</div>
-
-
-
-</>
-
-}
-
-
-
-</div>
-
-
-</RoleGuard>
-
-);
-
+  );
 
 }
