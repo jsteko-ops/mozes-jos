@@ -3,19 +3,18 @@
 import { useState } from "react";
 
 import {
-  addDoc,
-  collection,
   doc,
   getDoc,
-  serverTimestamp,
-  setDoc,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+
 import { useAuth } from "@/components/auth/AuthProvider";
 
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+
+import { createClientForTrainer } from "@/lib/createClientForTrainer";
 
 
 export default function ClientForm({
@@ -24,142 +23,145 @@ export default function ClientForm({
   onCreatedAction: () => void;
 }) {
 
+
   const { user } = useAuth();
 
+
   const [name, setName] = useState("");
+
   const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
   const [goal, setGoal] = useState("");
+
 
   const [loading, setLoading] = useState(false);
 
 
-  const addClient = async () => {
+
+  async function addClient() {
+
 
     if (!user) return;
 
 
+
     try {
+
 
       setLoading(true);
 
 
-      // Dohvati trenera
+
+      // Dohvati podatke trenera
+
       const trainerSnap = await getDoc(
-        doc(db, "users", user.uid)
+        doc(
+          db,
+          "users",
+          user.uid
+        )
       );
 
 
+
       if (!trainerSnap.exists()) {
+
         throw new Error(
           "Trener nije pronađen."
         );
+
       }
+
 
 
       const trainerData = trainerSnap.data();
 
 
+
       const gymId = trainerData.gymId;
 
 
+
       if (!gymId) {
+
         throw new Error(
           "Trener nema povezanu teretanu."
         );
+
       }
 
 
 
-      // 1. Glavni client dokument
+      // Kreiranje kompletnog klijenta
 
-      const clientRef = await addDoc(
-        collection(db, "clients"),
-        {
-          name,
-          email,
-          goal,
+      await createClientForTrainer({
 
-          trainerId: user.uid,
-          gymId,
+        name,
 
-          createdAt: serverTimestamp(),
-        }
-      );
+        email,
 
+        password,
 
+        goal,
 
-      // 2. Dodaj u gymMembers
+        trainerId: user.uid,
 
-      await setDoc(
-        doc(
-          db,
-          "gymMembers",
-          gymId,
-          "members",
-          clientRef.id
-        ),
-        {
-          role: "client",
+        gymId,
 
-          name,
-          email,
-
-          trainerId: user.uid,
-
-          createdAt: serverTimestamp(),
-        }
-      );
+      });
 
 
 
-      // 3. Stari zapis radi kompatibilnosti
-
-      await setDoc(
-        doc(
-          db,
-          "users",
-          user.uid,
-          "clients",
-          clientRef.id
-        ),
-        {
-          name,
-          email,
-          goal,
-
-          trainerId: user.uid,
-
-          clientId: clientRef.id,
-
-          createdAt: serverTimestamp(),
-        }
-      );
-
-
+      // čišćenje forme
 
       setName("");
+
       setEmail("");
+
+      setPassword("");
+
       setGoal("");
+
 
 
       onCreatedAction();
 
 
 
-    } catch (error) {
+      alert(
+        "Klijent uspješno dodan ✅"
+      );
+
+
+
+    } catch (error: any) {
+
 
       console.error(
         "Greška kod dodavanja klijenta:",
         error
       );
 
+
+      alert(
+        error.message ||
+        "Greška kod dodavanja klijenta"
+      );
+
+
+
     } finally {
+
 
       setLoading(false);
 
+
     }
 
-  };
+  }
+
 
 
 
@@ -169,45 +171,87 @@ export default function ClientForm({
 
 
       <Input
+
         label="Ime"
+
         placeholder="Ime klijenta"
+
         value={name}
+
         onChange={(e) =>
           setName(e.target.value)
         }
+
       />
 
 
+
       <Input
+
         label="Email"
+
         placeholder="Email klijenta"
+
         value={email}
+
         onChange={(e) =>
           setEmail(e.target.value)
         }
+
       />
+
 
 
       <Input
-        label="Cilj"
-        placeholder="npr. mršavljenje, masa, kondicija"
-        value={goal}
+
+        label="Privremena lozinka"
+
+        placeholder="Lozinka za prijavu"
+
+        value={password}
+
         onChange={(e) =>
-          setGoal(e.target.value)
+          setPassword(e.target.value)
         }
+
       />
 
 
+
+      <Input
+
+        label="Cilj"
+
+        placeholder="npr. mršavljenje, masa, kondicija"
+
+        value={goal}
+
+        onChange={(e) =>
+          setGoal(e.target.value)
+        }
+
+      />
+
+
+
       <Button
+
         onClick={addClient}
+
         loading={loading}
+
         fullWidth
+
       >
+
         Dodaj klijenta
+
       </Button>
+
 
 
     </div>
 
   );
+
 }

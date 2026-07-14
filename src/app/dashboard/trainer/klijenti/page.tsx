@@ -3,206 +3,451 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { useAuth } from "@/components/auth/AuthProvider";
-import { addClient, getClients } from "@/lib/services/klijentiService";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { addGymMember } from "@/lib/addGymMember";
+import { getGymMembers } from "@/lib/getGymMembers";
 
 
-type Client = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  note: string;
-};
+export default function OwnerDashboard() {
+
+  const [gymId, setGymId] = useState<string | null>(null);
+
+  const [members, setMembers] = useState<any[]>([]);
+
+  const [trainerEmail, setTrainerEmail] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+
+  const [loading, setLoading] = useState(false);
 
 
-export default function KlijentiPage() {
 
-  const { user } = useAuth();
+  const loadMembers = async (id: string) => {
 
-  const [clients, setClients] = useState<Client[]>([]);
+    const data = await getGymMembers(id);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [note, setNote] = useState("");
+    setMembers(data);
 
+  };
 
-  async function loadClients() {
-
-    if (!user) return;
-
-    const data = await getClients(user.uid);
-
-    setClients(data as Client[]);
-  }
 
 
   useEffect(() => {
-    loadClients();
-  }, [user]);
+
+    const unsub = onAuthStateChanged(
+      auth,
+      async (user) => {
+
+        if (!user) return;
 
 
+        const snap = await getDoc(
+          doc(db, "users", user.uid)
+        );
 
-  async function saveClient() {
 
-    if (!user) return;
+        const data = snap.data();
 
 
-    await addClient(
-      user.uid,
-      {
-        name,
-        email,
-        phone,
-        note,
+        if (data?.gymId) {
+
+          setGymId(data.gymId);
+
+          loadMembers(data.gymId);
+
+        }
+
       }
     );
 
 
-    setName("");
-    setEmail("");
-    setPhone("");
-    setNote("");
+    return () => unsub();
 
 
-    await loadClients();
+  }, []);
 
 
-    alert("Klijent dodan ✅");
-  }
+
+
+
+  const addMember = async (
+    email: string,
+    role: "trainer" | "client"
+  ) => {
+
+
+    if (!gymId) return;
+
+
+
+    try {
+
+
+      setLoading(true);
+
+
+
+      await addGymMember({
+
+        gymId,
+
+        email,
+
+        role,
+
+        addedBy: "owner",
+
+      });
+
+
+
+      await loadMembers(gymId);
+
+
+
+      alert(
+        role === "trainer"
+          ? "Trener dodan."
+          : "Klijent dodan."
+      );
+
+
+
+    } catch(error:any) {
+
+
+      alert(error.message);
+
+
+    } finally {
+
+
+      setLoading(false);
+
+
+    }
+
+  };
+
+
+
+
+
+  const trainers = members.filter(
+    (m)=>m.gymRole==="trainer"
+  );
+
+
+  const clients = members.filter(
+    (m)=>m.gymRole==="client"
+  );
+
+
 
 
 
   return (
 
-    <div className="p-6 space-y-8">
+    <ProtectedRoute allowedRoles={["gym_owner"]}>
 
 
-      <h1 className="text-3xl font-bold">
-        Klijenti
-      </h1>
+      <div className="p-6 space-y-8">
 
 
-
-      <div className="border rounded-xl p-5 max-w-md space-y-3">
-
-
-        <h2 className="text-xl font-bold">
-          Dodaj klijenta
-        </h2>
+        <h1 className="text-3xl font-bold">
+          🏢 Moja teretana
+        </h1>
 
 
 
-        <input
-          className="border p-2 w-full"
-          placeholder="Ime"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-
-
-        <input
-          className="border p-2 w-full"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-
-
-        <input
-          className="border p-2 w-full"
-          placeholder="Telefon"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-
-
-
-        <textarea
-          className="border p-2 w-full"
-          placeholder="Napomena"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-
-
-
-        <button
-          onClick={saveClient}
-          className="bg-black text-white px-5 py-2 rounded"
-        >
-          Spremi
-        </button>
-
-
-      </div>
+        <p className="text-gray-600">
+          Gym ID: {gymId}
+        </p>
 
 
 
 
-      <div>
 
-        <h2 className="text-xl font-bold mb-4">
-          Moji klijenti ({clients.length})
-        </h2>
+        <div className="grid grid-cols-3 gap-4">
 
 
+          <div className="rounded-xl border bg-white p-5">
 
-        <div className="space-y-3">
+            <h3 className="text-gray-500">
+              Treneri
+            </h3>
 
-
-          {clients.map((client) => (
-
-            <Link
-              key={client.id}
-              href={`/dashboard/trainer/klijenti/${client.id}`}
-              className="block border rounded-xl p-4 hover:bg-gray-50"
-            >
-
-              <h3 className="font-bold">
-                {client.name}
-              </h3>
-
-
-              <p>
-                {client.email}
-              </p>
-
-
-              <p>
-                {client.phone}
-              </p>
-
-
-              <p className="text-gray-500">
-                {client.note}
-              </p>
-
-
-            </Link>
-
-          ))}
-
-
-
-          {clients.length === 0 && (
-
-            <p>
-              Nema još klijenata.
+            <p className="text-3xl font-bold">
+              {trainers.length}
             </p>
 
-          )}
+          </div>
+
+
+
+
+          <div className="rounded-xl border bg-white p-5">
+
+            <h3 className="text-gray-500">
+              Klijenti
+            </h3>
+
+            <p className="text-3xl font-bold">
+              {clients.length}
+            </p>
+
+          </div>
+
+
+
+
+          <div className="rounded-xl border bg-white p-5">
+
+            <h3 className="text-gray-500">
+              Ukupno članova
+            </h3>
+
+            <p className="text-3xl font-bold">
+              {members.length}
+            </p>
+
+          </div>
 
 
         </div>
 
+
+
+
+
+
+        <div className="rounded-xl border bg-white p-5">
+
+
+          <h2 className="text-xl font-bold mb-3">
+            Dodaj člana
+          </h2>
+
+
+
+
+          <div className="flex gap-2 mb-4">
+
+
+            <input
+
+              className="border rounded p-2"
+
+              placeholder="Email trenera"
+
+              value={trainerEmail}
+
+              onChange={(e)=>
+                setTrainerEmail(e.target.value)
+              }
+
+            />
+
+
+
+            <button
+
+              className="bg-blue-600 text-white px-4 rounded"
+
+              disabled={loading}
+
+              onClick={() => {
+
+                addMember(
+                  trainerEmail,
+                  "trainer"
+                );
+
+                setTrainerEmail("");
+
+              }}
+
+            >
+
+              Dodaj trenera
+
+            </button>
+
+
+          </div>
+
+
+
+
+
+          <div className="flex gap-2">
+
+
+            <input
+
+              className="border rounded p-2"
+
+              placeholder="Email klijenta"
+
+              value={clientEmail}
+
+              onChange={(e)=>
+                setClientEmail(e.target.value)
+              }
+
+            />
+
+
+
+            <button
+
+              className="bg-green-600 text-white px-4 rounded"
+
+              disabled={loading}
+
+              onClick={() => {
+
+                addMember(
+                  clientEmail,
+                  "client"
+                );
+
+                setClientEmail("");
+
+              }}
+
+            >
+
+              Dodaj klijenta
+
+            </button>
+
+
+
+          </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <div className="grid md:grid-cols-2 gap-6">
+
+
+
+
+
+
+          <div className="rounded-xl border bg-white p-5">
+
+
+            <h2 className="text-xl font-bold mb-3">
+              👨‍🏫 Treneri
+            </h2>
+
+
+
+            {trainers.map((trainer)=>(
+
+
+              <div
+
+                key={trainer.uid}
+
+                className="border-b py-2"
+
+              >
+
+                <b>
+                  {trainer.name}
+                </b>
+
+                <br />
+
+                <span>
+                  {trainer.email}
+                </span>
+
+
+              </div>
+
+
+            ))}
+
+
+          </div>
+
+
+
+
+
+
+
+
+
+          <div className="rounded-xl border bg-white p-5">
+
+
+            <h2 className="text-xl font-bold mb-3">
+              👤 Klijenti
+            </h2>
+
+
+
+
+            {clients.map((client)=>(
+
+
+              <Link
+
+                key={client.uid}
+
+                href={`/dashboard/owner/clients/${client.uid}`}
+
+                className="block border-b py-3 hover:bg-gray-50"
+
+              >
+
+                <b>
+                  {client.name}
+                </b>
+
+
+                <br />
+
+
+                <span>
+                  {client.email}
+                </span>
+
+
+              </Link>
+
+
+            ))}
+
+
+          </div>
+
+
+
+        </div>
+
+
+
       </div>
 
 
-    </div>
+    </ProtectedRoute>
 
   );
+
 }

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import {
   collection,
   getDocs,
+  query,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -20,7 +22,7 @@ type Client = {
   id: string;
   name: string;
   email: string;
-  goal: string;
+  goal?: string;
 };
 
 
@@ -31,46 +33,74 @@ export default function ClientsPage() {
   const { user, loading } = useAuth();
 
 
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] =
+    useState<Client[]>([]);
 
 
 
-  const fetchClients = async () => {
+  async function fetchClients() {
 
 
     if (!user) return;
 
 
-    const ref = collection(
-      db,
-      "users",
-      user.uid,
-      "clients"
-    );
+
+    try {
 
 
-    const snap = await getDocs(ref);
+      const q = query(
+
+        collection(
+          db,
+          "clients"
+        ),
+
+        where(
+          "trainerId",
+          "==",
+          user.uid
+        )
+
+      );
 
 
 
-    setClients(
+      const snap = await getDocs(q);
 
-      snap.docs.map((doc) => ({
+
+
+      const data = snap.docs.map((doc) => ({
 
         id: doc.id,
 
         ...doc.data(),
 
-      })) as Client[]
-
-    );
+      })) as Client[];
 
 
-  };
+
+      setClients(data);
+
+
+
+    } catch(error) {
+
+
+      console.error(
+        "Greška kod dohvaćanja klijenata:",
+        error
+      );
+
+
+    }
+
+  }
+
 
 
 
   useEffect(() => {
+
 
     if (!loading && user) {
 
@@ -78,15 +108,46 @@ export default function ClientsPage() {
 
     }
 
+
   }, [user, loading]);
+
+
 
 
 
   if (loading) {
 
-    return <p>Loading...</p>;
+    return (
+
+      <div className="p-6">
+
+        Učitavanje...
+
+      </div>
+
+    );
 
   }
+
+
+
+
+
+  if (!user) {
+
+    return (
+
+      <div className="p-6">
+
+        Nisi prijavljen.
+
+      </div>
+
+    );
+
+  }
+
+
 
 
 
@@ -96,20 +157,29 @@ export default function ClientsPage() {
 
 
       <h1 className="text-2xl font-bold">
+
         Klijenti
+
       </h1>
 
 
 
+
       <ClientForm
+
         onCreatedAction={fetchClients}
+
       />
+
 
 
 
       <ClientList
+
         clients={clients}
+
       />
+
 
 
     </div>

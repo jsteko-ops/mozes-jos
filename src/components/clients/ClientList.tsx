@@ -8,7 +8,7 @@ type Client = {
   id: string;
   name: string;
   email: string;
-  goal: string;
+  goal?: string;
 };
 
 export default function ClientList({
