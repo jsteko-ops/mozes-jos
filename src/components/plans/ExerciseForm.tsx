@@ -56,21 +56,14 @@ export default function ExerciseForm({
 
 
 
-      const ref = collection(
-
-        db,
-
-        "clients",
-
-        clientId,
-
-        "plans",
-
-        planId,
-
-        "exercises"
-
-      );
+    const ref = collection(
+  db,
+  "clients",
+  clientId,
+  "workouts",
+  planId,
+  "exercises"
+);
 
 
 

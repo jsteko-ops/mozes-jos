@@ -76,13 +76,13 @@ export default function PlanDetailPage() {
 
     // PLAN
 
-    const planRef = doc(
-      db,
-      "clients",
-      clientId,
-      "plans",
-      planId
-    );
+   const planRef = doc(
+  db,
+  "clients",
+  clientId,
+  "workouts",
+  planId
+);
 
 
 
@@ -110,14 +110,14 @@ export default function PlanDetailPage() {
 
     // VJEŽBE
 
-    const exerciseRef = collection(
-      db,
-      "clients",
-      clientId,
-      "plans",
-      planId,
-      "exercises"
-    );
+   const exerciseRef = collection(
+  db,
+  "clients",
+  clientId,
+  "workouts",
+  planId,
+  "exercises"
+);
 
 
 

@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 import ClientMeasurements from "@/components/owner/ClientMeasurements";
-import ClientPlans from "@/components/owner/ClientPlans";
+import ClientDashboard from "@/components/client/ClientDashboard";
 
 import { db } from "@/lib/firebase";
 
@@ -303,9 +303,9 @@ export default function OwnerClientProfile() {
 
 
 
-            <ClientPlans
-              clientId={client.id}
-            />
+            <ClientDashboard
+  clientId={client.id}
+/>
 
 
 

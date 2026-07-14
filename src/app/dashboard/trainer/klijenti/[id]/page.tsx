@@ -13,7 +13,7 @@ import {
 } from "recharts";
 
 import RoleGuard from "@/components/auth/RoleGuard";
-import ClientPlans from "@/components/owner/ClientPlans";
+import ClientDashboard from "@/components/client/ClientDashboard";
 
 import {
   getClient,
@@ -917,7 +917,7 @@ export default function KlijentProfilPage() {
               </h2>
 
 
-              <ClientPlans clientId={id} />
+              <ClientDashboard clientId={id} />
 
             </div>
 

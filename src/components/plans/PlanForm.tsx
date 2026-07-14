@@ -46,12 +46,12 @@ export default function PlanForm({
 
 
 
-      const ref = collection(
-        db,
-        "clients",
-        clientId,
-        "plans"
-      );
+    const ref = collection(
+  db,
+  "clients",
+  clientId,
+  "workouts"
+);
 
 
 

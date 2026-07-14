@@ -43,11 +43,11 @@ export default function PlansPage() {
 
 
     const ref = collection(
-      db,
-      "clients",
-      clientId,
-      "plans"
-    );
+  db,
+  "clients",
+  clientId,
+  "workouts"
+);
 
 
 
