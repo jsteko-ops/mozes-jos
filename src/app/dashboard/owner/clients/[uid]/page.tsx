@@ -7,6 +7,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 import ClientMeasurements from "@/components/owner/ClientMeasurements";
 import ClientDashboard from "@/components/client/ClientDashboard";
+import ClientEditForm from "@/components/clients/ClientEditForm";
 
 import { db } from "@/lib/firebase";
 
@@ -31,6 +32,7 @@ type Client = {
 
 export default function OwnerClientProfile() {
 
+
   const params = useParams();
 
 
@@ -50,16 +52,24 @@ export default function OwnerClientProfile() {
     useState(true);
 
 
+  const [refresh, setRefresh] =
+    useState(false);
+
+
+
 
   useEffect(() => {
 
     loadClient();
 
-  }, []);
+  }, [refresh]);
+
+
 
 
 
   async function loadClient() {
+
 
     try {
 
@@ -71,6 +81,7 @@ export default function OwnerClientProfile() {
       // =====================
       // KLIJENT
       // =====================
+
 
       const clientSnap = await getDoc(
         doc(
@@ -106,9 +117,11 @@ export default function OwnerClientProfile() {
 
 
 
+
       // =====================
       // TRENER
       // =====================
+
 
       if (clientData.trainerId) {
 
@@ -135,9 +148,11 @@ export default function OwnerClientProfile() {
 
 
 
+
       // =====================
       // TERETANA
       // =====================
+
 
       if (clientData.gymId) {
 
@@ -182,7 +197,10 @@ export default function OwnerClientProfile() {
 
 
 
+
+
   return (
+
 
     <ProtectedRoute allowedRoles={["gym_owner"]}>
 
@@ -190,21 +208,27 @@ export default function OwnerClientProfile() {
       <div className="p-6">
 
 
+
         {loading ? (
+
 
           <p>
             Učitavanje...
           </p>
 
 
+
         ) : !client ? (
+
 
           <p>
             Klijent nije pronađen.
           </p>
 
 
+
         ) : (
+
 
           <>
 
@@ -212,6 +236,7 @@ export default function OwnerClientProfile() {
             <h1 className="text-3xl font-bold mb-6">
               👤 Profil klijenta
             </h1>
+
 
 
 
@@ -259,6 +284,7 @@ export default function OwnerClientProfile() {
 
 
 
+
               <div>
                 <b>Trener:</b>{" "}
                 {
@@ -296,6 +322,24 @@ export default function OwnerClientProfile() {
 
 
 
+
+            <div className="mt-6">
+
+
+              <ClientEditForm
+                client={client}
+                onSaved={() =>
+                  setRefresh(!refresh)
+                }
+              />
+
+
+            </div>
+
+
+
+
+
             <ClientMeasurements
               clientId={client.id}
             />
@@ -303,13 +347,15 @@ export default function OwnerClientProfile() {
 
 
 
+
             <ClientDashboard
-  clientId={client.id}
-/>
+              clientId={client.id}
+            />
 
 
 
           </>
+
 
         )}
 
