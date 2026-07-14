@@ -11,16 +11,12 @@ import {
 
 import { db } from "@/lib/firebase";
 
-
-
 type Plan = {
   id: string;
-  name: string;
-  description?: string;
+  title: string;
+  exercises: string;
   createdAt?: any;
 };
-
-
 
 export default function ClientPlans({
   clientId,
@@ -28,69 +24,40 @@ export default function ClientPlans({
   clientId: string;
 }) {
 
-
   const [plans, setPlans] = useState<Plan[]>([]);
-
   const [loading, setLoading] = useState(true);
 
-
-
-
   useEffect(() => {
-
     loadPlans();
-
   }, [clientId]);
 
-
-
-
-
-  async function loadPlans(){
-
+  async function loadPlans() {
 
     try {
 
-      console.log("CLIENT ID U KOMPONENTI:", clientId);
-
       const q = query(
-
-       collection(
-  db,
-  "clients",
-  clientId,
-  "workouts"
-),
-
+        collection(
+          db,
+          "clients",
+          clientId,
+          "workouts"
+        ),
         orderBy(
           "createdAt",
           "desc"
         )
-
       );
-
-
 
       const snap = await getDocs(q);
 
-console.log("BROJ WORKOUTA:", snap.docs.length);
-console.log("WORKOUT PODACI:", snap.docs.map(doc => doc.data()));
-
       setPlans(
-
-        snap.docs.map((doc)=>({
-
+        snap.docs.map((doc) => ({
           id: doc.id,
-
           ...doc.data(),
-
         })) as Plan[]
-
       );
 
-
-
-    } catch(error){
+    } catch (error) {
 
       console.error(
         "Greška planovi:",
@@ -99,113 +66,67 @@ console.log("WORKOUT PODACI:", snap.docs.map(doc => doc.data()));
 
     }
 
-
     setLoading(false);
-
 
   }
 
-
-
-
-
-  if(loading){
-
+  if (loading) {
     return (
       <p>
         Učitavanje planova...
       </p>
     );
-
   }
-
-
-
-
 
   return (
 
     <div className="mt-6 rounded-xl border bg-white p-6">
 
-
       <h2 className="text-xl font-bold mb-4">
         🏋️ Trening planovi
       </h2>
 
+      {plans.length === 0 ? (
 
+        <p>
+          Nema trening planova.
+        </p>
 
-      {
-        plans.length === 0 ? (
+      ) : (
 
-          <p>
-            Nema trening planova.
-          </p>
+        <div className="space-y-3">
 
+          {plans.map((plan) => (
 
-        ) : (
+            <div
+              key={plan.id}
+              className="border rounded-lg p-4"
+            >
 
+              <h3 className="font-bold text-lg">
+                {plan.title}
+              </h3>
 
-          <div className="space-y-3">
+              <p className="text-gray-600 whitespace-pre-line">
+                {plan.exercises}
+              </p>
 
-
-            {
-              plans.map((plan)=>(
-
-
-                <div
-
-                  key={plan.id}
-
-                  className="border rounded-lg p-4"
-
-                >
-
-
-                  <h3 className="font-bold text-lg">
-                    {plan.name}
-                  </h3>
-
-
-
-                  <p className="text-gray-600">
-                    {plan.description || "Bez opisa"}
-                  </p>
-
-
-
-                  <p className="text-sm text-gray-400 mt-2">
-
-                    Dodano:{" "}
-
-                    {
-                      plan.createdAt?.toDate
-                      ?
-                      plan.createdAt
+              <p className="text-sm text-gray-400 mt-2">
+                Dodano:{" "}
+                {plan.createdAt?.toDate
+                  ? plan.createdAt
                       .toDate()
                       .toLocaleDateString("hr-HR")
-                      :
-                      "-"
-                    }
+                  : "-"}
+              </p>
 
-                  </p>
+            </div>
 
+          ))}
 
+        </div>
 
-                </div>
-
-
-              ))
-
-            }
-
-
-          </div>
-
-
-        )
-      }
-
-
+      )}
 
     </div>
 

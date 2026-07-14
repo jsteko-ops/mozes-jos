@@ -229,14 +229,20 @@ export async function addCheckin(
   data: {
     weight: number;
     energy: number;
-    note: string;
+    sleep: number;
+    hunger: number;
+    water: string;
+    comment: string;
+    photos?: string[];
   }
 ) {
   await addDoc(
     collection(db, "clients", clientId, "checkins"),
     {
       ...data,
+      photos: data.photos ?? [],
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     }
   );
 }
@@ -248,8 +254,73 @@ export async function getCheckins(
     collection(db, "clients", clientId, "checkins")
   );
 
-  return snap.docs.map((doc) => ({
+
+  const checkins = snap.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   }));
+
+
+  return checkins.sort((a: any, b: any) => {
+
+    const dateA =
+      a.createdAt?.toMillis
+        ? a.createdAt.toMillis()
+        : 0;
+
+
+    const dateB =
+      b.createdAt?.toMillis
+        ? b.createdAt.toMillis()
+        : 0;
+
+
+    return dateB - dateA;
+
+  });
+}
+
+export async function markCheckinReviewed(
+  clientId: string,
+  checkinId: string
+) {
+  await updateDoc(
+    doc(
+      db,
+      "clients",
+      clientId,
+      "checkins",
+      checkinId
+    ),
+    {
+      reviewed: true,
+      reviewedAt: serverTimestamp(),
+    }
+  );
+}
+
+export async function getClientByEmail(
+  email: string
+) {
+  const q = query(
+    collection(db, "clients"),
+    where("email", "==", email)
+  );
+
+
+  const snap = await getDocs(q);
+
+
+  if (snap.empty) {
+    return null;
+  }
+
+
+  const clientDoc = snap.docs[0];
+
+
+  return {
+    id: clientDoc.id,
+    ...clientDoc.data(),
+  };
 }

@@ -6,6 +6,10 @@ import RoleGuard from "@/components/auth/RoleGuard";
 import PremiumGuard from "@/components/auth/PremiumGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
 
+import ClientSelect from "@/components/checkins/ClientSelect";
+import CheckinForm from "@/components/checkins/CheckinForm";
+import CheckinHistory from "@/components/checkins/CheckinHistory";
+
 import {
   getClients,
   addCheckin,
@@ -13,219 +17,166 @@ import {
 } from "@/lib/services/klijentiService";
 
 
-
 export default function CheckinPage() {
-
 
   const { user } = useAuth();
 
 
-
-
-  const [clients,setClients] =
+  const [clients, setClients] =
     useState<any[]>([]);
 
 
-
-  const [clientId,setClientId] =
+  const [clientId, setClientId] =
     useState("");
 
 
-
-  const [checkins,setCheckins] =
+  const [checkins, setCheckins] =
     useState<any[]>([]);
 
 
-
-  const [weight,setWeight] =
+  const [weight, setWeight] =
     useState("");
 
 
+  const [energy, setEnergy] =
+    useState(0);
 
-  const [energy,setEnergy] =
+
+  const [sleep, setSleep] =
+    useState(0);
+
+
+  const [hunger, setHunger] =
+    useState(0);
+
+
+  const [water, setWater] =
     useState("");
 
 
-
-  const [note,setNote] =
+  const [comment, setComment] =
     useState("");
 
 
-
-  const [loading,setLoading] =
+  const [loading, setLoading] =
     useState(true);
 
 
 
+  useEffect(() => {
 
+    async function loadClients() {
 
-
-  useEffect(()=>{
-
-
-    async function load(){
-
-
-      if(!user) return;
-
-
+      if (!user) return;
 
 
       const data =
         await getClients(user.uid);
 
 
-
-
-      setClients(data as any[]);
-
+      setClients(data);
 
 
       setLoading(false);
 
-
     }
 
 
+    loadClients();
 
-
-    load();
-
-
-
-  },[user]);
+  }, [user]);
 
 
 
+  async function loadCheckins() {
 
-
-
-
-
-  async function loadCheckins(){
-
-
-    if(!clientId){
-
+    if (!clientId) {
 
       setCheckins([]);
 
-
       return;
 
-
     }
-
-
-
 
 
     const data =
       await getCheckins(clientId);
 
 
-
-
-    setCheckins(data as any[]);
-
-
+    setCheckins(data);
 
   }
 
 
 
+  async function saveCheckin() {
 
-
-
-
-
-  async function save(){
-
-
-    if(!clientId){
-
+    if (!clientId) {
 
       alert("Odaberi klijenta");
 
-
       return;
-
 
     }
 
 
+    if (!weight) {
 
+      alert("Upiši težinu");
 
+      return;
+
+    }
 
 
     await addCheckin(
-
       clientId,
-
       {
-
         weight:
           Number(
             weight.replace(",", ".")
           ),
 
+        energy,
 
-        energy:
-          Number(energy),
+        sleep,
 
+        hunger,
 
-        note
+        water,
 
+        comment,
 
       }
-
     );
-
-
-
-
 
 
     setWeight("");
 
-    setEnergy("");
+    setEnergy(0);
 
-    setNote("");
+    setSleep(0);
 
+    setHunger(0);
 
+    setWater("");
 
+    setComment("");
 
 
     await loadCheckins();
 
 
-
-
-
     alert("Check-in spremljen ✅");
 
-
-
   }
-
-
-
-
-
-
-
-
-  return (
+    return (
 
     <RoleGuard allowedRoles={["trainer"]}>
 
-
       <PremiumGuard>
 
-
-
         <div className="p-6 space-y-6">
-
 
 
           <h1 className="text-3xl font-bold">
@@ -234,278 +185,55 @@ export default function CheckinPage() {
 
 
 
-
-
-
-          {
-            loading &&
-
+          {loading && (
             <p>
               Učitavanje klijenata...
             </p>
+          )}
 
-          }
 
 
+          <ClientSelect
+            clients={clients}
+            value={clientId}
+            onChange={setClientId}
+            onLoadHistory={loadCheckins}
+          />
 
 
 
+          <CheckinForm
 
-          <div className="border rounded-xl p-5 space-y-3">
+            weight={weight}
+            energy={energy}
+            sleep={sleep}
+            hunger={hunger}
+            water={water}
+            comment={comment}
 
+            setWeight={setWeight}
+            setEnergy={setEnergy}
+            setSleep={setSleep}
+            setHunger={setHunger}
+            setWater={setWater}
+            setComment={setComment}
 
+            onSave={saveCheckin}
 
-            <h2 className="text-xl font-bold">
-              Novi Check-in
-            </h2>
+          />
 
 
 
-
-
-
-
-            <select
-
-              className="border p-2 w-full"
-
-              value={clientId}
-
-              onChange={(e)=>{
-
-                setClientId(e.target.value);
-
-              }}
-
-            >
-
-
-              <option value="">
-                Odaberi klijenta
-              </option>
-
-
-
-
-              {
-                clients.map((c)=>(
-
-
-                  <option
-
-                    key={c.id}
-
-                    value={c.id}
-
-                  >
-
-                    {c.name}
-
-                  </option>
-
-
-                ))
-
-              }
-
-
-
-            </select>
-
-
-
-
-
-
-
-            <button
-
-              className="bg-gray-200 px-4 py-2 rounded"
-
-              onClick={loadCheckins}
-
-            >
-
-              Učitaj povijest
-
-            </button>
-
-
-
-
-
-
-
-            <input
-
-              className="border p-2 w-full"
-
-              placeholder="Težina kg"
-
-              value={weight}
-
-              onChange={(e)=>
-                setWeight(e.target.value)
-              }
-
-            />
-
-
-
-
-
-
-
-            <input
-
-              className="border p-2 w-full"
-
-              placeholder="Energija 1-10"
-
-              value={energy}
-
-              onChange={(e)=>
-                setEnergy(e.target.value)
-              }
-
-            />
-
-
-
-
-
-
-
-            <textarea
-
-              className="border p-2 w-full"
-
-              placeholder="Kako se klijent osjeća / napomena"
-
-              value={note}
-
-              onChange={(e)=>
-                setNote(e.target.value)
-              }
-
-            />
-
-
-
-
-
-
-
-            <button
-
-              className="bg-black text-white px-5 py-2 rounded"
-
-              onClick={save}
-
-            >
-
-              Spremi Check-in
-
-            </button>
-
-
-
-          </div>
-
-
-
-
-
-
-
-
-
-          <div className="border rounded-xl p-5">
-
-
-
-            <h2 className="text-xl font-bold">
-              📋 Povijest Check-inova
-            </h2>
-
-
-
-
-
-
-
-            {
-              checkins.length === 0 &&
-
-              <p className="mt-3">
-                Nema spremljenih check-inova.
-              </p>
-
-            }
-
-
-
-
-
-
-
-
-            {
-              checkins.map((c)=>(
-
-
-                <div
-
-                  key={c.id}
-
-                  className="border rounded p-3 mt-3"
-
-                >
-
-
-
-                  <p>
-                    ⚖️ Težina: {String(c.weight).replace(".",",")} kg
-                  </p>
-
-
-
-                  <p>
-                    ⚡ Energija: {c.energy}/10
-                  </p>
-
-
-
-
-                  <p>
-                    📝 {c.note}
-                  </p>
-
-
-
-                </div>
-
-
-              ))
-
-            }
-
-
-
-
-
-          </div>
-
-
-
+         <CheckinHistory
+  checkins={checkins}
+  clientId={clientId}
+  onReviewed={loadCheckins}
+/>
 
 
         </div>
 
-
-
       </PremiumGuard>
-
 
     </RoleGuard>
 
