@@ -42,6 +42,7 @@ interface CheckinHistoryProps {
 
 
 
+
 function formatDate(timestamp: any) {
 
   if (!timestamp) return "-";
@@ -53,7 +54,7 @@ function formatDate(timestamp: any) {
       : new Date(timestamp);
 
 
-  return date.toLocaleDateString("hr-HR");
+  return date.toLocaleString("hr-HR");
 
 }
 
@@ -74,18 +75,13 @@ export default function CheckinHistory({
 
 
   async function handleReviewed(
-
     checkinId: string
-
   ) {
 
 
     await markCheckinReviewed(
-
       clientId,
-
       checkinId
-
     );
 
 
@@ -99,17 +95,46 @@ export default function CheckinHistory({
 
 
 
+  const sortedCheckins =
+    [...checkins].sort(
+      (a,b)=>
+        b.createdAt?.seconds -
+        a.createdAt?.seconds
+    );
+
+
+
+
+
+
 
   return (
 
-    <div className="border rounded-xl bg-white p-5">
+    <div className="border rounded-xl bg-white p-5 space-y-5">
 
 
-      <h2 className="text-xl font-bold mb-4">
 
-        📋 Povijest Check-inova
+      <div className="flex justify-between items-center">
 
-      </h2>
+
+        <h2 className="text-xl font-bold">
+
+          📋 Povijest Check-inova
+
+        </h2>
+
+
+        <span className="text-sm text-gray-500">
+
+          Ukupno: {checkins.length}
+
+        </span>
+
+
+      </div>
+
+
+
 
 
 
@@ -134,7 +159,7 @@ export default function CheckinHistory({
 
 
 
-        {checkins.map((checkin)=>(
+        {sortedCheckins.map((checkin)=>(
 
 
 
@@ -142,24 +167,31 @@ export default function CheckinHistory({
 
             key={checkin.id}
 
-            className="border rounded-xl p-4 space-y-3"
+            className="border rounded-xl p-5 space-y-3"
 
           >
 
 
 
-            <div className="flex justify-between">
+
+            <div className="flex justify-between items-start">
 
 
-              <b>
+              <div>
 
-                📅 {formatDate(checkin.createdAt)}
+                <b>
+                  📅 {formatDate(checkin.createdAt)}
+                </b>
 
-              </b>
+              </div>
 
 
 
-              {checkin.reviewed && (
+              {
+
+                checkin.reviewed
+
+                ?
 
                 <span className="text-green-600 font-bold">
 
@@ -167,7 +199,16 @@ export default function CheckinHistory({
 
                 </span>
 
-              )}
+
+                :
+
+                <span className="text-orange-600 font-bold">
+
+                  ⏳ Čeka pregled
+
+                </span>
+
+              }
 
 
             </div>
@@ -176,69 +217,64 @@ export default function CheckinHistory({
 
 
 
-            <p>
-
-              ⚖️ Težina:
-
-              {" "}
-
-              {String(checkin.weight).replace(".", ",")}
-
-              {" "}kg
-
-            </p>
 
 
+            <div className="grid md:grid-cols-2 gap-3">
 
 
-            <p>
-
-              😊 Energija:
-
-              {" "}
-
-              {checkin.energy}/5
-
-            </p>
+              <p>
+                ⚖️ Težina:
+                {" "}
+                <b>
+                  {String(checkin.weight).replace(".", ",")}
+                  {" "}kg
+                </b>
+              </p>
 
 
 
-
-            <p>
-
-              😴 San:
-
-              {" "}
-
-              {checkin.sleep}/5
-
-            </p>
+              <p>
+                ⚡ Energija:
+                {" "}
+                <b>
+                  {checkin.energy}/5
+                </b>
+              </p>
 
 
 
-
-            <p>
-
-              🍽 Glad:
-
-              {" "}
-
-              {checkin.hunger}/5
-
-            </p>
+              <p>
+                😴 San:
+                {" "}
+                <b>
+                  {checkin.sleep}/5
+                </b>
+              </p>
 
 
 
+              <p>
+                🍽 Glad:
+                {" "}
+                <b>
+                  {checkin.hunger}/5
+                </b>
+              </p>
 
-            <p>
 
-              💧 Voda:
 
-              {" "}
+              <p>
+                💧 Voda:
+                {" "}
+                <b>
+                  {checkin.water}
+                </b>
+              </p>
 
-              {checkin.water}
 
-            </p>
+            </div>
+
+
 
 
 
@@ -246,11 +282,11 @@ export default function CheckinHistory({
 
             {checkin.comment && (
 
-              <p>
+              <div className="bg-gray-50 rounded p-3">
 
                 💬 {checkin.comment}
 
-              </p>
+              </div>
 
             )}
 
@@ -268,9 +304,7 @@ export default function CheckinHistory({
                 className="bg-black text-white px-4 py-2 rounded"
 
                 onClick={()=>
-
                   handleReviewed(checkin.id)
-
                 }
 
               >
@@ -285,7 +319,6 @@ export default function CheckinHistory({
 
 
 
-
           </div>
 
 
@@ -295,7 +328,6 @@ export default function CheckinHistory({
 
 
       </div>
-
 
 
     </div>
