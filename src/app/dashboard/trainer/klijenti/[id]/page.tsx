@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+
 import {
   LineChart,
   Line,
@@ -13,18 +14,17 @@ import {
 } from "recharts";
 
 import RoleGuard from "@/components/auth/RoleGuard";
-import ClientDashboard from "@/components/client/ClientDashboard";
+import ClientPlans from "@/components/owner/ClientPlans";
+import ClientEditForm from "@/components/clients/ClientEditForm";
 
 import {
   getClient,
-  updateClient,
   addMeasurement,
   getMeasurements,
   updateMeasurement,
   deleteMeasurement,
+  addWorkout,
 } from "@/lib/services/klijentiService";
-
-
 
 
 function toNumber(value: string) {
@@ -34,7 +34,6 @@ function toNumber(value: string) {
   );
 
 }
-
 
 
 
@@ -64,16 +63,12 @@ type Measurement = {
 
 
 
-
-
 export default function KlijentProfilPage() {
 
 
   const params = useParams();
 
   const id = params.id as string;
-
-
 
 
 
@@ -86,41 +81,14 @@ export default function KlijentProfilPage() {
     useState<Measurement[]>([]);
 
 
+
   const [chartData, setChartData] =
     useState<any[]>([]);
 
 
 
-
-
-
   const [loading, setLoading] =
     useState(true);
-
-
-
-
-
-  // KLIJENT EDIT
-
-  const [editingClient, setEditingClient] =
-    useState(false);
-
-
-  const [editName, setEditName] =
-    useState("");
-
-  const [editEmail, setEditEmail] =
-    useState("");
-
-  const [editPhone, setEditPhone] =
-    useState("");
-
-  const [editNote, setEditNote] =
-    useState("");
-
-
-
 
 
 
@@ -145,7 +113,6 @@ export default function KlijentProfilPage() {
 
 
 
-
   const [editingMeasurement, setEditingMeasurement] =
     useState<string | null>(null);
 
@@ -166,8 +133,6 @@ export default function KlijentProfilPage() {
 
 
 
-
-
   // TRENING
 
   const [workoutTitle, setWorkoutTitle] =
@@ -175,25 +140,6 @@ export default function KlijentProfilPage() {
 
   const [exercises, setExercises] =
     useState("");
-
-
-
-  const [editingWorkout, setEditingWorkout] =
-    useState<string | null>(null);
-
-
-
-  const [editWorkoutData, setEditWorkoutData] =
-    useState({
-
-      title: "",
-      exercises: ""
-
-    });
-
-
-
-
 
 
 
@@ -219,9 +165,12 @@ export default function KlijentProfilPage() {
       await getMeasurements(id);
 
 
+
     setMeasurements(
       m as Measurement[]
     );
+
+
 
     const chart = (m as any[])
       .map((item) => ({
@@ -229,7 +178,9 @@ export default function KlijentProfilPage() {
         date:
           item.createdAt?.toDate
             ?
-            item.createdAt.toDate().toLocaleDateString("hr-HR")
+            item.createdAt
+              .toDate()
+              .toLocaleDateString("hr-HR")
             :
             "",
 
@@ -244,14 +195,10 @@ export default function KlijentProfilPage() {
 
 
 
-
     setLoading(false);
 
 
   }
-
-
-
 
 
 
@@ -261,44 +208,6 @@ export default function KlijentProfilPage() {
     loadData();
 
   }, [id]);
-
-
-
-
-
-
-
-  async function saveClientChanges() {
-
-
-    await updateClient(
-
-      id,
-
-      {
-        name: editName,
-        email: editEmail,
-        phone: editPhone,
-        note: editNote
-      }
-
-    );
-
-
-
-    setEditingClient(false);
-
-
-    await loadData();
-
-
-    alert("Podaci spremljeni ✅");
-
-
-  }
-
-
-
 
 
 
@@ -337,14 +246,7 @@ export default function KlijentProfilPage() {
 
 
   }
-
-
-
-
-
-
-
-  async function saveEditedMeasurement(
+    async function saveEditedMeasurement(
     measurementId: string
   ) {
 
@@ -377,9 +279,15 @@ export default function KlijentProfilPage() {
 
 
   }
+
+
+
+
+
   async function removeMeasurement(
     measurementId: string
   ) {
+
 
     const ok =
       confirm(
@@ -390,16 +298,20 @@ export default function KlijentProfilPage() {
     if (!ok) return;
 
 
+
     await deleteMeasurement(
       id,
       measurementId
     );
 
 
+
     await loadData();
 
 
+
     alert("Mjerenje obrisano ✅");
+
 
   }
 
@@ -407,19 +319,46 @@ export default function KlijentProfilPage() {
 
 
 
+  async function saveWorkout() {
+
+
+    if (!workoutTitle || !exercises) {
+
+      alert(
+        "Upiši naziv plana i vježbe"
+      );
+
+      return;
+
+    }
 
 
 
+    await addWorkout(
+
+      id,
+
+      {
+        title: workoutTitle,
+        exercises
+      }
+
+    );
 
 
 
+    setWorkoutTitle("");
+
+    setExercises("");
 
 
 
+    alert(
+      "Trening plan spremljen ✅"
+    );
 
 
-
-
+  }
 
 
 
@@ -438,6 +377,7 @@ export default function KlijentProfilPage() {
         <h1 className="text-3xl font-bold">
           Profil klijenta
         </h1>
+
 
 
 
@@ -461,113 +401,20 @@ export default function KlijentProfilPage() {
             <div className="border rounded-xl p-5">
 
 
-              {!editingClient &&
+              <ClientEditForm
 
-                <>
+                client={client}
 
+                onSaved={() => {
 
-                  <h2 className="text-2xl font-bold">
-                    👤 {client.name}
-                  </h2>
+                  loadData();
 
+                }}
 
-                  <p>
-                    Email: {client.email}
-                  </p>
-
-
-                  <p>
-                    Telefon: {client.phone}
-                  </p>
-
-
-                  <p>
-                    Napomena: {client.note}
-                  </p>
-
-
-
-                  <button
-
-                    className="bg-black text-white px-4 py-2 rounded mt-3"
-
-                    onClick={() => {
-
-                      setEditName(client.name);
-                      setEditEmail(client.email);
-                      setEditPhone(client.phone);
-                      setEditNote(client.note);
-
-                      setEditingClient(true);
-
-                    }}
-
-                  >
-                    ✏️ Uredi podatke
-                  </button>
-
-
-                </>
-
-              }
-
-
-
-
-
-              {editingClient &&
-
-                <div className="space-y-2">
-
-
-                  <input
-                    className="border p-2 w-full"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                  />
-
-
-                  <input
-                    className="border p-2 w-full"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                  />
-
-
-                  <input
-                    className="border p-2 w-full"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                  />
-
-
-                  <textarea
-                    className="border p-2 w-full"
-                    value={editNote}
-                    onChange={(e) => setEditNote(e.target.value)}
-                  />
-
-
-
-                  <button
-
-                    className="bg-black text-white px-4 py-2 rounded"
-
-                    onClick={saveClientChanges}
-
-                  >
-                    Spremi promjene
-                  </button>
-
-
-                </div>
-
-              }
-
+              />
 
 
             </div>
-
 
 
 
@@ -641,16 +488,7 @@ export default function KlijentProfilPage() {
 
 
             </div>
-
-
-
-
-
-
-
-
-
-            <div className="border rounded-xl p-5">
+                        <div className="border rounded-xl p-5">
 
 
               <h2 className="font-bold text-xl">
@@ -663,7 +501,6 @@ export default function KlijentProfilPage() {
 
 
                 <div
-
 
                   key={m.id}
 
@@ -696,7 +533,6 @@ export default function KlijentProfilPage() {
                         }
 
                       />
-
 
 
                       <button
@@ -763,6 +599,7 @@ export default function KlijentProfilPage() {
 
 
 
+
                       <button
 
                         onClick={() => removeMeasurement(m.id)}
@@ -770,7 +607,6 @@ export default function KlijentProfilPage() {
                       >
                         🗑️ Obriši
                       </button>
-
 
 
                     </>
@@ -784,7 +620,6 @@ export default function KlijentProfilPage() {
 
 
               ))}
-
 
 
             </div>
@@ -803,9 +638,13 @@ export default function KlijentProfilPage() {
               </h2>
 
 
+
               <ResponsiveContainer
+
                 width="100%"
+
                 height={300}
+
               >
 
 
@@ -815,15 +654,14 @@ export default function KlijentProfilPage() {
                   <CartesianGrid />
 
 
-                  <XAxis
-                    dataKey="date"
-                  />
+                  <XAxis dataKey="date" />
 
 
                   <YAxis />
 
 
                   <Tooltip />
+
 
 
                   <Line
@@ -855,8 +693,9 @@ export default function KlijentProfilPage() {
 
 
               <h2 className="font-bold text-xl">
-                🏋️ Trening plan
+                🏋️ Dodaj trening plan
               </h2>
+
 
 
 
@@ -868,9 +707,12 @@ export default function KlijentProfilPage() {
 
                 value={workoutTitle}
 
-                onChange={(e) => setWorkoutTitle(e.target.value)}
+                onChange={(e) =>
+                  setWorkoutTitle(e.target.value)
+                }
 
               />
+
 
 
 
@@ -883,9 +725,13 @@ export default function KlijentProfilPage() {
 
                 value={exercises}
 
-                onChange={(e) => setExercises(e.target.value)}
+                onChange={(e) =>
+                  setExercises(e.target.value)
+                }
 
               />
+
+
 
 
 
@@ -893,10 +739,12 @@ export default function KlijentProfilPage() {
 
                 className="bg-black text-white px-5 py-2 rounded mt-2"
 
-                onClick={() => { }}
+                onClick={saveWorkout}
 
               >
+
                 Spremi trening
+
               </button>
 
 
@@ -908,27 +756,38 @@ export default function KlijentProfilPage() {
 
 
 
-
             <div className="border rounded-xl p-5">
 
 
-              <h2 className="font-bold text-xl">
+              <h2 className="text-xl font-bold">
+
                 📋 Trening planovi
+
               </h2>
 
 
-              <ClientDashboard clientId={id} />
+
+              <ClientPlans
+
+                clientId={id}
+
+              />
+
 
             </div>
+
 
           </>
 
         )}
 
+
       </div>
+
 
     </RoleGuard>
 
   );
+
 
 }

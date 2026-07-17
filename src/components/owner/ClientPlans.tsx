@@ -4,132 +4,454 @@ import { useEffect, useState } from "react";
 
 import {
   collection,
+  addDoc,
   getDocs,
-  query,
-  orderBy,
+  deleteDoc,
+  doc,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 
+
+
 type Plan = {
+
   id: string;
+
   title: string;
+
   exercises: string;
+
   createdAt?: any;
+
 };
 
+
+
+
+
 export default function ClientPlans({
+
   clientId,
+
 }: {
+
   clientId: string;
+
 }) {
 
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(true);
+
+
+  const [plans, setPlans] =
+    useState<Plan[]>([]);
+
+
+
+  const [title, setTitle] =
+    useState("");
+
+
+
+  const [exercises, setExercises] =
+    useState("");
+
+
+
+  const [loading, setLoading] =
+    useState(false);
+
+
+
+
+
+
+
 
   useEffect(() => {
+
     loadPlans();
+
   }, [clientId]);
+
+
+
+
+
+
+
+
 
   async function loadPlans() {
 
-    try {
 
-      const q = query(
+    const snap =
+      await getDocs(
+
         collection(
+
           db,
+
           "clients",
+
           clientId,
+
           "workouts"
-        ),
-        orderBy(
-          "createdAt",
-          "desc"
+
         )
+
       );
 
-      const snap = await getDocs(q);
 
-      setPlans(
-        snap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Plan[]
+
+
+    const data =
+      snap.docs.map((item)=>({
+
+
+        id:item.id,
+
+
+        ...item.data(),
+
+
+      })) as Plan[];
+
+
+
+
+    setPlans(data);
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+  async function savePlan() {
+
+
+    if (!title) {
+
+
+      alert(
+        "Upiši naziv plana"
       );
 
-    } catch (error) {
 
-      console.error(
-        "Greška planovi:",
-        error
-      );
+      return;
+
 
     }
 
+
+
+
+    setLoading(true);
+
+
+
+
+    await addDoc(
+
+      collection(
+
+        db,
+
+        "clients",
+
+        clientId,
+
+        "workouts"
+
+      ),
+
+      {
+
+
+        title,
+
+
+        exercises,
+
+
+        createdAt:
+          serverTimestamp(),
+
+
+      }
+
+    );
+
+
+
+
+
+    setTitle("");
+
+    setExercises("");
+
+
+
+
+    await loadPlans();
+
+
+
+
     setLoading(false);
 
+
+
+
+    alert(
+      "Trening plan spremljen ✅"
+    );
+
+
   }
 
-  if (loading) {
-    return (
-      <p>
-        Učitavanje planova...
-      </p>
+
+
+
+
+
+
+
+
+  async function removePlan(
+
+    id:string
+
+  ) {
+
+
+
+    await deleteDoc(
+
+      doc(
+
+        db,
+
+        "clients",
+
+        clientId,
+
+        "workouts",
+
+        id
+
+      )
+
     );
+
+
+
+    await loadPlans();
+
+
   }
+
+
+
+
+
+
+
+
 
   return (
 
     <div className="mt-6 rounded-xl border bg-white p-6">
 
+
       <h2 className="text-xl font-bold mb-4">
+
         🏋️ Trening planovi
+
       </h2>
 
-      {plans.length === 0 ? (
 
-        <p>
-          Nema trening planova.
-        </p>
 
-      ) : (
 
-        <div className="space-y-3">
 
-          {plans.map((plan) => (
+      <div className="space-y-3">
 
-            <div
-              key={plan.id}
-              className="border rounded-lg p-4"
-            >
 
-              <h3 className="font-bold text-lg">
-                {plan.title}
-              </h3>
+        <input
 
-              <p className="text-gray-600 whitespace-pre-line">
-                {plan.exercises}
-              </p>
+          className="border p-2 w-full rounded"
 
-              <p className="text-sm text-gray-400 mt-2">
-                Dodano:{" "}
-                {plan.createdAt?.toDate
-                  ? plan.createdAt
-                      .toDate()
-                      .toLocaleDateString("hr-HR")
-                  : "-"}
-              </p>
+          placeholder="Naziv plana (npr. Masa, Definicija)"
 
-            </div>
+          value={title}
 
-          ))}
+          onChange={(e)=>
+            setTitle(e.target.value)
+          }
 
-        </div>
+        />
 
-      )}
+
+
+
+        <textarea
+
+          className="border p-2 w-full rounded"
+
+          placeholder="Vježbe..."
+
+          rows={6}
+
+          value={exercises}
+
+          onChange={(e)=>
+            setExercises(e.target.value)
+          }
+
+        />
+
+
+
+
+        <button
+
+          onClick={savePlan}
+
+          disabled={loading}
+
+          className="bg-black text-white px-5 py-2 rounded"
+
+        >
+
+          {loading
+            ? "Spremanje..."
+            : "Spremi plan"
+          }
+
+
+        </button>
+
+
+
+      </div>
+
+
+
+
+
+
+
+      <hr className="my-6"/>
+
+
+
+
+
+
+
+      {
+        plans.length === 0 ?
+
+
+        (
+
+          <p>
+
+            Nema trening planova.
+
+          </p>
+
+
+        )
+
+
+        :
+
+
+        (
+
+          <div className="space-y-3">
+
+
+            {
+              plans.map((plan)=>(
+
+
+                <div
+
+                  key={plan.id}
+
+                  className="border rounded-lg p-4"
+
+
+                >
+
+
+
+                  <h3 className="font-bold text-lg">
+
+                    {plan.title}
+
+                  </h3>
+
+
+
+
+                  <p className="whitespace-pre-line mt-2">
+
+                    {plan.exercises}
+
+                  </p>
+
+
+
+
+
+                  <button
+
+                    onClick={()=>
+                      removePlan(plan.id)
+                    }
+
+                    className="text-red-600 mt-3"
+
+                  >
+
+                    🗑 Obriši
+
+                  </button>
+
+
+
+
+                </div>
+
+
+              ))
+
+            }
+
+
+          </div>
+
+
+        )
+
+      }
+
+
 
     </div>
 
   );
+
 
 }

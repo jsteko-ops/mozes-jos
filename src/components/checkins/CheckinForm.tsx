@@ -1,133 +1,228 @@
 "use client";
 
-interface CheckinFormProps {
-  weight: string;
-  energy: number;
-  sleep: number;
-  hunger: number;
-  water: string;
-  comment: string;
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
 
-  setWeight: (value: string) => void;
-  setEnergy: (value: number) => void;
-  setSleep: (value: number) => void;
-  setHunger: (value: number) => void;
-  setWater: (value: string) => void;
-  setComment: (value: string) => void;
+import {
+  useState,
+} from "react";
 
-  onSave: () => void;
-}
+import { db } from "@/lib/firebase";
 
-function Rating({
-  title,
-  value,
-  onChange,
-}: {
-  title: string;
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <p className="font-medium">{title}</p>
 
-      <div className="flex gap-2">
-        {[1, 2, 3, 4, 5].map((number) => (
-          <button
-            key={number}
-            type="button"
-            onClick={() => onChange(number)}
-            className={`w-10 h-10 rounded-full border ${
-              value === number
-                ? "bg-black text-white"
-                : "bg-white"
-            }`}
-          >
-            {number}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
+type Props = {
+  clientId?: string;
+  onSave?: () => void;
+};
+
 
 export default function CheckinForm({
-  weight,
-  energy,
-  sleep,
-  hunger,
-  water,
-  comment,
-
-  setWeight,
-  setEnergy,
-  setSleep,
-  setHunger,
-  setWater,
-  setComment,
-
+  clientId,
   onSave,
-}: CheckinFormProps) {
+}: Props) {
+
+
+  const [weight, setWeight] = useState("");
+  const [energy, setEnergy] = useState("");
+  const [sleep, setSleep] = useState("");
+  const [hunger, setHunger] = useState("");
+  const [water, setWater] = useState("");
+  const [comment, setComment] = useState("");
+
+
+
+  function toNumber(value:string){
+
+    return Number(
+      value.replace(",", ".")
+    );
+
+  }
+
+
+
+
+  async function saveCheckin(){
+
+
+    if(!clientId){
+
+      alert("Odaberi klijenta");
+
+      return;
+
+    }
+
+
+
+    await addDoc(
+
+      collection(
+        db,
+        "clients",
+        clientId,
+        "checkins"
+      ),
+
+      {
+
+        weight:
+          toNumber(weight),
+
+
+        energy:
+          Number(energy),
+
+
+        sleep:
+          Number(sleep),
+
+
+        hunger:
+          Number(hunger),
+
+
+        water,
+
+
+        comment,
+
+
+        reviewed:false,
+
+
+        createdAt:
+          serverTimestamp(),
+
+      }
+
+    );
+
+
+
+    alert(
+      "Check-in spremljen ✅"
+    );
+
+
+
+    setWeight("");
+    setEnergy("");
+    setSleep("");
+    setHunger("");
+    setWater("");
+    setComment("");
+
+
+
+    onSave?.();
+
+
+  }
+
+
+
+
   return (
-    <div className="border rounded-xl p-5 space-y-5">
+
+    <div className="border rounded-xl bg-white p-6 space-y-3">
+
 
       <h2 className="text-xl font-bold">
-        📝 Novi Check-in
+        ✅ Novi Check-in
       </h2>
 
 
+
+
       <input
-        className="border rounded p-2 w-full"
-        placeholder="⚖️ Težina kg"
+        className="border p-2 rounded w-full"
+        placeholder="Težina kg"
         value={weight}
-        onChange={(e) => setWeight(e.target.value)}
+        onChange={(e)=>
+          setWeight(e.target.value)
+        }
       />
 
-
-      <Rating
-        title="😊 Energija"
-        value={energy}
-        onChange={setEnergy}
-      />
-
-
-      <Rating
-        title="😴 San"
-        value={sleep}
-        onChange={setSleep}
-      />
-
-
-      <Rating
-        title="🍽 Glad"
-        value={hunger}
-        onChange={setHunger}
-      />
 
 
       <input
-        className="border rounded p-2 w-full"
-        placeholder="💧 Voda (npr. 2.5 L)"
-        value={water}
-        onChange={(e) => setWater(e.target.value)}
+        className="border p-2 rounded w-full"
+        placeholder="Energija 1-5"
+        type="number"
+        value={energy}
+        onChange={(e)=>
+          setEnergy(e.target.value)
+        }
       />
+
+
+
+      <input
+        className="border p-2 rounded w-full"
+        placeholder="San 1-5"
+        type="number"
+        value={sleep}
+        onChange={(e)=>
+          setSleep(e.target.value)
+        }
+      />
+
+
+
+      <input
+        className="border p-2 rounded w-full"
+        placeholder="Glad 1-5"
+        type="number"
+        value={hunger}
+        onChange={(e)=>
+          setHunger(e.target.value)
+        }
+      />
+
+
+
+      <input
+        className="border p-2 rounded w-full"
+        placeholder="Voda"
+        value={water}
+        onChange={(e)=>
+          setWater(e.target.value)
+        }
+      />
+
 
 
       <textarea
-        className="border rounded p-2 w-full"
-        placeholder="💬 Komentar"
+        className="border p-2 rounded w-full"
+        placeholder="Komentar"
         value={comment}
-        onChange={(e) => setComment(e.target.value)}
+        onChange={(e)=>
+          setComment(e.target.value)
+        }
       />
 
 
+
       <button
+
         className="bg-black text-white px-5 py-2 rounded"
-        onClick={onSave}
+
+        onClick={saveCheckin}
+
       >
-        ✅ Spremi Check-in
+
+        Spremi check-in
+
       </button>
 
+
+
     </div>
+
   );
+
 }

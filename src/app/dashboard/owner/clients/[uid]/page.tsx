@@ -6,10 +6,17 @@ import { useParams } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 import ClientMeasurements from "@/components/owner/ClientMeasurements";
-import ClientDashboard from "@/components/client/ClientDashboard";
+import ClientPlans from "@/components/owner/ClientPlans";
 import ClientEditForm from "@/components/clients/ClientEditForm";
+import ClientTabs from "@/components/owner/ClientTabs";
+import CheckinForm from "@/components/checkins/CheckinForm";
+import CheckinHistory from "@/components/checkins/CheckinHistory";
 
 import { db } from "@/lib/firebase";
+
+import {
+  getCheckins,
+} from "@/lib/services/klijentiService";
 
 import {
   doc,
@@ -18,15 +25,25 @@ import {
 
 
 type Client = {
+
   id: string;
+
   name?: string;
+
   email?: string;
+
   phone?: string;
+
   note?: string;
+
   goal?: string;
+
   trainerId?: string;
+
   gymId?: string;
+
 };
+
 
 
 
@@ -40,29 +57,39 @@ export default function OwnerClientProfile() {
     useState<Client | null>(null);
 
 
+
   const [trainer, setTrainer] =
     useState<any>(null);
+
 
 
   const [gym, setGym] =
     useState<any>(null);
 
 
+
   const [loading, setLoading] =
     useState(true);
+
 
 
   const [refresh, setRefresh] =
     useState(false);
 
 
+const [checkins, setCheckins] =
+  useState<any[]>([]);
+
 
 
   useEffect(() => {
 
     loadClient();
+    
 
   }, [refresh]);
+
+
 
 
 
@@ -74,31 +101,34 @@ export default function OwnerClientProfile() {
     try {
 
 
-      const id = params.uid as string;
+      const id =
+        params.uid as string;
 
 
 
-      // =====================
-      // KLIJENT
-      // =====================
 
+      const clientSnap =
+        await getDoc(
+          doc(
+            db,
+            "clients",
+            id
+          )
+        );
 
-      const clientSnap = await getDoc(
-        doc(
-          db,
-          "clients",
-          id
-        )
-      );
 
 
 
       if (!clientSnap.exists()) {
 
         setLoading(false);
+
         return;
 
       }
+
+
+
 
 
 
@@ -112,36 +142,44 @@ export default function OwnerClientProfile() {
 
 
 
+
+
       setClient(clientData);
 
+const checkinData =
+  await getCheckins(clientData.id);
+
+
+setCheckins(checkinData);
 
 
 
-
-      // =====================
-      // TRENER
-      // =====================
 
 
       if (clientData.trainerId) {
 
 
-        const trainerSnap = await getDoc(
-          doc(
-            db,
-            "users",
-            clientData.trainerId
-          )
-        );
+        const trainerSnap =
+          await getDoc(
+            doc(
+              db,
+              "users",
+              clientData.trainerId
+            )
+          );
+
 
 
         if (trainerSnap.exists()) {
+
 
           setTrainer(
             trainerSnap.data()
           );
 
+
         }
+
 
       }
 
@@ -149,32 +187,35 @@ export default function OwnerClientProfile() {
 
 
 
-      // =====================
-      // TERETANA
-      // =====================
 
 
       if (clientData.gymId) {
 
 
-        const gymSnap = await getDoc(
-          doc(
-            db,
-            "gyms",
-            clientData.gymId
-          )
-        );
+        const gymSnap =
+          await getDoc(
+            doc(
+              db,
+              "gyms",
+              clientData.gymId
+            )
+          );
+
 
 
         if (gymSnap.exists()) {
+
 
           setGym(
             gymSnap.data()
           );
 
+
         }
 
+
       }
+
 
 
 
@@ -190,7 +231,9 @@ export default function OwnerClientProfile() {
     }
 
 
+
     setLoading(false);
+
 
   }
 
@@ -199,13 +242,22 @@ export default function OwnerClientProfile() {
 
 
 
+
+
   return (
 
+    <ProtectedRoute
+      allowedRoles={[
+        "gym_owner",
+        "trainer"
+      ]}
+    >
 
-    <ProtectedRoute allowedRoles={["gym_owner"]}>
+
+      <div className="p-6 space-y-6">
 
 
-      <div className="p-6">
+
 
 
 
@@ -230,12 +282,16 @@ export default function OwnerClientProfile() {
         ) : (
 
 
+
           <>
 
 
-            <h1 className="text-3xl font-bold mb-6">
+
+            <h1 className="text-3xl font-bold">
               👤 Profil klijenta
             </h1>
+
+
 
 
 
@@ -245,36 +301,55 @@ export default function OwnerClientProfile() {
 
 
               <div>
+
                 <b>Ime:</b>{" "}
+
                 {client.name || "-"}
+
               </div>
 
 
 
+
               <div>
+
                 <b>Email:</b>{" "}
+
                 {client.email || "-"}
+
               </div>
 
 
 
+
               <div>
+
                 <b>Telefon:</b>{" "}
+
                 {client.phone || "-"}
+
               </div>
 
 
 
-              <div>
-                <b>Napomena:</b>{" "}
-                {client.note || "-"}
-              </div>
-
-
 
               <div>
+
                 <b>Cilj:</b>{" "}
+
                 {client.goal || "-"}
+
+              </div>
+
+
+
+
+              <div>
+
+                <b>Napomena:</b>{" "}
+
+                {client.note || "-"}
+
               </div>
 
 
@@ -285,34 +360,31 @@ export default function OwnerClientProfile() {
 
 
 
+
               <div>
+
                 <b>Trener:</b>{" "}
+
                 {
                   trainer?.name ||
                   trainer?.email ||
                   "-"
                 }
+
               </div>
 
 
 
 
               <div>
+
                 <b>Teretana:</b>{" "}
+
                 {
                   gym?.name ||
                   "-"
                 }
-              </div>
 
-
-
-
-              <div>
-                <b>Client ID:</b>{" "}
-                <span className="text-xs break-all">
-                  {client.id}
-                </span>
               </div>
 
 
@@ -323,34 +395,152 @@ export default function OwnerClientProfile() {
 
 
 
-            <div className="mt-6">
-
-
-              <ClientEditForm
-                client={client}
-                onSaved={() =>
-                  setRefresh(!refresh)
-                }
-              />
-
-
-            </div>
 
 
 
+           <ClientTabs
+
+  profile={
+
+    <ClientEditForm
+
+      client={client}
+
+      onSaved={() => {
+
+        setRefresh(
+          !refresh
+        );
+
+      }}
+
+    />
+
+  }
 
 
-            <ClientMeasurements
-              clientId={client.id}
-            />
+
+  measurements={
+
+    <ClientMeasurements
+
+      clientId={client.id}
+
+    />
+
+  }
 
 
 
+  plans={
+
+    <ClientPlans
+
+      clientId={client.id}
+
+    />
+
+  }
 
 
-            <ClientDashboard
-              clientId={client.id}
-            />
+
+ checkin={
+
+  <div className="space-y-6">
+
+
+   <CheckinForm
+
+  clientId={client.id}
+
+  onSave={async()=>{
+
+    const updated =
+      await getCheckins(client.id);
+
+    setCheckins(updated);
+
+  }}
+
+/>
+
+
+    <CheckinHistory
+
+  checkins={checkins}
+
+  clientId={client.id}
+
+  onReviewed={async ()=>{
+
+
+    const updated =
+      await getCheckins(client.id);
+
+
+    setCheckins(updated);
+
+
+  }}
+
+/>
+
+
+  </div>
+
+}
+
+
+
+  nutrition={
+
+    <div className="border rounded-xl bg-white p-6">
+
+      <h2 className="text-xl font-bold">
+
+        🥗 Prehrana
+
+      </h2>
+
+
+      <p className="mt-2">
+
+        Modul prehrane dolazi.
+
+      </p>
+
+
+    </div>
+
+  }
+
+
+
+  chat={
+
+    <div className="border rounded-xl bg-white p-6">
+
+      <h2 className="text-xl font-bold">
+
+        💬 Chat
+
+      </h2>
+
+
+      <p className="mt-2">
+
+        Trener - klijent komunikacija.
+
+      </p>
+
+
+    </div>
+
+  }
+
+/>
+
+
 
 
 
@@ -360,11 +550,14 @@ export default function OwnerClientProfile() {
         )}
 
 
+
       </div>
+
 
 
     </ProtectedRoute>
 
   );
+
 
 }

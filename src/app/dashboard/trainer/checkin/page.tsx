@@ -12,12 +12,12 @@ import CheckinHistory from "@/components/checkins/CheckinHistory";
 
 import {
   getClients,
-  addCheckin,
   getCheckins,
 } from "@/lib/services/klijentiService";
 
 
 export default function CheckinPage() {
+
 
   const { user } = useAuth();
 
@@ -34,38 +34,17 @@ export default function CheckinPage() {
     useState<any[]>([]);
 
 
-  const [weight, setWeight] =
-    useState("");
-
-
-  const [energy, setEnergy] =
-    useState(0);
-
-
-  const [sleep, setSleep] =
-    useState(0);
-
-
-  const [hunger, setHunger] =
-    useState(0);
-
-
-  const [water, setWater] =
-    useState("");
-
-
-  const [comment, setComment] =
-    useState("");
-
-
   const [loading, setLoading] =
     useState(true);
 
 
 
+
   useEffect(() => {
 
+
     async function loadClients() {
+
 
       if (!user) return;
 
@@ -79,102 +58,59 @@ export default function CheckinPage() {
 
       setLoading(false);
 
+
     }
 
 
     loadClients();
 
+
   }, [user]);
+
+
+
 
 
 
   async function loadCheckins() {
 
+
     if (!clientId) {
+
 
       setCheckins([]);
 
+
       return;
 
+
     }
+
 
 
     const data =
       await getCheckins(clientId);
 
 
+
     setCheckins(data);
 
-  }
-
-
-
-  async function saveCheckin() {
-
-    if (!clientId) {
-
-      alert("Odaberi klijenta");
-
-      return;
-
-    }
-
-
-    if (!weight) {
-
-      alert("Upiši težinu");
-
-      return;
-
-    }
-
-
-    await addCheckin(
-      clientId,
-      {
-        weight:
-          Number(
-            weight.replace(",", ".")
-          ),
-
-        energy,
-
-        sleep,
-
-        hunger,
-
-        water,
-
-        comment,
-
-      }
-    );
-
-
-    setWeight("");
-
-    setEnergy(0);
-
-    setSleep(0);
-
-    setHunger(0);
-
-    setWater("");
-
-    setComment("");
-
-
-    await loadCheckins();
-
-
-    alert("Check-in spremljen ✅");
 
   }
-    return (
+
+
+
+
+
+
+  return (
+
 
     <RoleGuard allowedRoles={["trainer"]}>
 
+
       <PremiumGuard>
+
 
         <div className="p-6 space-y-6">
 
@@ -185,58 +121,75 @@ export default function CheckinPage() {
 
 
 
+
           {loading && (
+
             <p>
               Učitavanje klijenata...
             </p>
+
           )}
 
 
 
+
+
+
           <ClientSelect
+
             clients={clients}
+
             value={clientId}
+
             onChange={setClientId}
+
             onLoadHistory={loadCheckins}
+
           />
+
+
+
+
 
 
 
           <CheckinForm
 
-            weight={weight}
-            energy={energy}
-            sleep={sleep}
-            hunger={hunger}
-            water={water}
-            comment={comment}
+            clientId={clientId}
 
-            setWeight={setWeight}
-            setEnergy={setEnergy}
-            setSleep={setSleep}
-            setHunger={setHunger}
-            setWater={setWater}
-            setComment={setComment}
-
-            onSave={saveCheckin}
+            onSave={loadCheckins}
 
           />
 
 
 
-         <CheckinHistory
-  checkins={checkins}
-  clientId={clientId}
-  onReviewed={loadCheckins}
-/>
+
+
+
+
+          <CheckinHistory
+
+            checkins={checkins}
+
+            clientId={clientId}
+
+            onReviewed={loadCheckins}
+
+          />
+
+
 
 
         </div>
 
+
       </PremiumGuard>
+
 
     </RoleGuard>
 
+
   );
+
 
 }
