@@ -4,6 +4,8 @@ import {
   addDoc,
   collection,
   serverTimestamp,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 
 import {
@@ -11,6 +13,10 @@ import {
 } from "react";
 
 import { db } from "@/lib/firebase";
+
+import {
+  createNotification,
+} from "@/lib/notifications";
 
 
 type Props = {
@@ -25,12 +31,23 @@ export default function CheckinForm({
 }: Props) {
 
 
-  const [weight, setWeight] = useState("");
-  const [energy, setEnergy] = useState("");
-  const [sleep, setSleep] = useState("");
-  const [hunger, setHunger] = useState("");
-  const [water, setWater] = useState("");
-  const [comment, setComment] = useState("");
+  const [weight,setWeight] =
+    useState("");
+
+  const [energy,setEnergy] =
+    useState("");
+
+  const [sleep,setSleep] =
+    useState("");
+
+  const [hunger,setHunger] =
+    useState("");
+
+  const [water,setWater] =
+    useState("");
+
+  const [comment,setComment] =
+    useState("");
 
 
 
@@ -44,18 +61,43 @@ export default function CheckinForm({
 
 
 
-
   async function saveCheckin(){
 
 
     if(!clientId){
 
-      alert("Odaberi klijenta");
+      alert(
+        "Nema klijenta"
+      );
 
       return;
 
     }
 
+
+    const clientSnap =
+      await getDoc(
+        doc(
+          db,
+          "clients",
+          clientId
+        )
+      );
+
+
+    if(!clientSnap.exists()){
+
+      alert(
+        "Klijent ne postoji"
+      );
+
+      return;
+
+    }
+
+
+    const client =
+      clientSnap.data();
 
 
     await addDoc(
@@ -68,38 +110,56 @@ export default function CheckinForm({
       ),
 
       {
-
         weight:
           toNumber(weight),
-
 
         energy:
           Number(energy),
 
-
         sleep:
           Number(sleep),
-
 
         hunger:
           Number(hunger),
 
-
         water,
-
 
         comment,
 
-
         reviewed:false,
-
 
         createdAt:
           serverTimestamp(),
-
       }
 
     );
+        // OBAVIJEST TRENERU
+
+    if(client.trainerId){
+
+     await createNotification(
+
+  client.trainerId,
+
+  {
+
+    title:
+      "Novi check-in",
+
+    message:
+      `${client.name || "Klijent"} je poslao novi check-in.`,
+
+    type:
+      "checkin",
+
+    link:
+  `/dashboard/trainer/klijenti/${clientId}?tab=checkin`,
+
+  }
+
+);
+
+    }
 
 
 
@@ -110,10 +170,15 @@ export default function CheckinForm({
 
 
     setWeight("");
+
     setEnergy("");
+
     setSleep("");
+
     setHunger("");
+
     setWater("");
+
     setComment("");
 
 
@@ -126,84 +191,140 @@ export default function CheckinForm({
 
 
 
+
   return (
 
     <div className="border rounded-xl bg-white p-6 space-y-3">
 
 
       <h2 className="text-xl font-bold">
+
         ✅ Novi Check-in
+
       </h2>
 
 
 
 
       <input
+
         className="border p-2 rounded w-full"
+
         placeholder="Težina kg"
+
         value={weight}
+
         onChange={(e)=>
           setWeight(e.target.value)
         }
+
       />
 
 
 
+
       <input
+
         className="border p-2 rounded w-full"
+
         placeholder="Energija 1-5"
+
         type="number"
+
+        min="1"
+
+        max="5"
+
         value={energy}
+
         onChange={(e)=>
           setEnergy(e.target.value)
         }
+
       />
 
 
 
+
       <input
+
         className="border p-2 rounded w-full"
+
         placeholder="San 1-5"
+
         type="number"
+
+        min="1"
+
+        max="5"
+
         value={sleep}
+
         onChange={(e)=>
           setSleep(e.target.value)
         }
+
       />
 
 
 
+
       <input
+
         className="border p-2 rounded w-full"
+
         placeholder="Glad 1-5"
+
         type="number"
+
+        min="1"
+
+        max="5"
+
         value={hunger}
+
         onChange={(e)=>
           setHunger(e.target.value)
         }
+
       />
+
 
 
 
       <input
+
         className="border p-2 rounded w-full"
+
         placeholder="Voda"
+
         value={water}
+
         onChange={(e)=>
           setWater(e.target.value)
         }
+
       />
+
+
 
 
 
       <textarea
+
         className="border p-2 rounded w-full"
+
         placeholder="Komentar"
+
         value={comment}
+
         onChange={(e)=>
           setComment(e.target.value)
         }
+
       />
+
+
 
 
 
@@ -224,5 +345,6 @@ export default function CheckinForm({
     </div>
 
   );
+
 
 }

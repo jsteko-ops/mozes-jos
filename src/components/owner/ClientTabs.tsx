@@ -1,6 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useSearchParams,
+} from "next/navigation";
+
 
 
 type Props = {
@@ -21,6 +29,8 @@ type Props = {
 
 
 
+
+
 export default function ClientTabs({
 
   profile,
@@ -38,65 +48,130 @@ export default function ClientTabs({
 }: Props) {
 
 
-  const [active, setActive] =
+
+  const searchParams =
+    useSearchParams();
+
+
+
+  const [active,setActive] =
     useState("profile");
+
+
+
+
+
+  useEffect(()=>{
+
+
+    const tab =
+      searchParams.get("tab");
+
+
+
+    if(tab){
+
+      setActive(tab);
+
+    }
+
+
+  },[searchParams]);
+
+
+
+
+
 
 
 
   const tabs = [
 
-    {
-      id: "profile",
-      name: "👤 Profil",
-      content: profile,
-    },
 
     {
-      id: "measurements",
-      name: "📏 Mjerenja",
-      content: measurements,
+      id:"profile",
+      name:"👤 Profil",
+      content:profile,
     },
 
+
+
     {
-      id: "plans",
-      name: "🏋️ Planovi",
-      content: plans,
+      id:"measurements",
+      name:"📏 Mjerenja",
+      content:measurements,
     },
+
+
+
+    {
+      id:"plans",
+      name:"🏋️ Planovi",
+      content:plans,
+    },
+
 
 
     ...(checkin
-      ? [
-          {
-            id: "checkin",
-            name: "✅ Check-in",
-            content: checkin,
-          },
-        ]
-      : []),
+
+      ?
+
+      [
+        {
+          id:"checkin",
+          name:"✅ Check-in",
+          content:checkin,
+        },
+      ]
+
+      :
+
+      []
+
+    ),
+
 
 
 
     ...(nutrition
-      ? [
-          {
-            id: "nutrition",
-            name: "🥗 Prehrana",
-            content: nutrition,
-          },
-        ]
-      : []),
+
+      ?
+
+      [
+        {
+          id:"nutrition",
+          name:"🥗 Prehrana",
+          content:nutrition,
+        },
+      ]
+
+      :
+
+      []
+
+    ),
+
 
 
 
     ...(chat
-      ? [
-          {
-            id: "chat",
-            name: "💬 Chat",
-            content: chat,
-          },
-        ]
-      : []),
+
+      ?
+
+      [
+        {
+          id:"chat",
+          name:"💬 Chat",
+          content:chat,
+        },
+      ]
+
+      :
+
+      []
+
+    ),
+
 
   ];
 
@@ -104,10 +179,15 @@ export default function ClientTabs({
 
 
 
+
+
   const current =
+
     tabs.find(
-      (tab) => tab.id === active
+      (tab)=>tab.id===active
     );
+
+
 
 
 
@@ -121,39 +201,40 @@ export default function ClientTabs({
       <div className="flex flex-wrap gap-2 mb-6">
 
 
-        {tabs.map((tab)=>(
+        {
+          tabs.map((tab)=>(
 
 
-          <button
+            <button
 
-            key={tab.id}
+              key={tab.id}
 
-            onClick={() =>
-              setActive(tab.id)
-            }
+              onClick={()=>setActive(tab.id)}
 
-            className={
+              className={
 
-              active === tab.id
+                active===tab.id
 
-              ?
+                ?
 
-              "bg-black text-white px-4 py-2 rounded"
+                "bg-black text-white px-4 py-2 rounded"
 
-              :
+                :
 
-              "border px-4 py-2 rounded"
+                "border px-4 py-2 rounded"
 
-            }
+              }
 
-          >
+            >
 
-            {tab.name}
+              {tab.name}
 
-          </button>
+            </button>
 
 
-        ))}
+          ))
+
+        }
 
 
       </div>
@@ -162,11 +243,10 @@ export default function ClientTabs({
 
 
 
+
       <div>
 
-
         {
-
           current?.content
 
           ?
@@ -192,5 +272,6 @@ export default function ClientTabs({
     </div>
 
   );
+
 
 }
