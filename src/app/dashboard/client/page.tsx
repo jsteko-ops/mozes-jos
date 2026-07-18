@@ -15,7 +15,10 @@ import {
 
 import {
   getCheckins,
+  getClientByEmail,
 } from "@/lib/services/klijentiService";
+
+import ClientNutrition from "@/components/client/ClientNutrition";
 
 
 
@@ -29,7 +32,8 @@ export default function ClientDashboard() {
   const [loading,setLoading] =
     useState(true);
 
-
+const [clientId,setClientId] =
+  useState<string | null>(null);
 
   useEffect(()=>{
 
@@ -48,7 +52,19 @@ export default function ClientDashboard() {
 
           }
 
+const client =
+  await getClientByEmail(
+    user.email || ""
+  );
 
+
+if(client){
+
+  setClientId(
+    client.id
+  );
+
+}
 
           try{
 
@@ -205,9 +221,6 @@ export default function ClientDashboard() {
 
 
 
-
-
-
         {
           loading
 
@@ -233,6 +246,20 @@ export default function ClientDashboard() {
 
           )
 
+        }
+
+
+
+        {
+          clientId && (
+
+            <ClientNutrition
+
+              clientId={clientId}
+
+            />
+
+          )
         }
 
 

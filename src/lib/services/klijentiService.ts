@@ -612,3 +612,74 @@ export async function getClientByEmail(
   };
 
 }
+// =======================
+// PREHRANA
+// =======================
+
+export async function addNutritionPlan(
+  clientId:string,
+  data:{
+    title:string;
+    meals:string;
+  }
+){
+
+  await addDoc(
+    collection(
+      db,
+      "clients",
+      clientId,
+      "nutrition"
+    ),
+    {
+      ...data,
+      createdAt:
+        serverTimestamp(),
+    }
+  );
+
+}
+
+
+export async function getNutritionPlans(
+  clientId:string
+){
+
+  const snap =
+    await getDocs(
+      collection(
+        db,
+        "clients",
+        clientId,
+        "nutrition"
+      )
+    );
+
+
+  return snap.docs.map(doc=>({
+
+    id:doc.id,
+
+    ...doc.data()
+
+  }));
+
+}
+
+
+export async function deleteNutritionPlan(
+  clientId:string,
+  planId:string
+){
+
+  await deleteDoc(
+    doc(
+      db,
+      "clients",
+      clientId,
+      "nutrition",
+      planId
+    )
+  );
+
+}

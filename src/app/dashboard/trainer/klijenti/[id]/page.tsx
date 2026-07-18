@@ -17,6 +17,18 @@ import RoleGuard from "@/components/auth/RoleGuard";
 import ClientPlans from "@/components/owner/ClientPlans";
 import ClientEditForm from "@/components/clients/ClientEditForm";
 
+import ClientTabs from "@/components/owner/ClientTabs";
+
+import ClientNutrition from "@/components/nutrition/ClientNutrition";
+
+import CheckinHistory from "@/components/checkins/CheckinHistory";
+
+import {
+  getCheckins,
+  markCheckinReviewed,
+} from "@/lib/services/klijentiService";
+
+
 import {
   getClient,
   addMeasurement,
@@ -90,7 +102,12 @@ export default function KlijentProfilPage() {
   const [loading, setLoading] =
     useState(true);
 
+const [checkins,setCheckins] =
+  useState<any[]>([]);
 
+
+const [refreshCheckins,setRefreshCheckins] =
+  useState(false);
 
 
   // MJERENJE
@@ -170,7 +187,13 @@ export default function KlijentProfilPage() {
       m as Measurement[]
     );
 
+const cks =
+  await getCheckins(id);
 
+
+setCheckins(
+  cks as any[]
+);
 
     const chart = (m as any[])
       .map((item) => ({
@@ -207,7 +230,10 @@ export default function KlijentProfilPage() {
 
     loadData();
 
-  }, [id]);
+  }, [
+  id,
+  refreshCheckins
+]);
 
 
 
@@ -363,7 +389,95 @@ export default function KlijentProfilPage() {
 
 
 
+const profileContent = (
 
+  <div className="border rounded-xl p-5">
+
+    {client && (
+
+      <ClientEditForm
+
+        client={client}
+
+        onSaved={() => {
+
+          loadData();
+
+        }}
+
+      />
+
+    )}
+
+  </div>
+
+);
+
+
+
+const measurementsContent = (
+
+  <div className="space-y-6">
+
+    {/* ovdje ćemo kasnije prebaciti mjerenja */}
+
+    <p>
+      Mjerenja modul
+    </p>
+
+  </div>
+
+);
+
+
+
+const plansContent = (
+
+  <div className="space-y-6">
+
+    <ClientPlans
+
+      clientId={id}
+
+    />
+
+  </div>
+
+);
+
+
+
+const nutritionContent = (
+
+  <ClientNutrition
+
+    clientId={id}
+
+  />
+
+);
+
+
+
+const checkinContent = (
+
+  <CheckinHistory
+
+    clientId={id}
+
+    checkins={checkins}
+
+    onReviewed={()=>{
+
+      setRefreshCheckins(
+        !refreshCheckins
+      );
+
+    }}
+
+  />
+
+);
 
 
   return (
@@ -379,7 +493,19 @@ export default function KlijentProfilPage() {
         </h1>
 
 
+<ClientTabs
 
+  profile={profileContent}
+
+  measurements={measurementsContent}
+
+  plans={plansContent}
+
+  checkin={checkinContent}
+
+  nutrition={nutritionContent}
+
+/>
 
 
         {loading &&
@@ -394,392 +520,7 @@ export default function KlijentProfilPage() {
 
 
 
-        {client && (
-
-          <>
-
-            <div className="border rounded-xl p-5">
-
-
-              <ClientEditForm
-
-                client={client}
-
-                onSaved={() => {
-
-                  loadData();
-
-                }}
-
-              />
-
-
-            </div>
-
-
-
-
-
-
-
-            <div className="border rounded-xl p-5">
-
-
-              <h2 className="font-bold text-xl">
-                ⚖️ Dodaj mjerenje
-              </h2>
-
-
-
-              <input
-                className="border p-2 w-full mt-2"
-                placeholder="Težina kg"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-              />
-
-
-
-              <input
-                className="border p-2 w-full mt-2"
-                placeholder="Visina cm"
-                value={height}
-                onChange={(e) => setHeight(e.target.value)}
-              />
-
-
-
-              <input
-                className="border p-2 w-full mt-2"
-                placeholder="Struk"
-                value={waist}
-                onChange={(e) => setWaist(e.target.value)}
-              />
-
-
-
-              <input
-                className="border p-2 w-full mt-2"
-                placeholder="Prsa"
-                value={chest}
-                onChange={(e) => setChest(e.target.value)}
-              />
-
-
-
-              <input
-                className="border p-2 w-full mt-2"
-                placeholder="Ruka"
-                value={arm}
-                onChange={(e) => setArm(e.target.value)}
-              />
-
-
-
-              <button
-
-                className="bg-black text-white px-5 py-2 rounded mt-3"
-
-                onClick={saveMeasurement}
-
-              >
-                Spremi mjerenje
-              </button>
-
-
-            </div>
-                        <div className="border rounded-xl p-5">
-
-
-              <h2 className="font-bold text-xl">
-                📋 Mjerenja
-              </h2>
-
-
-
-              {measurements.map((m) => (
-
-
-                <div
-
-                  key={m.id}
-
-                  className="border rounded p-3 mt-3"
-
-                >
-
-
-                  {editingMeasurement === m.id ?
-
-
-                    <>
-
-                      <input
-
-                        className="border p-2 w-full"
-
-                        value={editMeasurementData.weight}
-
-                        onChange={(e) =>
-
-                          setEditMeasurementData({
-
-                            ...editMeasurementData,
-
-                            weight: e.target.value
-
-                          })
-
-                        }
-
-                      />
-
-
-                      <button
-
-                        className="bg-black text-white px-3 py-2 rounded mt-2"
-
-                        onClick={() => saveEditedMeasurement(m.id)}
-
-                      >
-                        Spremi
-                      </button>
-
-
-                    </>
-
-
-                    :
-
-
-                    <>
-
-
-                      <p>
-                        ⚖️ {String(m.weight).replace(".", ",")} kg
-                      </p>
-
-
-                      <p>
-                        📏 {m.height} cm
-                      </p>
-
-
-                      <p>
-                        📐 Struk: {m.waist} cm
-                      </p>
-
-
-
-
-                      <button
-
-                        className="mr-3 mt-2"
-
-                        onClick={() => {
-
-                          setEditingMeasurement(m.id);
-
-
-                          setEditMeasurementData({
-
-                            weight: String(m.weight).replace(".", ","),
-                            height: String(m.height),
-                            waist: String(m.waist),
-                            chest: String(m.chest),
-                            arm: String(m.arm)
-
-                          });
-
-                        }}
-
-                      >
-                        ✏️ Uredi
-                      </button>
-
-
-
-
-                      <button
-
-                        onClick={() => removeMeasurement(m.id)}
-
-                      >
-                        🗑️ Obriši
-                      </button>
-
-
-                    </>
-
-
-                  }
-
-
-
-                </div>
-
-
-              ))}
-
-
-            </div>
-
-
-
-
-
-
-
-            <div className="border rounded-xl p-5">
-
-
-              <h2 className="font-bold text-xl mb-4">
-                📈 Napredak težine
-              </h2>
-
-
-
-              <ResponsiveContainer
-
-                width="100%"
-
-                height={300}
-
-              >
-
-
-                <LineChart data={chartData}>
-
-
-                  <CartesianGrid />
-
-
-                  <XAxis dataKey="date" />
-
-
-                  <YAxis />
-
-
-                  <Tooltip />
-
-
-
-                  <Line
-
-                    type="monotone"
-
-                    dataKey="weight"
-
-                    strokeWidth={3}
-
-                  />
-
-
-                </LineChart>
-
-
-              </ResponsiveContainer>
-
-
-            </div>
-
-
-
-
-
-
-
-            <div className="border rounded-xl p-5">
-
-
-              <h2 className="font-bold text-xl">
-                🏋️ Dodaj trening plan
-              </h2>
-
-
-
-
-              <input
-
-                className="border p-2 w-full mt-2"
-
-                placeholder="Naziv plana"
-
-                value={workoutTitle}
-
-                onChange={(e) =>
-                  setWorkoutTitle(e.target.value)
-                }
-
-              />
-
-
-
-
-
-              <textarea
-
-                className="border p-2 w-full mt-2"
-
-                placeholder="Vježbe"
-
-                value={exercises}
-
-                onChange={(e) =>
-                  setExercises(e.target.value)
-                }
-
-              />
-
-
-
-
-
-              <button
-
-                className="bg-black text-white px-5 py-2 rounded mt-2"
-
-                onClick={saveWorkout}
-
-              >
-
-                Spremi trening
-
-              </button>
-
-
-            </div>
-
-
-
-
-
-
-
-            <div className="border rounded-xl p-5">
-
-
-              <h2 className="text-xl font-bold">
-
-                📋 Trening planovi
-
-              </h2>
-
-
-
-              <ClientPlans
-
-                clientId={id}
-
-              />
-
-
-            </div>
-
-
-          </>
-
-        )}
+       
 
 
       </div>
