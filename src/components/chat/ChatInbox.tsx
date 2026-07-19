@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 import {
-  getTrainerChats,
+  listenTrainerChats,
+  markChatRead,
 } from "@/lib/services/chat/chatService";
 
 import {
@@ -17,6 +18,7 @@ type Chat = {
   trainerId: string;
   lastMessage?: string;
   updatedAt?: any;
+  unreadForTrainer?: boolean;
 };
 
 
@@ -46,54 +48,66 @@ const [clientNames, setClientNames] =
 
 
 
-  useEffect(() => {
+useEffect(()=>{
 
 
-    async function loadChats(){
+  const unsubscribe =
+    listenTrainerChats(
+
+      trainerId,
+
+      async(data)=>{
 
 
-      const data =
-        await getTrainerChats(
-          trainerId
+        setChats(
+          data as Chat[]
         );
 
 
-      setChats(
-        data as Chat[]
-      );
-
-const names:any = {};
+        const names:any = {};
 
 
-for(const chat of data){
+        for(const chat of data){
 
-  const client =
-    await getClient(
-      chat.clientId
+
+          const client =
+            await getClient(
+              chat.clientId
+            );
+
+
+          if(client){
+
+            names[chat.clientId] =
+              client.name;
+
+          }
+
+
+        }
+
+
+        setClientNames(names);
+
+        setLoading(false);
+
+
+      }
+
     );
 
 
-  if(client){
+  return ()=>{
 
-    names[chat.clientId] =
-      client.name;
+    unsubscribe();
 
-  }
-
-}
+  };
 
 
-setClientNames(names);
-
-      setLoading(false);
-
-    }
+},[trainerId]);
 
 
-    loadChats();
 
-
-  },[trainerId]);
 
 
 
@@ -144,11 +158,18 @@ setClientNames(names);
 
           key={chat.id}
 
-          onClick={()=>
-            onSelectChat(
-              chat.clientId
-            )
-          }
+         onClick={async()=>{
+
+  await markChatRead(
+    chat.id,
+    "trainer"
+  );
+
+  onSelectChat(
+    chat.clientId
+  );
+
+}}
 
           className="
             w-full
@@ -162,13 +183,18 @@ setClientNames(names);
         >
 
 
-        <div className="font-semibold">
+<div className="font-semibold flex items-center gap-2">
+
+  {chat.unreadForTrainer && (
+    <span className="text-red-600">
+      🔴
+    </span>
+  )}
 
   {clientNames[chat.clientId] ??
     "Klijent"}
 
 </div>
-
 
           <div className="text-sm text-gray-600">
 

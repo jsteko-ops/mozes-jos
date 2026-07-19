@@ -366,3 +366,149 @@ return snap.docs.map((doc)=>({
 }));
 
 }
+
+
+export async function markChatRead(
+
+  chatId:string,
+
+  userType:"trainer"|"client"
+
+){
+
+  await updateDoc(
+
+    doc(
+      db,
+      "chats",
+      chatId
+    ),
+
+    userType === "trainer"
+
+      ? {
+          unreadForTrainer:false
+        }
+
+      : {
+          unreadForClient:false
+        }
+
+  );
+
+}
+
+export function listenTrainerChats(
+
+  trainerId:string,
+
+  callback:(chats:any[])=>void
+
+){
+
+  const q = query(
+
+    collection(
+      db,
+      "chats"
+    ),
+
+    where(
+      "trainerId",
+      "==",
+      trainerId
+    ),
+
+    orderBy(
+      "updatedAt",
+      "desc"
+    )
+
+  );
+
+
+  return onSnapshot(
+
+    q,
+
+    (snapshot)=>{
+
+
+      const chats =
+        snapshot.docs.map((doc)=>({
+
+          id:doc.id,
+
+          ...doc.data(),
+
+        }));
+
+
+      callback(chats);
+
+
+    }
+
+  );
+
+}
+
+
+// ======================
+// REAL-TIME CHATOVI KLIJENTA
+// ======================
+
+export function listenClientChats(
+
+  clientId:string,
+
+  callback:(chats:any[])=>void
+
+){
+
+  const q = query(
+
+    collection(
+      db,
+      "chats"
+    ),
+
+    where(
+      "clientId",
+      "==",
+      clientId
+    ),
+
+    orderBy(
+      "updatedAt",
+      "desc"
+    )
+
+  );
+
+
+  return onSnapshot(
+
+    q,
+
+    (snapshot)=>{
+
+
+      const chats =
+        snapshot.docs.map((doc)=>({
+
+          id:doc.id,
+
+          ...doc.data(),
+
+        }));
+
+
+      callback(chats);
+
+
+    }
+
+  );
+
+}

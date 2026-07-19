@@ -6,12 +6,12 @@ import RoleGuard from "@/components/auth/RoleGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 import ChatWindow from "@/components/chat/ChatWindow";
-import ChatClientSelect from "@/components/chat/ChatClientSelect";
+
 
 import ChatInbox from "@/components/chat/ChatInbox";
+import ClientChatInbox from "@/components/chat/ClientChatInbox";
 
 import {
-  getClients,
   getClientByUserId,
 } from "@/lib/services/klijentiService";
 
@@ -26,8 +26,7 @@ export default function ChatPage() {
 
 
 
-  const [clients,setClients] =
-    useState<any[]>([]);
+
 
 
 
@@ -65,18 +64,9 @@ export default function ChatPage() {
       if(userProfile.role === "trainer"){
 
 
-        const data =
-          await getClients(
-            user.uid
-          );
-
-
-        setClients(data);
-
-
-        setTrainerId(
-          user.uid
-        );
+     setTrainerId(
+  user.uid
+);
 
 
       }
@@ -175,6 +165,22 @@ const client: any =
     onSelectChat={(id)=>{
 
       setClientId(id);
+
+    }}
+
+  />
+
+)}
+
+{userProfile?.role === "client" && clientId && (
+
+  <ClientChatInbox
+
+    clientId={clientId}
+
+    onSelectChat={(id)=>{
+
+      setTrainerId(id);
 
     }}
 
