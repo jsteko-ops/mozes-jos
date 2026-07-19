@@ -93,15 +93,11 @@ const client: any =
             user.uid
           );
 
-alert(
-  "USER UID: " + user.uid + "\nCLIENT: " + JSON.stringify(client)
-);
+
 
   if(client){
 
-  alert(
-    JSON.stringify(client)
-  );
+ 
 
 
   setClientId(
