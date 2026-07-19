@@ -4,15 +4,17 @@ import {
   getDocs,
   orderBy,
   query,
+  where,
   serverTimestamp,
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   onSnapshot,
-  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { createNotification } from "@/lib/notifications";
 
 // ======================
 // PRONAĐI ILI KREIRAJ CHAT
@@ -80,6 +82,7 @@ export async function getOrCreateChat(
 // POŠALJI PORUKU
 // ======================
 
+
 export async function sendMessage(
 
   chatId:string,
@@ -90,23 +93,45 @@ export async function sendMessage(
 
 ){
 
+  const chatSnap =
+    await getDoc(
+      doc(
+        db,
+        "chats",
+        chatId
+      )
+    );
+
+
+  if(!chatSnap.exists()){
+    return;
+  }
+
+
+  const chatData =
+    chatSnap.data();
+
+
+  const isTrainer =
+    chatData.trainerId === senderId;
+
+const receiverId =
+  isTrainer
+    ? chatData.clientId
+    : chatData.trainerId;
+
+
 
   await addDoc(
 
     collection(
-
       db,
-
       "chats",
-
       chatId,
-
       "messages"
-
     ),
 
     {
-
       senderId,
 
       text,
@@ -119,12 +144,59 @@ export async function sendMessage(
   );
 
 
+
+  await updateDoc(
+
+    doc(
+      db,
+      "chats",
+      chatId
+    ),
+
+    {
+
+      lastMessage:text,
+
+      lastSenderId:senderId,
+
+      updatedAt:
+        serverTimestamp(),
+
+      unreadForTrainer:
+        !isTrainer,
+
+      unreadForClient:
+        isTrainer,
+
+    }
+
+  );
+
+
+
+
+await createNotification(
+
+  receiverId,
+
+  {
+    title:
+      "Nova poruka 💬",
+
+    message:
+      text,
+
+    type:
+      "chat",
+
+    link:
+      "/dashboard/chat",
+
+  }
+
+);
+
 }
-
-
-
-
-
 
 // ======================
 // DOHVATI PORUKE
@@ -279,3 +351,4 @@ export async function getTrainerChats(
   }));
 
 }
+

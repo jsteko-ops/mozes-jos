@@ -8,6 +8,8 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import ChatWindow from "@/components/chat/ChatWindow";
 import ChatClientSelect from "@/components/chat/ChatClientSelect";
 
+import ChatInbox from "@/components/chat/ChatInbox";
+
 import {
   getClients,
   getClientByUserId,
@@ -166,17 +168,19 @@ const client: any =
 
         {userProfile?.role === "trainer" && (
 
-          <ChatClientSelect
+  <ChatInbox
 
-            clients={clients}
+    trainerId={user.uid}
 
-            value={clientId}
+    onSelectChat={(id)=>{
 
-            onChange={setClientId}
+      setClientId(id);
 
-          />
+    }}
 
-        )}
+  />
+
+)}
 
 
 
