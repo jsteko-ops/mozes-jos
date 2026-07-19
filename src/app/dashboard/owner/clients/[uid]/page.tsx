@@ -453,7 +453,7 @@ setCheckins(checkinData);
 
   clientId={client.id}
 
-  onSave={async()=>{
+  onSaveAction={async()=>{
 
     const updated =
       await getCheckins(client.id);

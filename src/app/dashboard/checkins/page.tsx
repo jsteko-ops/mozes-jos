@@ -128,7 +128,7 @@ export default function ClientCheckinPage() {
 
             clientId={clientId}
 
-            onSave={()=>{
+            onSaveAction={()=>{
 
               alert(
                 "Check-in uspješno poslan treneru."

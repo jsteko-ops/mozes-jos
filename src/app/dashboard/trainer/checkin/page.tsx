@@ -157,7 +157,7 @@ export default function CheckinPage() {
 
             clientId={clientId}
 
-            onSave={loadCheckins}
+          onSaveAction={loadCheckins}
 
           />
 

@@ -21,15 +21,14 @@ import {
 
 type Props = {
   clientId?: string;
-  onSave?: () => void;
+  onSaveAction?: () => void | Promise<void>;
 };
 
 
 export default function CheckinForm({
   clientId,
-  onSave,
+  onSaveAction,
 }: Props) {
-
 
   const [weight,setWeight] =
     useState("");
@@ -66,6 +65,19 @@ export default function CheckinForm({
 
     if(!clientId){
 
+
+const weightValue = toNumber(weight);
+
+if (isNaN(weightValue) || weightValue < 20 || weightValue > 400) {
+  alert("Težina mora biti između 20 i 400 kg.");
+  return;
+}
+
+if (!energy || !sleep || !hunger) {
+  alert("Odaberi energiju, san i glad.");
+  return;
+}
+
       alert(
         "Nema klijenta"
       );
@@ -99,6 +111,22 @@ export default function CheckinForm({
     const client =
       clientSnap.data();
 
+      const weightValue = toNumber(weight);
+
+if (isNaN(weightValue)) {
+  alert("Unesi ispravnu težinu.");
+  return;
+}
+
+if (weightValue < 20 || weightValue > 400) {
+  alert("Težina mora biti između 20 i 400 kg.");
+  return;
+}
+
+if (!energy || !sleep || !hunger) {
+  alert("Odaberi energiju, san i glad.");
+  return;
+}
 
     await addDoc(
 
@@ -111,7 +139,7 @@ export default function CheckinForm({
 
       {
         weight:
-          toNumber(weight),
+  weightValue,
 
         energy:
           Number(energy),
@@ -183,7 +211,7 @@ export default function CheckinForm({
 
 
 
-    onSave?.();
+    await onSaveAction?.();
 
 
   }
@@ -223,71 +251,49 @@ export default function CheckinForm({
 
 
 
-      <input
-
-        className="border p-2 rounded w-full"
-
-        placeholder="Energija 1-5"
-
-        type="number"
-
-        min="1"
-
-        max="5"
-
-        value={energy}
-
-        onChange={(e)=>
-          setEnergy(e.target.value)
-        }
-
-      />
+      <select
+  className="border p-2 rounded w-full"
+  value={energy}
+  onChange={(e) => setEnergy(e.target.value)}
+>
+  <option value="">Odaberi energiju</option>
+  <option value="1">1 - Vrlo loše</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5 - Odlično</option>
+</select>
 
 
 
-
-      <input
-
-        className="border p-2 rounded w-full"
-
-        placeholder="San 1-5"
-
-        type="number"
-
-        min="1"
-
-        max="5"
-
-        value={sleep}
-
-        onChange={(e)=>
-          setSleep(e.target.value)
-        }
-
-      />
+<select
+  className="border p-2 rounded w-full"
+  value={sleep}
+  onChange={(e) => setSleep(e.target.value)}
+>
+  <option value="">Odaberi kvalitetu sna</option>
+  <option value="1">1 - Vrlo loše</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5 - Odlično</option>
+</select>
 
 
 
 
-      <input
-
-        className="border p-2 rounded w-full"
-
-        placeholder="Glad 1-5"
-
-        type="number"
-
-        min="1"
-
-        max="5"
-
-        value={hunger}
-
-        onChange={(e)=>
-          setHunger(e.target.value)
-        }
-
-      />
+     <select
+  className="border p-2 rounded w-full"
+  value={hunger}
+  onChange={(e) => setHunger(e.target.value)}
+>
+  <option value="">Odaberi razinu gladi</option>
+  <option value="1">1 - Nisam gladan</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5 - Jako gladan</option>
+</select>
 
 
 
