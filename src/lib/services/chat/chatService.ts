@@ -9,12 +9,10 @@ import {
   getDoc,
   setDoc,
   onSnapshot,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
-
-
-
 
 // ======================
 // PRONAĐI ILI KREIRAJ CHAT
@@ -243,5 +241,41 @@ export function listenMessages(
 
   );
 
+
+}
+
+// ======================
+// DOHVATI CHATOVE TRENERA
+// ======================
+
+export async function getTrainerChats(
+  trainerId: string
+) {
+
+  const q = query(
+    collection(db, "chats"),
+    where(
+      "trainerId",
+      "==",
+      trainerId
+    ),
+    orderBy(
+      "updatedAt",
+      "desc"
+    )
+  );
+
+
+  const snap =
+    await getDocs(q);
+
+
+  return snap.docs.map((doc)=>({
+
+    id: doc.id,
+
+    ...doc.data(),
+
+  }));
 
 }
