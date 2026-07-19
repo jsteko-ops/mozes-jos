@@ -689,55 +689,30 @@ export async function deleteNutritionPlan(
 }
 
 export async function getClientByUserId(
-
-  userId:string
-
-){
-
-
-  const q = query(
-
-    collection(
-      db,
-      "clients"
-    ),
-
-    where(
-      "userId",
-      "==",
-      userId
-    )
-
-  );
-
+  userId: string
+): Promise<any | null> {
 
 
   const snap =
-    await getDocs(q);
+    await getDoc(
+      doc(
+        db,
+        "clients",
+        userId
+      )
+    );
 
 
+  if (snap.exists()) {
 
-  if(snap.empty){
-
-    return null;
+    return {
+      id: snap.id,
+      ...snap.data(),
+    };
 
   }
 
 
-
-  const data =
-    snap.docs[0];
-
-
-
-  return {
-
-    id:data.id,
-
-    ...data.data(),
-
-  };
-
+  return null;
 
 }
-

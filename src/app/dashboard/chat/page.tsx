@@ -93,19 +93,27 @@ const client: any =
             user.uid
           );
 
+alert(
+  "USER UID: " + user.uid + "\nCLIENT: " + JSON.stringify(client)
+);
 
-        if(client){
+  if(client){
 
-          setClientId(
-            client.id
-          );
+  alert(
+    JSON.stringify(client)
+  );
 
 
-          setTrainerId(
-            client.trainerId
-          );
+  setClientId(
+    client.id
+  );
 
-        }
+
+  setTrainerId(
+    client.trainerId
+  );
+
+}
 
       }
 

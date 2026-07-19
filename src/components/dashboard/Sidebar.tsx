@@ -208,6 +208,13 @@ export default function Sidebar() {
               Mjerenja
             </Link>
 
+<Link
+  href="/dashboard/chat"
+  className={linkClass("/dashboard/chat")}
+>
+  💬 Chat
+</Link>
+
             <Link
               href="/dashboard/settings"
               className={linkClass("/dashboard/settings")}

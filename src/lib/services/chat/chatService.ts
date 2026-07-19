@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  onSnapshot,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -176,6 +177,71 @@ export async function getMessages(
     ...doc.data(),
 
   }));
+
+
+}
+// ======================
+// REAL-TIME PORUKE
+// ======================
+
+export function listenMessages(
+
+  chatId:string,
+
+  callback:(messages:any[])=>void
+
+){
+
+
+  const q = query(
+
+    collection(
+
+      db,
+
+      "chats",
+
+      chatId,
+
+      "messages"
+
+    ),
+
+    orderBy(
+
+      "createdAt",
+
+      "asc"
+
+    )
+
+  );
+
+
+
+  return onSnapshot(
+
+    q,
+
+    (snapshot)=>{
+
+
+      const messages =
+        snapshot.docs.map((doc)=>({
+
+          id:doc.id,
+
+          ...doc.data(),
+
+        }));
+
+
+      callback(messages);
+
+
+    }
+
+  );
 
 
 }

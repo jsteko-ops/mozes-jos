@@ -6,9 +6,9 @@ import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 
 import {
-  getMessages,
   getOrCreateChat,
   sendMessage,
+  listenMessages,
 } from "@/lib/services/chat/chatService";
 
 
@@ -28,20 +28,22 @@ export default function ChatWindow({
 }: Props) {
 
 
-  const [chatId,setChatId] =
+  const [chatId, setChatId] =
     useState("");
 
-
-  const [messages,setMessages] =
+  const [messages, setMessages] =
     useState<any[]>([]);
 
-
-  const [loading,setLoading] =
+  const [loading, setLoading] =
     useState(true);
 
 
 
   useEffect(()=>{
+
+
+    let unsubscribe: any;
+
 
 
     async function loadChat(){
@@ -61,44 +63,49 @@ export default function ChatWindow({
 
 
 
-      const data =
-        await getMessages(id);
+      unsubscribe =
+        listenMessages(
+
+          id,
+
+          (data)=>{
 
 
+            setMessages(data);
 
-      setMessages(data);
+            setLoading(false);
 
 
-      setLoading(false);
+          }
+
+        );
 
 
     }
 
 
+
     loadChat();
 
 
-  },[trainerId,clientId]);
+
+    return ()=>{
 
 
+      if(unsubscribe){
+
+        unsubscribe();
+
+      }
 
 
-
-  async function refreshMessages(){
-
-
-    if(!chatId) return;
+    };
 
 
-    const data =
-      await getMessages(chatId);
-
-
-    setMessages(data);
-
-
-  }
-
+  },[
+    trainerId,
+    clientId
+  ]);
 
 
 
@@ -126,11 +133,8 @@ export default function ChatWindow({
     );
 
 
-
-    await refreshMessages();
-
-
   }
+
 
 
 
@@ -151,6 +155,7 @@ export default function ChatWindow({
 
 
   }
+
 
 
 
