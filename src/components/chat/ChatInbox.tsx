@@ -6,6 +6,10 @@ import {
   getTrainerChats,
 } from "@/lib/services/chat/chatService";
 
+import {
+  getClient,
+} from "@/lib/services/klijentiService";
+
 
 type Chat = {
   id: string;
@@ -33,6 +37,9 @@ export default function ChatInbox({
   const [chats, setChats] =
     useState<Chat[]>([]);
 
+const [clientNames, setClientNames] =
+    useState<Record<string,string>>({});
+
 
   const [loading, setLoading] =
     useState(true);
@@ -55,6 +62,28 @@ export default function ChatInbox({
         data as Chat[]
       );
 
+const names:any = {};
+
+
+for(const chat of data){
+
+  const client =
+    await getClient(
+      chat.clientId
+    );
+
+
+  if(client){
+
+    names[chat.clientId] =
+      client.name;
+
+  }
+
+}
+
+
+setClientNames(names);
 
       setLoading(false);
 
@@ -133,11 +162,12 @@ export default function ChatInbox({
         >
 
 
-          <div className="font-semibold">
+        <div className="font-semibold">
 
-            Klijent: {chat.clientId}
+  {clientNames[chat.clientId] ??
+    "Klijent"}
 
-          </div>
+</div>
 
 
           <div className="text-sm text-gray-600">

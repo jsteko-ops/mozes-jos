@@ -240,13 +240,18 @@ export async function getMessages(
 
 
 
-  return snap.docs.map((doc)=>({
+ return snap.docs.map((doc)=>({
 
-    id:doc.id,
+  id:doc.id,
 
-    ...doc.data(),
+  ...(doc.data() as {
+    clientId:string;
+    trainerId:string;
+    lastMessage?:string;
+    updatedAt?:any;
+  }),
 
-  }));
+}));
 
 
 }
@@ -342,13 +347,22 @@ export async function getTrainerChats(
     await getDocs(q);
 
 
-  return snap.docs.map((doc)=>({
+return snap.docs.map((doc)=>({
 
-    id: doc.id,
+  id: doc.id,
 
-    ...doc.data(),
+  ...(doc.data() as {
 
-  }));
+    clientId: string;
+
+    trainerId: string;
+
+    lastMessage?: string;
+
+    updatedAt?: any;
+
+  }),
+
+}));
 
 }
-
