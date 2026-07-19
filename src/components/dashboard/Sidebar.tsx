@@ -67,6 +67,12 @@ export default function Sidebar() {
               Dashboard
             </Link>
 
+<Link
+  href="/dashboard/chat"
+  className={linkClass("/dashboard/chat")}
+>
+  💬 Chat
+</Link>
 
             <Link
               href="/dashboard/trainer/klijenti"
@@ -153,7 +159,12 @@ export default function Sidebar() {
               Izvještaji
             </Link>
 
-
+<Link
+  href="/dashboard/chat"
+  className={linkClass("/dashboard/chat")}
+>
+  💬 Chat
+</Link>
 
             <Link
               href="/dashboard/settings"

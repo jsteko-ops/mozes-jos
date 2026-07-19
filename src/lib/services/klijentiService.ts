@@ -108,18 +108,22 @@ export async function getClient(
     );
 
 
-
   if(!snap.exists()) {
+
     return null;
+
   }
 
+
+  const data =
+    snap.data() as Client;
 
 
   return {
 
     id: snap.id,
 
-    ...snap.data(),
+    ...data,
 
   };
 
@@ -683,3 +687,57 @@ export async function deleteNutritionPlan(
   );
 
 }
+
+export async function getClientByUserId(
+
+  userId:string
+
+){
+
+
+  const q = query(
+
+    collection(
+      db,
+      "clients"
+    ),
+
+    where(
+      "userId",
+      "==",
+      userId
+    )
+
+  );
+
+
+
+  const snap =
+    await getDocs(q);
+
+
+
+  if(snap.empty){
+
+    return null;
+
+  }
+
+
+
+  const data =
+    snap.docs[0];
+
+
+
+  return {
+
+    id:data.id,
+
+    ...data.data(),
+
+  };
+
+
+}
+
