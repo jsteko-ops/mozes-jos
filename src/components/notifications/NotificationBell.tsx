@@ -26,17 +26,19 @@ import { useRouter } from "next/navigation";
 
 type Notification = {
 
-  id: string;
+  id:string;
 
-  title: string;
+  title:string;
 
-  message: string;
+  message:string;
 
-  read: boolean;
+  read:boolean;
 
-  link?: string;
+  link?:string;
 
-  createdAt?: any;
+  type?:string;
+
+  createdAt?:any;
 
 };
 
@@ -125,6 +127,29 @@ export default function NotificationBell(){
 
   }
 
+
+function notificationIcon(type?:string){
+
+  switch(type){
+
+    case "checkin":
+      return "📝";
+
+    case "chat":
+      return "💬";
+
+    case "workout":
+      return "🏋️";
+
+    case "measurement":
+      return "📏";
+
+    default:
+      return "🔔";
+
+  }
+
+}
 
 
 
@@ -414,9 +439,9 @@ export default function NotificationBell(){
                 >
 
 
-                  <b>
-                    {n.title}
-                  </b>
+                 <b>
+ {notificationIcon(n.type)} {n.title}
+</b>
 
 
                   <p className="text-sm">

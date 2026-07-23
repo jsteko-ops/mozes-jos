@@ -37,6 +37,8 @@ type Notification = {
 
   link?:string;
 
+  type?:string;
+
   createdAt?:any;
 
 };
@@ -318,7 +320,28 @@ export default function NotificationsPage(){
     });
 
 
+function notificationIcon(type?:string){
 
+  switch(type){
+
+    case "checkin":
+      return "📝";
+
+    case "chat":
+      return "💬";
+
+    case "workout":
+      return "🏋️";
+
+    case "measurement":
+      return "📏";
+
+    default:
+      return "🔔";
+
+  }
+
+}
 
 
   function formatDate(timestamp:any){
@@ -500,9 +523,9 @@ export default function NotificationsPage(){
               <div className="flex justify-between">
 
 
-                <b>
-                  {n.title}
-                </b>
+          <b>
+  {notificationIcon(n.type)} {n.title}
+</b>
 
 
                 <span className="text-sm">
