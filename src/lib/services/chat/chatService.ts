@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+
 import { createNotification } from "@/lib/notifications";
 
 // ======================
@@ -143,7 +144,27 @@ const receiverId =
 
   );
 
+  await createNotification(
 
+    receiverId,
+
+    {
+
+      title:
+        "Nova poruka",
+
+      message:
+        "Dobili ste novu poruku.",
+
+      type:
+        "chat",
+
+      link:
+        "/dashboard/chat",
+
+    }
+
+  );
 
   await updateDoc(
 
