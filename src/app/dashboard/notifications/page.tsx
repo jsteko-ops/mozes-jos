@@ -9,29 +9,41 @@ import {
   where,
   orderBy,
   doc,
-  updateDoc,
   writeBatch,
+  deleteDoc,
 } from "firebase/firestore";
 
-import { auth, db } from "@/lib/firebase";
+import {
+  auth,
+  db,
+} from "@/lib/firebase";
 
-import { onAuthStateChanged } from "firebase/auth";
+import {
+  onAuthStateChanged,
+} from "firebase/auth";
 
 import { useRouter } from "next/navigation";
 
 
 type Notification = {
-  id: string;
-  title: string;
-  message: string;
-  read: boolean;
-  link?: string;
-  createdAt?: any;
+
+  id:string;
+
+  title:string;
+
+  message:string;
+
+  read:boolean;
+
+  link?:string;
+
+  createdAt?:any;
+
 };
 
 
 
-export default function NotificationsPage() {
+export default function NotificationsPage(){
 
 
   const router = useRouter();
@@ -41,6 +53,7 @@ export default function NotificationsPage() {
     useState<Notification[]>([]);
 
 
+
   const [filter,setFilter] =
     useState<
       "all" | "new" | "read"
@@ -48,71 +61,85 @@ export default function NotificationsPage() {
 
 
 
+
   useEffect(()=>{
 
 
     const unsubscribeAuth =
-      onAuthStateChanged(auth,(user)=>{
+      onAuthStateChanged(
+
+        auth,
+
+        (user)=>{
 
 
-        if(!user){
-          return;
+          if(!user){
+            return;
+          }
+
+
+
+          const q = query(
+
+            collection(
+              db,
+              "notifications"
+            ),
+
+            where(
+              "userId",
+              "==",
+              user.uid
+            ),
+
+            orderBy(
+              "createdAt",
+              "desc"
+            )
+
+          );
+
+
+
+          const unsubscribe =
+            onSnapshot(
+
+              q,
+
+              (snap)=>{
+
+
+                const data =
+                  snap.docs.map((item)=>({
+
+
+                    id:item.id,
+
+                    ...item.data()
+
+
+                  })) as Notification[];
+
+
+
+                setNotifications(data);
+
+
+              }
+
+            );
+
+
+          return unsubscribe;
+
+
         }
 
-
-
-        const q = query(
-
-          collection(
-            db,
-            "notifications"
-          ),
-
-          where(
-            "userId",
-            "==",
-            user.uid
-          ),
-
-          orderBy(
-            "createdAt",
-            "desc"
-          )
-
-        );
-
-
-
-        const unsubscribe =
-          onSnapshot(q,(snap)=>{
-
-
-            const data =
-              snap.docs.map((item)=>({
-
-                id:item.id,
-
-                ...item.data()
-
-              })) as Notification[];
-
-
-
-            setNotifications(data);
-
-
-          });
-
-
-        return unsubscribe;
-
-
-      });
+      );
 
 
 
     return ()=>unsubscribeAuth();
-
 
 
   },[]);
@@ -121,15 +148,18 @@ export default function NotificationsPage() {
 
 
 
+
   async function markAllRead(){
+
 
     const unread =
       notifications.filter(
-        n => !n.read
+        n=>!n.read
       );
 
 
-    if(unread.length === 0){
+
+    if(unread.length===0){
       return;
     }
 
@@ -142,19 +172,19 @@ export default function NotificationsPage() {
 
     unread.forEach((n)=>{
 
-      const ref =
+
+      batch.update(
+
         doc(
           db,
           "notifications",
           n.id
-        );
+        ),
 
-
-      batch.update(
-        ref,
         {
           read:true
         }
+
       );
 
 
@@ -164,9 +194,102 @@ export default function NotificationsPage() {
 
     await batch.commit();
 
+
   }
 
 
+
+
+
+
+  async function deleteNotification(
+    id:string
+  ){
+
+
+    if(!confirm("Obrisati ovu obavijest?")){
+      return;
+    }
+
+
+
+    await deleteDoc(
+
+      doc(
+        db,
+        "notifications",
+        id
+      )
+
+    );
+
+
+  }
+
+
+
+
+
+
+  async function deleteReadNotifications(){
+
+
+    const readNotifications =
+      notifications.filter(
+        n=>n.read
+      );
+
+
+
+    if(readNotifications.length===0){
+
+      alert(
+        "Nema pročitanih obavijesti"
+      );
+
+      return;
+
+    }
+
+
+
+    if(!confirm(
+      "Obrisati sve pročitane obavijesti?"
+    )){
+
+      return;
+
+    }
+
+
+
+    const batch =
+      writeBatch(db);
+
+
+
+    readNotifications.forEach((n)=>{
+
+
+      batch.delete(
+
+        doc(
+          db,
+          "notifications",
+          n.id
+        )
+
+      );
+
+
+    });
+
+
+
+    await batch.commit();
+
+
+  }
 
 
 
@@ -175,13 +298,17 @@ export default function NotificationsPage() {
     notifications.filter((n)=>{
 
 
-      if(filter === "new"){
+      if(filter==="new"){
+
         return !n.read;
+
       }
 
 
-      if(filter === "read"){
+      if(filter==="read"){
+
         return n.read;
+
       }
 
 
@@ -194,12 +321,13 @@ export default function NotificationsPage() {
 
 
 
-
-
   function formatDate(timestamp:any){
 
+
     if(!timestamp){
+
       return "";
+
     }
 
 
@@ -208,6 +336,7 @@ export default function NotificationsPage() {
       .toLocaleString(
         "hr-HR"
       );
+
 
   }
 
@@ -218,160 +347,247 @@ export default function NotificationsPage() {
 
   return (
 
-<div className="p-6">
+    <div className="p-6">
 
 
-<h1 className="text-2xl font-bold mb-6">
-🔔 Povijest obavijesti
-</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        🔔 Povijest obavijesti
+      </h1>
 
 
 
 
-<div className="flex gap-3 mb-5">
 
+      <div className="flex gap-3 mb-5 flex-wrap">
 
-<button
-onClick={()=>setFilter("all")}
-className="px-4 py-2 rounded bg-gray-100"
->
-Sve
-</button>
 
+        <button
 
+          onClick={()=>
+            setFilter("all")
+          }
 
-<button
-onClick={()=>setFilter("new")}
-className="px-4 py-2 rounded bg-gray-100"
->
-Nove
-</button>
+          className="px-4 py-2 rounded bg-gray-100"
 
+        >
+          Sve
+        </button>
 
 
-<button
-onClick={()=>setFilter("read")}
-className="px-4 py-2 rounded bg-gray-100"
->
-Pročitane
-</button>
 
+        <button
 
+          onClick={()=>
+            setFilter("new")
+          }
 
-<button
-onClick={markAllRead}
-className="ml-auto px-4 py-2 rounded bg-blue-600 text-white"
->
-Označi sve pročitano
-</button>
+          className="px-4 py-2 rounded bg-gray-100"
 
+        >
+          Nove
+        </button>
 
-</div>
 
 
+        <button
 
+          onClick={()=>
+            setFilter("read")
+          }
 
+          className="px-4 py-2 rounded bg-gray-100"
 
-<div className="bg-white rounded-xl shadow p-4">
+        >
+          Pročitane
+        </button>
 
 
 
-{
-filteredNotifications.length === 0 ?
 
+        <button
 
-<p>
-Nema obavijesti
-</p>
+          onClick={markAllRead}
 
+          className="px-4 py-2 rounded bg-blue-600 text-white"
 
+        >
+          ✅ Označi sve pročitano
+        </button>
 
-:
 
-filteredNotifications.map((n)=>(
 
 
-<button
+        <button
 
-key={n.id}
+          onClick={deleteReadNotifications}
 
-onClick={()=>{
+          className="px-4 py-2 rounded bg-red-600 text-white"
 
-if(n.link){
+        >
+          🗑 Obriši pročitane
+        </button>
 
-router.push(
-n.link
-);
 
-}
 
-}}
+      </div>
 
-className={`w-full text-left border-b py-4 px-3 rounded hover:bg-gray-50 ${
-!n.read ? "bg-blue-50" : ""
-}`}
 
->
 
 
 
-<div className="flex justify-between">
 
 
-<b>
-{n.title}
-</b>
+      <div className="bg-white rounded-xl shadow p-4">
 
 
-<span className="text-sm">
 
-{
-n.read
-?
-"Pročitano"
-:
-"Novo"
-}
 
-</span>
 
+      {
+        filteredNotifications.length===0 ?
 
-</div>
 
+        (
 
+          <p>
+            Nema obavijesti
+          </p>
 
+        )
 
-<p>
-{n.message}
-</p>
 
+        :
 
 
-<p className="text-sm text-gray-500 mt-1">
+        filteredNotifications.map((n)=>(
 
-{formatDate(n.createdAt)}
 
-</p>
+          <div
 
+            key={n.id}
 
+            className={`border-b py-4 px-3 rounded ${
+              !n.read
+              ?
+              "bg-blue-50"
+              :
+              ""
+            }`}
 
+          >
 
-</button>
 
 
-))
+            <button
 
+              className="w-full text-left"
 
-}
+              onClick={()=>{
 
+                if(n.link){
 
+                  router.push(
+                    n.link
+                  );
 
-</div>
+                }
 
+              }}
 
-</div>
+            >
 
-);
+
+              <div className="flex justify-between">
+
+
+                <b>
+                  {n.title}
+                </b>
+
+
+                <span className="text-sm">
+
+                  {
+                    n.read
+                    ?
+                    "Pročitano"
+                    :
+                    "Novo"
+                  }
+
+                </span>
+
+
+              </div>
+
+
+
+
+              <p>
+                {n.message}
+              </p>
+
+
+
+
+              <p className="text-sm text-gray-500 mt-1">
+
+                {formatDate(n.createdAt)}
+
+              </p>
+
+
+
+            </button>
+
+
+
+
+
+            <button
+
+              type="button"
+
+              onClick={(e)=>{
+
+                e.stopPropagation();
+
+                deleteNotification(
+                  n.id
+                );
+
+              }}
+
+              className="mt-2 text-sm text-red-600 hover:underline"
+
+            >
+
+              🗑 Obriši
+
+            </button>
+
+
+
+
+          </div>
+
+
+        ))
+
+
+      }
+
+
+
+
+
+      </div>
+
+
+
+    </div>
+
+  );
 
 
 }
