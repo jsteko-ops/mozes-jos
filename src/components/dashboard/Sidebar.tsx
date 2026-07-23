@@ -97,6 +97,13 @@ export default function Sidebar() {
               Check-in
             </Link>
 
+<Link
+  href="/dashboard/notifications"
+  className={linkClass("/dashboard/notifications")}
+>
+  🔔 Obavijesti
+</Link>
+
 
             <Link
               href="/dashboard/trainer/izvjestaji"

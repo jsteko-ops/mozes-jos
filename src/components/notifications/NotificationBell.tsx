@@ -204,6 +204,8 @@ async function openNotification(
   notification: Notification
 ){
 
+console.log("KLIK OBAVIJEST:", notification);
+
   await updateDoc(
 
     doc(
