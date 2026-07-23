@@ -20,7 +20,7 @@ import ClientEditForm from "@/components/clients/ClientEditForm";
 import ClientTabs from "@/components/owner/ClientTabs";
 
 import ClientNutrition from "@/components/nutrition/ClientNutrition";
-
+import ClientMeasurements from "@/components/owner/ClientMeasurements";
 import CheckinHistory from "@/components/checkins/CheckinHistory";
 
 import {
@@ -413,17 +413,13 @@ const profileContent = (
 
 );
 
-
-
 const measurementsContent = (
 
   <div className="space-y-6">
 
-    {/* ovdje ćemo kasnije prebaciti mjerenja */}
-
-    <p>
-      Mjerenja modul
-    </p>
+    <ClientMeasurements
+      clientId={params.id as string}
+    />
 
   </div>
 

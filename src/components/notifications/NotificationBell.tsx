@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   collection,
-  getDocs,
+  onSnapshot,
   query,
   where,
   orderBy,
@@ -60,141 +60,199 @@ export default function NotificationBell(){
 
   const [open,setOpen] =
     useState(false);
+const bellRef = useRef<HTMLDivElement>(null);
+
+
+
+
+  function loadNotifications(uid: string) {
+
+  const q = query(
+
+    collection(
+      db,
+      "notifications"
+    ),
+
+    where(
+      "userId",
+      "==",
+      uid
+    ),
+
+    orderBy(
+      "createdAt",
+      "desc"
+    )
+
+  );
+
+  return onSnapshot(
+
+    q,
+
+    (snap) => {
+
+      const data = snap.docs
+        .map((d) => ({
+
+          id: d.id,
+
+          ...d.data(),
+
+        }) as Notification)
+        .filter((n) => !n.read);
+
+      setNotifications(data);
+
+    }
+
+  );
+
+}
 
 
 
 
 
-  async function loadNotifications(uid:string){
 
 
-    const q =
-      query(
+  useEffect(() => {
 
-        collection(
-          db,
-          "notifications"
-        ),
+  let unsubscribeNotifications: (() => void) | undefined;
 
-        where(
-          "userId",
-          "==",
-          uid
-        ),
+  const unsubscribeAuth = onAuthStateChanged(
 
-        orderBy(
-          "createdAt",
-          "desc"
-        )
+    auth,
 
-      );
+    (user) => {
 
+      if (!user) {
 
+        setNotifications([]);
+        setUserId(null);
 
-    const snap =
-      await getDocs(q);
-
-
-
-    setNotifications(
-
-      snap.docs.map((d)=>({
-
-        id:d.id,
-
-        ...d.data()
-
-      })) as Notification[]
-
-    );
-
-
-  }
-
-
-
-
-
-
-
-  useEffect(()=>{
-
-
-    const unsub =
-      onAuthStateChanged(
-        auth,
-        (user)=>{
-
-
-          if(user){
-
-            setUserId(
-              user.uid
-            );
-
-            loadNotifications(
-              user.uid
-            );
-
-          }
-
-
+        if (unsubscribeNotifications) {
+          unsubscribeNotifications();
         }
-      );
 
+        return;
 
-    return ()=>unsub();
-
-
-  },[]);
-
-
-
-
-
-
-
-  async function openNotification(
-    notification:Notification
-  ){
-
-
-    await updateDoc(
-
-      doc(
-        db,
-        "notifications",
-        notification.id
-      ),
-
-      {
-        read:true
       }
 
-    );
+      setUserId(user.uid);
 
+      if (unsubscribeNotifications) {
+        unsubscribeNotifications();
+      }
 
-    if(notification.link){
-
-      router.push(
-        notification.link
-      );
-
-      return;
+      unsubscribeNotifications =
+        loadNotifications(user.uid);
 
     }
 
+  );
 
-    if(userId){
+  return () => {
 
-      loadNotifications(
-        userId
-      );
+    unsubscribeAuth();
 
+    if (unsubscribeNotifications) {
+      unsubscribeNotifications();
     }
 
+  };
+
+}, []);
+
+
+
+
+useEffect(() => {
+
+  function handleClickOutside(event: MouseEvent) {
+
+    if (
+      bellRef.current &&
+      !bellRef.current.contains(event.target as Node)
+    ) {
+      setOpen(false);
+    }
 
   }
+
+  document.addEventListener(
+    "mousedown",
+    handleClickOutside
+  );
+
+  return () => {
+
+    document.removeEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+  };
+
+}, []);
+
+
+
+
+async function openNotification(
+  notification: Notification
+){
+
+  await updateDoc(
+
+    doc(
+      db,
+      "notifications",
+      notification.id
+    ),
+
+    {
+      read:true
+    }
+
+  );
+
+
+// makni odmah iz prikaza
+setNotifications(prev =>
+  prev.filter(
+    n => n.id !== notification.id
+  )
+);
+
+// zatvori oblačić
+setOpen(false);
+
+  // idi na povezani sadržaj
+  if(notification.link){
+
+  await router.push(
+  notification.link
+);
+
+router.refresh();
+
+return;
+
+  }
+
+
+  // ako nema linka samo osvježi listu
+  if(userId){
+
+    loadNotifications(
+      userId
+    );
+
+  }
+
+}
 
 
 
@@ -213,7 +271,10 @@ export default function NotificationBell(){
 
   return (
 
-    <div className="relative">
+<div
+  ref={bellRef}
+  className="relative"
+>
 
 
       <button

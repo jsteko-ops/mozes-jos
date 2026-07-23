@@ -9,9 +9,11 @@ import {
   getDoc,
   updateDoc,
   deleteDoc,
+  onSnapshot,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { createNotification } from "@/lib/notifications";
 
 
 interface Client {
@@ -538,6 +540,7 @@ export async function markCheckinReviewed(
   );
 
 }
+
 export async function saveTrainerComment(
   clientId:string,
   checkinId:string,
@@ -562,8 +565,29 @@ export async function saveTrainerComment(
     }
   );
 
-}
+  await createNotification(
 
+    clientId,
+
+    {
+
+      title:
+        "Odgovor trenera",
+
+      message:
+        "Trener je odgovorio na tvoj check-in.",
+
+      type:
+        "checkin_reply",
+
+      link:
+        "/dashboard/client",
+
+    }
+
+  );
+
+}
 
 
 
@@ -714,5 +738,60 @@ export async function getClientByUserId(
 
 
   return null;
+
+}
+// =======================
+// REAL-TIME CHECKINS
+// =======================
+
+export function listenCheckins(
+
+  clientId: string,
+
+  callback: (checkins: any[]) => void
+
+) {
+
+  return onSnapshot(
+
+    collection(
+      db,
+      "clients",
+      clientId,
+      "checkins"
+    ),
+
+    (snapshot) => {
+
+      const checkins =
+        snapshot.docs
+          .map((doc) => ({
+
+            id: doc.id,
+
+            ...doc.data(),
+
+          }))
+          .sort((a: any, b: any) => {
+
+            const dateA =
+              a.createdAt?.toMillis
+                ? a.createdAt.toMillis()
+                : 0;
+
+            const dateB =
+              b.createdAt?.toMillis
+                ? b.createdAt.toMillis()
+                : 0;
+
+            return dateB - dateA;
+
+          });
+
+      callback(checkins);
+
+    }
+
+  );
 
 }

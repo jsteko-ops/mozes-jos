@@ -109,8 +109,15 @@ if(client){
 
 
 
-  const latest =
-    checkins[0];
+ const latest =
+  checkins[0];
+
+
+const hasTrainerReply =
+  checkins.some(
+    (item)=>
+      item.trainerComment
+  );
 
 
 
@@ -182,18 +189,18 @@ if(client){
 
             <p className="text-xl font-bold">
 
-              {
-                latest?.trainerComment
+             {
+  hasTrainerReply
 
-                ?
+  ?
 
-                "🟢 Odgovoreno"
+  "🟢 Trener je odgovorio"
 
-                :
+  :
 
-                "🟠 Čeka odgovor"
+  "🟠 Čeka odgovor"
 
-              }
+}
 
             </p>
 
@@ -207,17 +214,26 @@ if(client){
 
 
 
-        <Link
+       <Link
 
-          href="/dashboard/checkins"
+  href="/dashboard/checkins"
 
-          className="inline-block bg-black text-white px-5 py-3 rounded-xl"
+className="
+  inline-block
+  bg-blue-600
+  text-white
+  font-bold
+  px-6
+  py-3
+  rounded-xl
+  shadow-lg
+  hover:bg-blue-700
+  transition
+"
 
-        >
-
-          ➕ Novi Check-in
-
-        </Link>
+>
+  ➕ Novi Check-in
+</Link>
 
 
 

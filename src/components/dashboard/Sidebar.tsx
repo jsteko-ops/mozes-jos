@@ -182,48 +182,52 @@ export default function Sidebar() {
 
 
 
+{/* CLIENT MENU */}
+{userProfile.role === "client" && (
+  <>
 
-               {/* CLIENT MENU */}
-        {userProfile.role === "client" && (
-          <>
+    <Link
+      href="/dashboard/client"
+      className={linkClass("/dashboard/client")}
+    >
+      Moj napredak
+    </Link>
 
-            <Link
-              href="/dashboard/client"
-              className={linkClass("/dashboard/client")}
-            >
-              Moj napredak
-            </Link>
 
-            <Link
-              href="/dashboard/client"
-              className={linkClass("/dashboard/client")}
-            >
-              Moji treninzi
-            </Link>
+    <Link
+      href="/dashboard/client/workouts"
+      className={linkClass("/dashboard/client/workouts")}
+    >
+      Moji treninzi
+    </Link>
 
-            <Link
-              href="/dashboard/client"
-              className={linkClass("/dashboard/client")}
-            >
-              Mjerenja
-            </Link>
 
-<Link
-  href="/dashboard/chat"
-  className={linkClass("/dashboard/chat")}
->
-  💬 Chat
-</Link>
+    <Link
+      href="/dashboard/client/measurements"
+      className={linkClass("/dashboard/client/measurements")}
+    >
+      Mjerenja
+    </Link>
 
-            <Link
-              href="/dashboard/settings"
-              className={linkClass("/dashboard/settings")}
-            >
-              Profil
-            </Link>
 
-          </>
-        )}
+    <Link
+      href="/dashboard/chat"
+      className={linkClass("/dashboard/chat")}
+    >
+      💬 Chat
+    </Link>
+
+
+    <Link
+      href="/dashboard/settings"
+      className={linkClass("/dashboard/settings")}
+    >
+      Profil
+    </Link>
+
+
+  </>
+)}
 
 
 

@@ -4,52 +4,48 @@ import { useEffect, useState } from "react";
 
 import RoleGuard from "@/components/auth/RoleGuard";
 import CheckinForm from "@/components/checkins/CheckinForm";
+import CheckinHistory from "@/components/checkins/CheckinHistory";
 
 import { auth, db } from "@/lib/firebase";
 
-import {
-  onAuthStateChanged,
-} from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 
 import {
   doc,
   getDoc,
 } from "firebase/firestore";
 
-
+import {
+  listenCheckins,
+} from "@/lib/services/klijentiService";
 
 export default function ClientCheckinPage() {
 
-
-  const [clientId,setClientId] =
+  const [clientId, setClientId] =
     useState<string | null>(null);
 
+  const [checkins, setCheckins] =
+    useState<any[]>([]);
 
-
-  const [loading,setLoading] =
+  const [loading, setLoading] =
     useState(true);
 
 
+  
 
-
-
-  useEffect(()=>{
-
+  useEffect(() => {
 
     const unsub =
       onAuthStateChanged(
         auth,
-        async(user)=>{
+        async (user) => {
 
-
-          if(!user){
+          if (!user) {
 
             setLoading(false);
             return;
 
           }
-
-
 
           const snap =
             await getDoc(
@@ -60,44 +56,33 @@ export default function ClientCheckinPage() {
               )
             );
 
+  if (snap.exists()) {
+
+  setClientId(user.uid);
+
+  const unsubscribeCheckins =
+    listenCheckins(
+      user.uid,
+      setCheckins
+    );
 
 
-          if(snap.exists()){
-
-            setClientId(
-              user.uid
-            );
-
-          }
-
-
+}
 
           setLoading(false);
-
 
         }
       );
 
+    return () => unsub();
 
-
-    return ()=>unsub();
-
-
-  },[]);
-
-
-
-
-
-
+  }, []);
 
   return (
 
     <RoleGuard allowedRoles={["client"]}>
 
-
       <div className="p-6 space-y-6">
-
 
         <h1 className="text-3xl font-bold">
 
@@ -105,54 +90,60 @@ export default function ClientCheckinPage() {
 
         </h1>
 
-
-
         {
           loading
 
-          ?
+            ?
 
-          <p>
-            Učitavanje...
-          </p>
+            <p>
+              Učitavanje...
+            </p>
 
+            :
 
-          :
+            clientId
 
+              ?
 
-          clientId
+              <>
 
-          ?
+                <CheckinForm
 
-          <CheckinForm
+                  clientId={clientId}
 
-            clientId={clientId}
+                onSaveAction={() => {
 
-            onSaveAction={()=>{
+  alert(
+    "Check-in uspješno poslan treneru."
+  );
 
-              alert(
-                "Check-in uspješno poslan treneru."
-              );
+}}
 
-            }}
+                />
 
-          />
+                <CheckinHistory
 
+                  checkins={checkins}
 
-          :
+                  clientId={clientId}
 
-          <p>
+              onReviewed={() => {}}
 
-            Klijent nije pronađen.
+                />
 
-          </p>
+              </>
+
+              :
+
+              <p>
+
+                Klijent nije pronađen.
+
+              </p>
 
         }
 
-
-
       </div>
-
 
     </RoleGuard>
 
