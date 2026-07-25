@@ -339,15 +339,6 @@ async function openNotification(
   setOpen(false);
 
 
-  if(notification.link){
-
-    router.push(
-      notification.link
-    );
-
-  }
-
-
   await updateDoc(
 
     doc(
@@ -363,6 +354,15 @@ async function openNotification(
   );
 
 
+  if(notification.link){
+
+    router.push(
+      notification.link
+    );
+
+  }
+
+
   setNotifications(prev =>
 
     prev.filter(
@@ -372,8 +372,6 @@ async function openNotification(
   );
 
 }
-
-
     const unread =
     notifications.filter(
       n=>!n.read
