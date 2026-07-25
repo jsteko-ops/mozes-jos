@@ -105,7 +105,12 @@ export default function Sidebar() {
 </Link>
 
 
-         
+         <Link
+  href="/dashboard/reports"
+  className={linkClass("/dashboard/reports")}
+>
+  📄 Izvještaji
+</Link>
 
 
             <Link
