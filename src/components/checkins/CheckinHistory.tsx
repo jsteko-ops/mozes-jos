@@ -175,7 +175,7 @@ useEffect(()=>{
 
         setHighlightedCheckin(null);
 
-      },3000);
+      },10000);
 
 
     return ()=>clearTimeout(timer);
@@ -250,9 +250,10 @@ useEffect(()=>{
 
  <div
 
+ id={checkin.id}
   key={checkin.id}
 
-  id={checkin.id}
+
 
   className={`
     border

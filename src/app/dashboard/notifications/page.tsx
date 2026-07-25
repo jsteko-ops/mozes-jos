@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import {
   collection,
   onSnapshot,
@@ -11,6 +10,7 @@ import {
   doc,
   writeBatch,
   deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
 
 import {
@@ -622,36 +622,54 @@ export default function NotificationsPage(){
           filteredNotifications.map((n)=>(
 
 
-            <div
+      <div
 
-              key={n.id}
+  key={n.id}
 
-              className={`border-b py-4 px-3 rounded ${
-                !n.read
-                ?
-                "bg-blue-50"
-                :
-                ""
-              }`}
+  onClick={async()=>{
 
-            >
+    if(!n.read){
+
+      await updateDoc(
+
+        doc(
+          db,
+          "notifications",
+          n.id
+        ),
+
+        {
+          read:true
+        }
+
+      );
+
+    }
+
+
+    if(n.link){
+
+      router.push(
+        n.link
+      );
+
+    }
+
+  }}
+
+  className={`cursor-pointer border-b py-4 px-3 rounded transition ${
+    !n.read
+    ?
+    "bg-blue-50 hover:bg-blue-100"
+    :
+    "hover:bg-gray-50"
+  }`}
+
+>
 
 
 
-              <button
-
-                type="button"
-
-                className="w-full text-left"
-
-           onClick={()=>{
-
-  alert("KLIK RADI");
-
-}}
-
-              >
-
+             
 
 
                 <div className="flex justify-between">
@@ -729,7 +747,7 @@ export default function NotificationsPage(){
 
 
 
-              </button>
+             
 
 
 
