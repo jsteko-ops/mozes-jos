@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import {
   markCheckinReviewed,
@@ -90,7 +89,8 @@ export default function CheckinHistory({
 
 }:CheckinHistoryProps){
 
-
+const [highlightedCheckin, setHighlightedCheckin] =
+  useState<string | null>(null);
 
   const [comments,setComments] =
     useState<Record<string,string>>({});
@@ -166,6 +166,20 @@ useEffect(()=>{
       block:"center"
     });
 
+
+    setHighlightedCheckin(targetCheckinId);
+
+
+    const timer =
+      setTimeout(()=>{
+
+        setHighlightedCheckin(null);
+
+      },3000);
+
+
+    return ()=>clearTimeout(timer);
+
   }
 
 
@@ -234,15 +248,29 @@ useEffect(()=>{
        {sortedCheckins.map((checkin)=>(
 
 
-  <div
+ <div
 
-    key={checkin.id}
+  key={checkin.id}
 
-    id={checkin.id}
+  id={checkin.id}
 
-    className="border rounded-xl p-5 space-y-4"
+  className={`
+    border
+    rounded-xl
+    p-5
+    space-y-4
+    transition-all
+    duration-500
+    ${
+      highlightedCheckin === checkin.id
+      ?
+      "bg-yellow-100 ring-2 ring-yellow-400"
+      :
+      ""
+    }
+  `}
 
-  >
+>
 
 
 
