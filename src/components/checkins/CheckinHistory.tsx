@@ -184,7 +184,7 @@ useEffect(()=>{
 
 
 },[targetCheckinId,checkins]);
-
+  
 
 
   const sortedCheckins =
@@ -262,13 +262,18 @@ useEffect(()=>{
     space-y-4
     transition-all
     duration-500
+
     ${
-      highlightedCheckin === checkin.id
-      ?
-      "bg-yellow-100 ring-2 ring-yellow-400"
-      :
-      ""
-    }
+  highlightedCheckin === checkin.id
+  ?
+  "bg-yellow-100 ring-2 ring-yellow-400"
+  :
+  !checkin.reviewed
+  ?
+  "bg-orange-50 border-orange-300"
+  :
+  ""
+}
   `}
 
 >
