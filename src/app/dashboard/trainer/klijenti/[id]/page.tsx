@@ -47,10 +47,7 @@ function toNumber(value: string) {
 
 }
 
-const searchParams = useSearchParams();
 
-const checkinId =
-  searchParams.get("checkinId");
 
 type Client = {
 
