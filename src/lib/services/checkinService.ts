@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   orderBy,
   query,
@@ -10,6 +11,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { createNotification } from "@/lib/notifications";
 
 export interface Checkin {
   id?: string;
@@ -28,13 +30,76 @@ export async function createCheckin(
   clientId: string,
   data: Omit<Checkin, "id" | "createdAt" | "updatedAt">
 ) {
-  const ref = collection(db, "clients", clientId, "checkins");
 
-  return await addDoc(ref, {
-    ...data,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
+  const ref =
+    collection(
+      db,
+      "clients",
+      clientId,
+      "checkins"
+    );
+
+
+  const checkinRef =
+    await addDoc(
+      ref,
+      {
+        ...data,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }
+    );
+
+
+
+  const clientSnap =
+    await getDoc(
+      doc(
+        db,
+        "clients",
+        clientId
+      )
+    );
+
+
+  if(clientSnap.exists()){
+
+    const client =
+      clientSnap.data();
+
+
+
+    if(client.trainerId){
+
+      await createNotification(
+
+        client.trainerId,
+
+        {
+          title:
+            "Novi check-in",
+
+          message:
+            `${client.name} je poslao novi check-in.`,
+
+          type:
+            "checkin",
+
+          link:
+            `/dashboard/trainer/klijenti/${clientId}?tab=checkin&checkinId=${checkinRef.id}`
+
+        }
+
+      );
+
+    }
+
+  }
+
+
+
+  return checkinRef;
+
 }
 
 export async function getCheckins(clientId: string) {
