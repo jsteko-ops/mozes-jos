@@ -105,12 +105,7 @@ export default function Sidebar() {
 </Link>
 
 
-            <Link
-              href="/dashboard/trainer/izvjestaji"
-              className={linkClass("/dashboard/trainer/izvjestaji")}
-            >
-              Izvještaji
-            </Link>
+         
 
 
             <Link
@@ -160,11 +155,11 @@ export default function Sidebar() {
 
 
             <Link
-              href="/dashboard/reports"
-              className={linkClass("/dashboard/reports")}
-            >
-              Izvještaji
-            </Link>
+  href="/dashboard/reports"
+  className={linkClass("/dashboard/reports")}
+>
+  📄 Izvještaji
+</Link>
 
 <Link
   href="/dashboard/chat"

@@ -1,5 +1,8 @@
 "use client";
 
+
+import ChatWindow from "@/components/chat/ChatWindow";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import {
@@ -77,7 +80,7 @@ type Measurement = {
 
 export default function KlijentProfilPage() {
 
-
+const { user } = useAuth();
   const params = useParams();
 const searchParams = useSearchParams();
 
@@ -459,7 +462,23 @@ const nutritionContent = (
 
 
 
+const chatContent = (
 
+  user && client && (
+
+    <ChatWindow
+
+      trainerId={user.uid}
+
+      clientId={id}
+
+      currentUserId={user.uid}
+
+    />
+
+  )
+
+);
 
 const checkinContent = (
 
@@ -507,6 +526,7 @@ const checkinContent = (
   checkin={checkinContent}
 
   nutrition={nutritionContent}
+chat={chatContent}
 
 />
 
