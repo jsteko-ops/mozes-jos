@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import RoleGuard from "@/components/auth/RoleGuard";
 import PremiumGuard from "@/components/auth/PremiumGuard";
@@ -16,26 +17,44 @@ import {
 } from "@/lib/services/klijentiService";
 
 
+
 export default function CheckinPage() {
 
 
   const { user } = useAuth();
 
 
+  const searchParams =
+    useSearchParams();
+
+
+  const urlClientId =
+    searchParams.get("client");
+
+
+  const urlCheckinId =
+    searchParams.get("checkin");
+
+
+
   const [clients, setClients] =
     useState<any[]>([]);
+
 
 
   const [clientId, setClientId] =
     useState("");
 
 
+
   const [checkins, setCheckins] =
     useState<any[]>([]);
 
 
+
   const [loading, setLoading] =
     useState(true);
+
 
 
 
@@ -49,11 +68,35 @@ export default function CheckinPage() {
       if (!user) return;
 
 
+
       const data =
         await getClients(user.uid);
 
 
+
       setClients(data);
+
+
+
+
+      if(urlClientId){
+
+
+        setClientId(urlClientId);
+
+
+
+        const dataCheckins =
+          await getCheckins(urlClientId);
+
+
+
+        setCheckins(dataCheckins);
+
+
+
+      }
+
 
 
       setLoading(false);
@@ -62,20 +105,30 @@ export default function CheckinPage() {
     }
 
 
+
     loadClients();
 
 
-  }, [user]);
+
+  }, [user, urlClientId]);
 
 
 
 
 
 
-  async function loadCheckins() {
+
+  async function loadCheckins(
+    id?: string
+  ) {
 
 
-    if (!clientId) {
+    const selectedId =
+      id || clientId;
+
+
+
+    if(!selectedId){
 
 
       setCheckins([]);
@@ -89,14 +142,17 @@ export default function CheckinPage() {
 
 
     const data =
-      await getCheckins(clientId);
+      await getCheckins(selectedId);
 
 
 
     setCheckins(data);
 
 
+
   }
+
+
 
 
 
@@ -115,9 +171,13 @@ export default function CheckinPage() {
         <div className="p-6 space-y-6">
 
 
+
           <h1 className="text-3xl font-bold">
+
             ✅ Check-in klijenata
+
           </h1>
+
 
 
 
@@ -125,10 +185,13 @@ export default function CheckinPage() {
           {loading && (
 
             <p>
+
               Učitavanje klijenata...
+
             </p>
 
           )}
+
 
 
 
@@ -141,11 +204,21 @@ export default function CheckinPage() {
 
             value={clientId}
 
-            onChange={setClientId}
+            onChange={(id)=>{
 
-            onLoadHistory={loadCheckins}
+
+              setClientId(id);
+
+
+            }}
+
+
+            onLoadHistory={() =>
+              loadCheckins(clientId)
+            }
 
           />
+
 
 
 
@@ -157,9 +230,12 @@ export default function CheckinPage() {
 
             clientId={clientId}
 
-          onSaveAction={loadCheckins}
+            onSaveAction={() =>
+              loadCheckins(clientId)
+            }
 
           />
+
 
 
 
@@ -173,9 +249,12 @@ export default function CheckinPage() {
 
             clientId={clientId}
 
-            onReviewed={loadCheckins}
+            onReviewed={() =>
+              loadCheckins(clientId)
+            }
 
           />
+
 
 
 
@@ -190,6 +269,5 @@ export default function CheckinPage() {
 
 
   );
-
 
 }

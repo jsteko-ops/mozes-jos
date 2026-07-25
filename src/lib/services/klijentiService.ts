@@ -16,6 +16,10 @@ import { db } from "@/lib/firebase";
 import { createNotification } from "@/lib/notifications";
 
 
+// =======================
+// TIPOVI
+// =======================
+
 interface Client {
 
   id: string;
@@ -33,7 +37,6 @@ interface Client {
   createdAt?: any;
 
 }
-
 
 
 // =======================
@@ -54,13 +57,19 @@ export async function addClient(
   await addDoc(
     collection(db, "clients"),
     {
+
       trainerId,
+
       ...data,
-      createdAt: serverTimestamp(),
+
+      createdAt:
+        serverTimestamp(),
+
     }
   );
 
 }
+
 
 
 
@@ -69,17 +78,19 @@ export async function getClients(
 ): Promise<Client[]> {
 
 
-  const q = query(
-    collection(db, "clients"),
-    where(
-      "trainerId",
-      "==",
-      trainerId
-    )
-  );
+  const q =
+    query(
+      collection(db, "clients"),
+      where(
+        "trainerId",
+        "==",
+        trainerId
+      )
+    );
 
 
-  const snap = await getDocs(q);
+  const snap =
+    await getDocs(q);
 
 
 
@@ -96,8 +107,8 @@ export async function getClients(
 
 
 export async function getClient(
-  clientId: string
-) {
+  clientId:string
+): Promise<Client | null>{
 
 
   const snap =
@@ -110,22 +121,19 @@ export async function getClient(
     );
 
 
-  if(!snap.exists()) {
+  if(!snap.exists()){
 
     return null;
 
   }
 
 
-  const data =
-    snap.data() as Client;
-
 
   return {
 
     id: snap.id,
 
-    ...data,
+    ...(snap.data() as Omit<Client,"id">),
 
   };
 
@@ -145,12 +153,15 @@ export async function updateClient(
 ){
 
   await updateDoc(
+
     doc(
       db,
       "clients",
       clientId
     ),
+
     data
+
   );
 
 }
@@ -174,19 +185,27 @@ export async function addMeasurement(
 ){
 
   await addDoc(
+
     collection(
       db,
       "clients",
       clientId,
       "measurements"
     ),
+
     {
+
       ...data,
-      createdAt:serverTimestamp(),
+
+      createdAt:
+        serverTimestamp(),
+
     }
+
   );
 
 }
+
 
 
 
@@ -197,25 +216,29 @@ export async function getMeasurements(
 
   const snap =
     await getDocs(
+
       collection(
         db,
         "clients",
         clientId,
         "measurements"
       )
+
     );
 
 
 
   return snap.docs.map((doc)=>({
 
-    id:doc.id,
+    id:
+      doc.id,
 
     ...doc.data(),
 
   }));
 
 }
+
 
 
 
@@ -233,6 +256,7 @@ export async function updateMeasurement(
 ){
 
   await updateDoc(
+
     doc(
       db,
       "clients",
@@ -240,10 +264,13 @@ export async function updateMeasurement(
       "measurements",
       measurementId
     ),
+
     data
+
   );
 
 }
+
 
 
 
@@ -254,6 +281,7 @@ export async function deleteMeasurement(
 ){
 
   await deleteDoc(
+
     doc(
       db,
       "clients",
@@ -261,11 +289,10 @@ export async function deleteMeasurement(
       "measurements",
       measurementId
     )
+
   );
 
 }
-
-
 
 // =======================
 // TRENING PLANOVI
@@ -281,19 +308,28 @@ export async function addWorkout(
 ){
 
   await addDoc(
+
     collection(
       db,
       "clients",
       clientId,
       "workouts"
     ),
+
     {
+
       ...data,
-      createdAt:serverTimestamp(),
+
+      createdAt:
+        serverTimestamp(),
+
     }
+
   );
 
 }
+
+
 
 
 
@@ -303,25 +339,33 @@ export async function getWorkouts(
 
   const snap =
     await getDocs(
+
       collection(
         db,
         "clients",
         clientId,
         "workouts"
       )
+
     );
 
 
 
   return snap.docs.map((doc)=>({
 
-    id:doc.id,
+    id:
+      doc.id,
 
     ...doc.data(),
 
   }));
 
 }
+
+
+
+
+
 export async function updateWorkout(
   clientId:string,
   workoutId:string,
@@ -332,6 +376,7 @@ export async function updateWorkout(
 ){
 
   await updateDoc(
+
     doc(
       db,
       "clients",
@@ -339,10 +384,13 @@ export async function updateWorkout(
       "workouts",
       workoutId
     ),
+
     data
+
   );
 
 }
+
 
 
 
@@ -353,6 +401,7 @@ export async function deleteWorkout(
 ){
 
   await deleteDoc(
+
     doc(
       db,
       "clients",
@@ -360,9 +409,12 @@ export async function deleteWorkout(
       "workouts",
       workoutId
     )
+
   );
 
 }
+
+
 
 
 
@@ -415,6 +467,8 @@ export async function getTrainerStats(
 
 
 
+
+
 // =======================
 // CHECK-IN
 // =======================
@@ -434,12 +488,14 @@ export async function addCheckin(
 ){
 
   await addDoc(
+
     collection(
       db,
       "clients",
       clientId,
       "checkins"
     ),
+
     {
 
       ...data,
@@ -447,18 +503,23 @@ export async function addCheckin(
       photos:
         data.photos ?? [],
 
+
       reviewed:false,
+
 
       createdAt:
         serverTimestamp(),
+
 
       updatedAt:
         serverTimestamp(),
 
     }
+
   );
 
 }
+
 
 
 
@@ -469,12 +530,14 @@ export async function getCheckins(
 
   const snap =
     await getDocs(
+
       collection(
         db,
         "clients",
         clientId,
         "checkins"
       )
+
     );
 
 
@@ -482,7 +545,8 @@ export async function getCheckins(
   const checkins =
     snap.docs.map((doc)=>({
 
-      id:doc.id,
+      id:
+        doc.id,
 
       ...doc.data(),
 
@@ -491,7 +555,9 @@ export async function getCheckins(
 
 
   return checkins.sort(
+
     (a:any,b:any)=>{
+
 
       const dateA =
         a.createdAt?.toMillis
@@ -508,10 +574,13 @@ export async function getCheckins(
 
       return dateB - dateA;
 
+
     }
+
   );
 
 }
+
 
 
 
@@ -522,6 +591,7 @@ export async function markCheckinReviewed(
 ){
 
   await updateDoc(
+
     doc(
       db,
       "clients",
@@ -529,6 +599,7 @@ export async function markCheckinReviewed(
       "checkins",
       checkinId
     ),
+
     {
 
       reviewed:true,
@@ -537,9 +608,14 @@ export async function markCheckinReviewed(
         serverTimestamp(),
 
     }
+
   );
 
 }
+
+
+
+
 
 export async function saveTrainerComment(
   clientId:string,
@@ -547,23 +623,45 @@ export async function saveTrainerComment(
   trainerComment:string
 ){
 
-  await updateDoc(
+  const checkinRef =
     doc(
       db,
       "clients",
       clientId,
       "checkins",
       checkinId
-    ),
+    );
+
+
+
+  const oldCheckin =
+    await getDoc(checkinRef);
+
+
+
+  const hadComment =
+    oldCheckin.exists() &&
+    !!oldCheckin.data().trainerComment;
+
+
+
+  await updateDoc(
+
+    checkinRef,
+
     {
 
       trainerComment,
+
 
       trainerCommentAt:
         serverTimestamp(),
 
     }
+
   );
+
+
 
   await createNotification(
 
@@ -572,22 +670,139 @@ export async function saveTrainerComment(
     {
 
       title:
-        "Odgovor trenera",
+        hadComment
+          ? "Ažuriran komentar trenera"
+          : "Odgovor trenera",
+
+
 
       message:
-        "Trener je odgovorio na tvoj check-in.",
+        hadComment
+          ? "Trener je ažurirao komentar na tvom check-inu."
+          : "Trener je odgovorio na tvoj check-in.",
+
+
 
       type:
-        "checkin_reply",
+        "checkin",
+
+
 
       link:
-        "/dashboard/client",
+        `/dashboard/client?tab=checkin&checkin=${checkinId}`
 
     }
 
   );
 
 }
+// =======================
+// ODGOVOR KLIJENTA NA KOMENTAR TRENERA
+// =======================
+
+
+export async function saveClientReply(
+  clientId:string,
+  checkinId:string,
+  clientReply:string
+){
+
+  await updateDoc(
+
+    doc(
+      db,
+      "clients",
+      clientId,
+      "checkins",
+      checkinId
+    ),
+
+    {
+
+      clientReply,
+
+
+      clientReplyAt:
+        serverTimestamp(),
+
+    }
+
+  );
+
+
+
+  const clientSnap =
+    await getDoc(
+
+      doc(
+        db,
+        "clients",
+        clientId
+      )
+
+    );
+
+
+
+  if(!clientSnap.exists()){
+
+    return;
+
+  }
+
+
+
+  const clientData =
+    clientSnap.data();
+
+
+
+  const trainerId =
+    clientData.trainerId;
+
+
+
+  if(!trainerId){
+
+    return;
+
+  }
+
+
+
+
+
+  await createNotification(
+
+    trainerId,
+
+    {
+
+      title:
+        "Novi odgovor klijenta",
+
+
+
+      message:
+        "Klijent je odgovorio na tvoj komentar na check-inu.",
+
+
+
+      type:
+        "checkin",
+
+
+
+      link:
+`/dashboard/trainer/checkin?client=${clientId}&checkin=${checkinId}`
+    }
+
+  );
+
+
+}
+
+
 
 
 
@@ -602,12 +817,18 @@ export async function getClientByEmail(
 
   const q =
     query(
-      collection(db,"clients"),
+
+      collection(
+        db,
+        "clients"
+      ),
+
       where(
         "email",
         "==",
         email
       )
+
     );
 
 
@@ -640,9 +861,157 @@ export async function getClientByEmail(
   };
 
 }
+
+
+
+
+
+// =======================
+// KLIJENT PO USER ID
+// =======================
+
+
+export async function getClientByUserId(
+  userId:string
+):Promise<any|null>{
+
+
+  const snap =
+    await getDoc(
+
+      doc(
+        db,
+        "clients",
+        userId
+      )
+
+    );
+
+
+
+  if(snap.exists()){
+
+
+    return {
+
+      id:
+        snap.id,
+
+
+      ...snap.data(),
+
+    };
+
+
+  }
+
+
+
+  return null;
+
+
+}
+
+
+
+
+
+// =======================
+// REAL-TIME CHECKINS
+// =======================
+
+
+export function listenCheckins(
+
+  clientId:string,
+
+  callback:(checkins:any[])=>void
+
+){
+
+
+  return onSnapshot(
+
+
+    collection(
+
+      db,
+
+      "clients",
+
+      clientId,
+
+      "checkins"
+
+    ),
+
+
+
+    (snapshot)=>{
+
+
+      const checkins =
+
+        snapshot.docs
+
+        .map((doc)=>({
+
+
+          id:
+            doc.id,
+
+
+          ...doc.data(),
+
+
+        }))
+
+
+
+        .sort((a:any,b:any)=>{
+
+
+          const dateA =
+
+            a.createdAt?.toMillis
+
+              ? a.createdAt.toMillis()
+
+              : 0;
+
+
+
+          const dateB =
+
+            b.createdAt?.toMillis
+
+              ? b.createdAt.toMillis()
+
+              : 0;
+
+
+
+          return dateB - dateA;
+
+
+        });
+
+
+
+      callback(checkins);
+
+
+    }
+
+
+  );
+
+
+}
 // =======================
 // PREHRANA
 // =======================
+
 
 export async function addNutritionPlan(
   clientId:string,
@@ -653,20 +1022,29 @@ export async function addNutritionPlan(
 ){
 
   await addDoc(
+
     collection(
       db,
       "clients",
       clientId,
       "nutrition"
     ),
+
     {
+
       ...data,
+
       createdAt:
         serverTimestamp(),
+
     }
+
   );
 
 }
+
+
+
 
 
 export async function getNutritionPlans(
@@ -675,24 +1053,31 @@ export async function getNutritionPlans(
 
   const snap =
     await getDocs(
+
       collection(
         db,
         "clients",
         clientId,
         "nutrition"
       )
+
     );
 
 
-  return snap.docs.map(doc=>({
 
-    id:doc.id,
+  return snap.docs.map((doc)=>({
 
-    ...doc.data()
+    id:
+      doc.id,
+
+    ...doc.data(),
 
   }));
 
 }
+
+
+
 
 
 export async function deleteNutritionPlan(
@@ -701,96 +1086,20 @@ export async function deleteNutritionPlan(
 ){
 
   await deleteDoc(
+
     doc(
+
       db,
+
       "clients",
+
       clientId,
+
       "nutrition",
+
       planId
+
     )
-  );
-
-}
-
-export async function getClientByUserId(
-  userId: string
-): Promise<any | null> {
-
-
-  const snap =
-    await getDoc(
-      doc(
-        db,
-        "clients",
-        userId
-      )
-    );
-
-
-  if (snap.exists()) {
-
-    return {
-      id: snap.id,
-      ...snap.data(),
-    };
-
-  }
-
-
-  return null;
-
-}
-// =======================
-// REAL-TIME CHECKINS
-// =======================
-
-export function listenCheckins(
-
-  clientId: string,
-
-  callback: (checkins: any[]) => void
-
-) {
-
-  return onSnapshot(
-
-    collection(
-      db,
-      "clients",
-      clientId,
-      "checkins"
-    ),
-
-    (snapshot) => {
-
-      const checkins =
-        snapshot.docs
-          .map((doc) => ({
-
-            id: doc.id,
-
-            ...doc.data(),
-
-          }))
-          .sort((a: any, b: any) => {
-
-            const dateA =
-              a.createdAt?.toMillis
-                ? a.createdAt.toMillis()
-                : 0;
-
-            const dateB =
-              b.createdAt?.toMillis
-                ? b.createdAt.toMillis()
-                : 0;
-
-            return dateB - dateA;
-
-          });
-
-      callback(checkins);
-
-    }
 
   );
 

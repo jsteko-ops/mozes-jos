@@ -42,7 +42,52 @@ type Notification = {
 
 };
 
+function formatNotificationTime(timestamp: any) {
 
+  if (!timestamp) return "-";
+
+  const date =
+    timestamp.toDate
+      ? timestamp.toDate()
+      : new Date(timestamp);
+
+  const now = new Date();
+
+  const diff =
+    Math.floor(
+      (now.getTime() - date.getTime()) / 1000
+    );
+
+  if (diff < 60) {
+    return "Upravo sada";
+  }
+
+  if (diff < 3600) {
+    return `Prije ${Math.floor(diff / 60)} min`;
+  }
+
+  const isToday =
+    date.toDateString() === now.toDateString();
+
+  if (isToday) {
+    return `Danas u ${date.toLocaleTimeString("hr-HR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  }
+
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+
+  if (date.toDateString() === yesterday.toDateString()) {
+    return `Jučer u ${date.toLocaleTimeString("hr-HR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  }
+
+  return date.toLocaleString("hr-HR");
+}
 
 export default function NotificationBell(){
 
@@ -287,60 +332,49 @@ function notificationIcon(type?:string){
   },[]);
 
 
+async function openNotification(
+  notification: Notification
+){
+
+  setOpen(false);
 
 
+  if(notification.link){
 
-  async function openNotification(
-    notification:Notification
-  ){
-
-
-    await updateDoc(
-
-      doc(
-        db,
-        "notifications",
-        notification.id
-      ),
-
-      {
-        read:true
-      }
-
+    router.push(
+      notification.link
     );
-
-
-
-    setNotifications(prev=>
-
-      prev.filter(
-        n=>n.id !== notification.id
-      )
-
-    );
-
-
-
-    setOpen(false);
-
-
-
-    if(notification.link){
-
-
-      await router.push(
-        notification.link
-      );
-
-
-      router.refresh();
-
-
-    }
-
 
   }
-  const unread =
+
+
+  await updateDoc(
+
+    doc(
+      db,
+      "notifications",
+      notification.id
+    ),
+
+    {
+      read:true
+    }
+
+  );
+
+
+  setNotifications(prev =>
+
+    prev.filter(
+      n => n.id !== notification.id
+    )
+
+  );
+
+}
+
+
+    const unread =
     notifications.filter(
       n=>!n.read
     ).length;
@@ -448,7 +482,11 @@ function notificationIcon(type?:string){
                     {n.message}
                   </p>
 
+<p className="text-xs text-gray-500 mt-1">
 
+  🕒 {formatNotificationTime(n.createdAt)}
+
+</p>
                 </button>
 
 

@@ -128,39 +128,36 @@ if (!energy || !sleep || !hunger) {
   return;
 }
 
-    await addDoc(
+const checkinRef = await addDoc(
+  collection(
+    db,
+    "clients",
+    clientId,
+    "checkins"
+  ),
+  {
 
-      collection(
-        db,
-        "clients",
-        clientId,
-        "checkins"
-      ),
+    weight:
+      weightValue,
 
-      {
-        weight:
-  weightValue,
+    energy,
 
-        energy:
-          Number(energy),
+    sleep,
 
-        sleep:
-          Number(sleep),
+    hunger,
 
-        hunger:
-          Number(hunger),
+    water,
 
-        water,
+    comment,
 
-        comment,
+    reviewed:false,
 
-        reviewed:false,
+    createdAt:
+      serverTimestamp(),
 
-        createdAt:
-          serverTimestamp(),
-      }
+  }
+);
 
-    );
         // OBAVIJEST TRENERU
 
     if(client.trainerId){
@@ -180,9 +177,8 @@ if (!energy || !sleep || !hunger) {
     type:
       "checkin",
 
-    link:
-  `/dashboard/trainer/klijenti/${clientId}?tab=checkin`,
-
+link:
+`/dashboard/trainer/klijenti/${clientId}?tab=checkin&checkinId=${checkinRef.id}`,
   }
 
 );

@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-
+import { useParams, useSearchParams } from "next/navigation";
 import {
   LineChart,
   Line,
@@ -39,6 +38,7 @@ import {
 } from "@/lib/services/klijentiService";
 
 
+
 function toNumber(value: string) {
 
   return Number(
@@ -47,7 +47,10 @@ function toNumber(value: string) {
 
 }
 
+const searchParams = useSearchParams();
 
+const checkinId =
+  searchParams.get("checkinId");
 
 type Client = {
 
@@ -79,6 +82,10 @@ export default function KlijentProfilPage() {
 
 
   const params = useParams();
+const searchParams = useSearchParams();
+
+const checkinId =
+  searchParams.get("checkinId");
 
   const id = params.id as string;
 
@@ -455,6 +462,8 @@ const nutritionContent = (
 
 
 
+
+
 const checkinContent = (
 
   <CheckinHistory
@@ -462,6 +471,8 @@ const checkinContent = (
     clientId={id}
 
     checkins={checkins}
+
+    targetCheckinId={checkinId}
 
     onReviewed={()=>{
 
@@ -474,7 +485,6 @@ const checkinContent = (
   />
 
 );
-
 
   return (
 

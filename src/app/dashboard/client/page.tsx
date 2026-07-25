@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { useSearchParams } from "next/navigation";
+
 import Link from "next/link";
 
 import RoleGuard from "@/components/auth/RoleGuard";
@@ -24,6 +26,14 @@ import ClientNutrition from "@/components/client/ClientNutrition";
 
 export default function ClientDashboard() {
 
+
+const searchParams = useSearchParams();
+
+const openCheckin =
+  searchParams.get("tab") === "checkin";
+
+const selectedCheckin =
+  searchParams.get("checkin");
 
   const [checkins,setCheckins] =
     useState<any[]>([]);
@@ -126,7 +136,7 @@ const hasTrainerReply =
     <RoleGuard allowedRoles={["client"]}>
 
 
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
 
 
 
@@ -254,11 +264,16 @@ className="
 
           (
 
-            <ClientCheckins
+<ClientCheckins
 
-              checkins={checkins}
+  checkins={checkins}
 
-            />
+  selectedCheckin={selectedCheckin}
+
+  clientId={clientId}
+
+/>
+
 
           )
 

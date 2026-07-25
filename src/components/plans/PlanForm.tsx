@@ -13,7 +13,7 @@ import { db } from "@/lib/firebase";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
-
+import { createNotification } from "@/lib/notifications";
 
 export default function PlanForm({
   clientId,
@@ -64,7 +64,27 @@ export default function PlanForm({
         }
       );
 
+await createNotification(
 
+  clientId,
+
+  {
+
+    title:
+      "Novi trening",
+
+    message:
+      "Trener vam je dodao novi plan treninga.",
+
+    type:
+      "workout",
+
+    link:
+      "/dashboard/client/workouts",
+
+  }
+
+);
 
       setName("");
 

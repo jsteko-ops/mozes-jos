@@ -5,210 +5,251 @@ import { useRouter } from "next/navigation";
 
 import RoleGuard from "@/components/auth/RoleGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getTrainerStats } from "@/lib/services/klijentiService";
+
+import {
+  getTrainerStats,
+} from "@/lib/services/klijentiService";
+
 
 
 export default function TrainerPage(){
 
-const { user } = useAuth();
 
-const router = useRouter();
+  const { user } = useAuth();
 
 
-const [stats,setStats] =
-useState({
+  const router = useRouter();
 
-clientsCount:0,
 
-measurementsCount:0
 
-});
+  const [stats,setStats] =
+    useState({
 
+      clientsCount:0,
 
-const [loading,setLoading] =
-useState(true);
+      measurementsCount:0
 
+    });
 
 
-useEffect(()=>{
 
+  const [loading,setLoading] =
+    useState(true);
 
-async function loadStats(){
 
 
-if(!user) return;
 
 
-const data =
-await getTrainerStats(
-user.uid
-);
+  useEffect(()=>{
 
 
-setStats(data);
+    async function loadStats(){
 
-setLoading(false);
 
+      if(!user) return;
 
-}
 
 
-loadStats();
+      const data =
+        await getTrainerStats(
+          user.uid
+        );
 
 
-},[user]);
 
+      setStats(data);
 
 
 
+      setLoading(false);
 
-return(
 
-<RoleGuard allowedRoles={["trainer"]}>
+    }
 
 
-<div className="p-6 space-y-6">
 
+    loadStats();
 
-<h1 className="text-3xl font-bold">
-🏋️ Trainer Dashboard
-</h1>
 
+  },[user]);
 
 
 
 
-{loading ?
 
 
-<p>
-Učitavanje statistike...
-</p>
 
+  return(
 
-:
 
+    <RoleGuard allowedRoles={["trainer"]}>
 
-<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
+      <div className="p-6 space-y-6">
 
 
 
+        <h1 className="text-3xl font-bold">
 
-<div
+          🏋️ Trainer Dashboard
 
-className="border rounded-xl p-5 cursor-pointer hover:bg-gray-100"
+        </h1>
 
-onClick={()=>
-router.push("/dashboard/trainer/klijenti")
-}
 
->
 
 
-<h2 className="text-xl font-bold">
-👥 Klijenti
-</h2>
 
+        {loading ? (
 
-<p className="text-4xl mt-3">
-{stats.clientsCount}
-</p>
 
+          <p>
+            Učitavanje statistike...
+          </p>
 
-</div>
 
+        ) : (
 
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
 
 
 
-<div
 
-className="border rounded-xl p-5 cursor-pointer hover:bg-gray-100"
+            <div
 
-onClick={()=>
-router.push("/dashboard/trainer/mjerenja")
-}
+              className="border rounded-xl p-5 cursor-pointer hover:bg-gray-100"
 
->
+              onClick={()=>
 
 
-<h2 className="text-xl font-bold">
-⚖️ Mjerenja
-</h2>
+                router.push(
+                  "/dashboard/trainer/klijenti"
+                )
 
+              }
 
-<p className="text-4xl mt-3">
-{stats.measurementsCount}
-</p>
+            >
 
+              <h2 className="text-xl font-bold">
 
-</div>
+                👥 Klijenti
 
+              </h2>
 
 
+              <p className="text-4xl mt-3">
 
+                {stats.clientsCount}
 
+              </p>
 
 
-<div className="border rounded-xl p-5">
+            </div>
 
 
-<h2 className="text-xl font-bold">
-🏆 Status
-</h2>
 
 
-<p className="mt-3">
-Aktivan trener
-</p>
 
 
-</div>
+            <div
 
+              className="border rounded-xl p-5 cursor-pointer hover:bg-gray-100"
 
+              onClick={()=>
 
 
+                router.push(
+                  "/dashboard/trainer/mjerenja"
+                )
 
+              }
 
+            >
 
-<div className="border rounded-xl p-5">
+              <h2 className="text-xl font-bold">
 
+                ⚖️ Mjerenja
 
-<h2 className="text-xl font-bold">
-🚀 Možeš Još
-</h2>
+              </h2>
 
 
-<p className="mt-3">
-Radi na napretku klijenata
-</p>
+              <p className="text-4xl mt-3">
 
+                {stats.measurementsCount}
 
-</div>
+              </p>
 
 
+            </div>
 
 
 
 
-</div>
 
 
-}
+            <div className="border rounded-xl p-5">
 
 
+              <h2 className="text-xl font-bold">
 
+                🏆 Status
 
+              </h2>
 
-</div>
 
+              <p className="mt-3">
 
-</RoleGuard>
+                Aktivan trener
 
-);
+              </p>
+
+
+            </div>
+
+
+
+
+
+
+
+            <div className="border rounded-xl p-5">
+
+
+              <h2 className="text-xl font-bold">
+
+                🚀 Možeš Još
+
+              </h2>
+
+
+              <p className="mt-3">
+
+                Radi na napretku klijenata
+
+              </p>
+
+
+            </div>
+
+
+
+
+
+          </div>
+
+
+        )}
+
+
+
+      </div>
+
+
+    </RoleGuard>
+
+
+  );
 
 
 }

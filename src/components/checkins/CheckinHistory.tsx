@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
 
 import {
   markCheckinReviewed,
@@ -30,6 +31,8 @@ interface Checkin {
 
   trainerComment?: string;
 
+  clientReply?: string;
+
 }
 
 
@@ -41,15 +44,15 @@ interface CheckinHistoryProps {
   clientId: string;
 
   onReviewed: () => void;
+targetCheckinId?: string | null;
 
 }
 
 
 
+function formatDate(timestamp:any){
 
-function formatDate(timestamp: any) {
-
-  if (!timestamp) return "-";
+  if(!timestamp) return "-";
 
 
   const date =
@@ -58,11 +61,19 @@ function formatDate(timestamp: any) {
       : new Date(timestamp);
 
 
-  return date.toLocaleString("hr-HR");
+
+  return date.toLocaleString(
+    "hr-HR",
+    {
+      day:"2-digit",
+      month:"2-digit",
+      year:"numeric",
+      hour:"2-digit",
+      minute:"2-digit",
+    }
+  );
 
 }
-
-
 
 
 
@@ -75,25 +86,31 @@ export default function CheckinHistory({
 
   onReviewed,
 
-}: CheckinHistoryProps) {
+  targetCheckinId,
+
+}:CheckinHistoryProps){
 
 
 
-  const [comments, setComments] =
+  const [comments,setComments] =
     useState<Record<string,string>>({});
 
 
 
-  const [saving, setSaving] =
+  const [saving,setSaving] =
     useState<string | null>(null);
 
+
+
+  const [editing,setEditing] =
+    useState<string | null>(null);
 
 
 
 
   async function handleReviewed(
     checkinId:string
-  ) {
+  ){
 
 
     await markCheckinReviewed(
@@ -105,14 +122,9 @@ export default function CheckinHistory({
     onReviewed();
 
   }
-
-
-
-
-
   async function handleSaveComment(
     checkinId:string
-  ) {
+  ){
 
 
     setSaving(checkinId);
@@ -129,6 +141,8 @@ export default function CheckinHistory({
 
     setSaving(null);
 
+    setEditing(null);
+
 
     onReviewed();
 
@@ -136,6 +150,26 @@ export default function CheckinHistory({
   }
 
 
+useEffect(()=>{
+
+  if(!targetCheckinId) return;
+
+
+  const element =
+    document.getElementById(targetCheckinId);
+
+
+  if(element){
+
+    element.scrollIntoView({
+      behavior:"smooth",
+      block:"center"
+    });
+
+  }
+
+
+},[targetCheckinId,checkins]);
 
 
 
@@ -150,9 +184,11 @@ export default function CheckinHistory({
 
 
 
+
   return (
 
     <div className="border rounded-xl bg-white p-5 space-y-5">
+
 
 
       <div className="flex justify-between items-center">
@@ -165,6 +201,7 @@ export default function CheckinHistory({
         </h2>
 
 
+
         <span className="text-sm text-gray-500">
 
           Ukupno: {checkins.length}
@@ -173,7 +210,12 @@ export default function CheckinHistory({
 
 
       </div>
-            {checkins.length === 0 && (
+
+
+
+
+
+      {checkins.length === 0 && (
 
         <p>
           Nema spremljenih check-inova.
@@ -184,34 +226,36 @@ export default function CheckinHistory({
 
 
 
+
+
       <div className="space-y-4">
 
 
-        {sortedCheckins.map((checkin)=>(
+       {sortedCheckins.map((checkin)=>(
 
 
-          <div
+  <div
 
-            key={checkin.id}
+    key={checkin.id}
 
-            className="border rounded-xl p-5 space-y-4"
+    id={checkin.id}
 
-          >
+    className="border rounded-xl p-5 space-y-4"
+
+  >
+
+
 
 
 
             <div className="flex justify-between items-start">
 
 
-              <div>
+              <b>
 
-                <b>
+                📅 {formatDate(checkin.createdAt)}
 
-                  📅 {formatDate(checkin.createdAt)}
-
-                </b>
-
-              </div>
+              </b>
 
 
 
@@ -224,7 +268,9 @@ export default function CheckinHistory({
 
                 </span>
 
+
               ) : (
+
 
                 <span className="text-orange-600 font-bold">
 
@@ -232,10 +278,14 @@ export default function CheckinHistory({
 
                 </span>
 
+
               )}
 
 
+
             </div>
+
+
 
 
 
@@ -246,13 +296,13 @@ export default function CheckinHistory({
 
               <p>
 
-                ⚖️ Težina:{" "}
+                ⚖️ Težina:
+
+                {" "}
 
                 <b>
 
-                  {String(checkin.weight).replace(".", ",")}
-
-                  {" "}kg
+                  {String(checkin.weight).replace(".", ",")} kg
 
                 </b>
 
@@ -261,9 +311,12 @@ export default function CheckinHistory({
 
 
 
+
               <p>
 
-                ⚡ Energija:{" "}
+                ⚡ Energija:
+
+                {" "}
 
                 <b>
 
@@ -276,9 +329,12 @@ export default function CheckinHistory({
 
 
 
+
               <p>
 
-                😴 San:{" "}
+                😴 San:
+
+                {" "}
 
                 <b>
 
@@ -291,9 +347,12 @@ export default function CheckinHistory({
 
 
 
+
               <p>
 
-                🍽 Glad:{" "}
+                🍽 Glad:
+
+                {" "}
 
                 <b>
 
@@ -306,9 +365,12 @@ export default function CheckinHistory({
 
 
 
+
               <p>
 
-                💧 Voda:{" "}
+                💧 Voda:
+
+                {" "}
 
                 <b>
 
@@ -329,11 +391,13 @@ export default function CheckinHistory({
 
               <div className="rounded bg-gray-100 p-3">
 
+
                 <b>
 
                   Komentar klijenta
 
                 </b>
+
 
 
                 <p className="mt-2">
@@ -360,20 +424,51 @@ export default function CheckinHistory({
                 💬 Komentar trenera
 
               </b>
+              {checkin.trainerComment && editing !== checkin.id ? (
+
+                <>
+
+                  <p className="mt-2 whitespace-pre-wrap">
+
+                    {checkin.trainerComment}
+
+                  </p>
 
 
 
+                  <button
 
-              {checkin.trainerComment ? (
+                    className="mt-3 text-blue-600 underline"
 
-                <p className="mt-2 whitespace-pre-wrap">
+                    onClick={()=>{
 
-                  {checkin.trainerComment}
+                      setComments({
 
-                </p>
+                        ...comments,
+
+                        [checkin.id]:
+                          checkin.trainerComment || ""
+
+                      });
+
+
+                      setEditing(checkin.id);
+
+
+                    }}
+
+                  >
+
+                    ✏️ Uredi komentar
+
+                  </button>
+
+
+                </>
 
 
               ) : (
+
 
                 <textarea
 
@@ -395,7 +490,7 @@ export default function CheckinHistory({
                       ...comments,
 
                       [checkin.id]:
-                        e.target.value,
+                        e.target.value
 
                     })
 
@@ -404,36 +499,93 @@ export default function CheckinHistory({
 
                 />
 
+
               )}
 
 
 
             </div>
-                          {!checkin.trainerComment && (
 
-                <button
 
-                  className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
 
-                  disabled={
-                    saving === checkin.id
-                  }
 
-                  onClick={() =>
-                    handleSaveComment(
-                      checkin.id
-                    )
-                  }
 
-                >
 
-                  {saving === checkin.id
-                    ? "Spremam..."
-                    : "💬 Spremi komentar"}
+            {(!checkin.trainerComment || editing === checkin.id) && (
 
-                </button>
 
-              )}
+              <button
+
+                className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+
+                disabled={
+                  saving === checkin.id
+                }
+
+
+                onClick={()=> 
+                  handleSaveComment(
+                    checkin.id
+                  )
+                }
+
+
+              >
+
+                {
+
+                  saving === checkin.id
+
+                  ?
+
+                  "Spremam..."
+
+                  :
+
+                  "💬 Spremi komentar"
+
+                }
+
+
+              </button>
+
+
+            )}
+
+
+
+
+
+
+
+            {checkin.clientReply && (
+
+
+              <div className="rounded bg-green-50 p-3">
+
+
+                <b>
+
+                  👤 Odgovor klijenta
+
+                </b>
+
+
+                <p className="mt-2 whitespace-pre-wrap">
+
+                  {checkin.clientReply}
+
+                </p>
+
+
+              </div>
+
+
+            )}
+
+
+
+
 
 
 
@@ -442,13 +594,19 @@ export default function CheckinHistory({
 
               <button
 
-                className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
 
-                onClick={() =>
+                className="bg-black text-white px-4 px-2 py-2 rounded hover:bg-gray-800"
+
+
+                onClick={()=>
+
+
                   handleReviewed(
                     checkin.id
                   )
+
                 }
+
 
               >
 
@@ -461,6 +619,8 @@ export default function CheckinHistory({
 
 
 
+
+
           </div>
 
 
@@ -470,7 +630,9 @@ export default function CheckinHistory({
       </div>
 
 
+
     </div>
+
 
   );
 

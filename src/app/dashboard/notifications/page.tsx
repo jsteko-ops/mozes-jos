@@ -22,7 +22,10 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+} from "next/navigation";
+
 
 
 type Notification = {
@@ -45,103 +48,223 @@ type Notification = {
 
 
 
+function formatDate(timestamp:any){
+
+  if(!timestamp) return "-";
+
+
+  const date =
+    timestamp.toDate
+      ? timestamp.toDate()
+      : new Date(timestamp);
+
+
+
+  return date.toLocaleString(
+    "hr-HR"
+  );
+
+}
+
+
+
+
+
+function formatNotificationTime(timestamp:any){
+
+  if(!timestamp) return "-";
+
+
+  const date =
+    timestamp.toDate
+      ? timestamp.toDate()
+      : new Date(timestamp);
+
+
+
+  const now =
+    new Date();
+
+
+
+  const diff =
+    Math.floor(
+      (
+        now.getTime()
+        -
+        date.getTime()
+      )
+      /
+      1000
+    );
+
+
+
+  if(diff < 60){
+
+    return "Upravo sada";
+
+  }
+
+
+
+  if(diff < 3600){
+
+    return `Prije ${Math.floor(diff / 60)} min`;
+
+  }
+
+
+
+  const isToday =
+    date.toDateString()
+    ===
+    now.toDateString();
+
+
+
+  if(isToday){
+
+    return `Danas u ${
+      date.toLocaleTimeString(
+        "hr-HR",
+        {
+          hour:"2-digit",
+          minute:"2-digit",
+        }
+      )
+    }`;
+
+  }
+
+
+
+  const yesterday =
+    new Date();
+
+
+  yesterday.setDate(
+    now.getDate() - 1
+  );
+
+
+
+  if(
+    date.toDateString()
+    ===
+    yesterday.toDateString()
+  ){
+
+    return `Jučer u ${
+      date.toLocaleTimeString(
+        "hr-HR",
+        {
+          hour:"2-digit",
+          minute:"2-digit",
+        }
+      )
+    }`;
+
+  }
+
+
+
+  return date.toLocaleString(
+    "hr-HR"
+  );
+
+}
+
+
+
+
+
+function notificationIcon(
+  type?:string
+){
+
+  switch(type){
+
+    case "checkin":
+      return "📋";
+
+
+    case "chat":
+      return "💬";
+
+
+    case "plan":
+      return "🏋️";
+
+
+    default:
+      return "🔔";
+
+  }
+
+}
+
+
+
+
+
+
 export default function NotificationsPage(){
 
 
-  const router = useRouter();
+  const router =
+    useRouter();
 
 
-  const [notifications,setNotifications] =
+
+  const [
+    notifications,
+    setNotifications
+  ] =
     useState<Notification[]>([]);
 
 
 
-  const [filter,setFilter] =
+  const [
+    userId,
+    setUserId
+  ] =
+    useState<string | null>(null);
+
+
+
+  const [
+    filter,
+    setFilter
+  ] =
     useState<
       "all" | "new" | "read"
     >("all");
 
-
-
-
   useEffect(()=>{
 
 
-    const unsubscribeAuth =
+    const unsubscribe =
       onAuthStateChanged(
-
         auth,
-
         (user)=>{
 
 
-          if(!user){
-            return;
+          if(user){
+
+            setUserId(
+              user.uid
+            );
+
           }
 
 
-
-          const q = query(
-
-            collection(
-              db,
-              "notifications"
-            ),
-
-            where(
-              "userId",
-              "==",
-              user.uid
-            ),
-
-            orderBy(
-              "createdAt",
-              "desc"
-            )
-
-          );
-
-
-
-          const unsubscribe =
-            onSnapshot(
-
-              q,
-
-              (snap)=>{
-
-
-                const data =
-                  snap.docs.map((item)=>({
-
-
-                    id:item.id,
-
-                    ...item.data()
-
-
-                  })) as Notification[];
-
-
-
-                setNotifications(data);
-
-
-              }
-
-            );
-
-
-          return unsubscribe;
-
-
         }
-
       );
 
 
 
-    return ()=>unsubscribeAuth();
+    return ()=>unsubscribe();
 
 
   },[]);
@@ -151,19 +274,86 @@ export default function NotificationsPage(){
 
 
 
-  async function markAllRead(){
+  useEffect(()=>{
 
 
-    const unread =
-      notifications.filter(
-        n=>!n.read
+    if(!userId) return;
+
+
+
+    const q =
+      query(
+
+        collection(
+          db,
+          "notifications"
+        ),
+
+
+        where(
+          "userId",
+          "==",
+          userId
+        ),
+
+
+        orderBy(
+          "createdAt",
+          "desc"
+        )
+
       );
 
 
 
-    if(unread.length===0){
-      return;
-    }
+    const unsubscribe =
+      onSnapshot(
+        q,
+        (snapshot)=>{
+
+
+          const data =
+            snapshot.docs.map(
+              (doc)=>({
+
+                id:
+                  doc.id,
+
+                ...doc.data(),
+
+              } as Notification)
+
+            );
+
+
+
+          setNotifications(
+            data
+          );
+
+
+        }
+
+      );
+
+
+
+    return ()=>unsubscribe();
+
+
+
+  },[userId]);
+
+
+
+
+
+
+
+  async function markAllRead(){
+
+
+    if(!userId) return;
 
 
 
@@ -172,25 +362,34 @@ export default function NotificationsPage(){
 
 
 
-    unread.forEach((n)=>{
+    notifications.forEach(
+      (n)=>{
 
 
-      batch.update(
+        if(!n.read){
 
-        doc(
-          db,
-          "notifications",
-          n.id
-        ),
 
-        {
-          read:true
+          batch.update(
+
+            doc(
+              db,
+              "notifications",
+              n.id
+            ),
+
+            {
+              read:true,
+            }
+
+          );
+
+
         }
 
-      );
 
+      }
 
-    });
+    );
 
 
 
@@ -204,15 +403,10 @@ export default function NotificationsPage(){
 
 
 
+
   async function deleteNotification(
     id:string
   ){
-
-
-    if(!confirm("Obrisati ovu obavijest?")){
-      return;
-    }
-
 
 
     await deleteDoc(
@@ -233,47 +427,22 @@ export default function NotificationsPage(){
 
 
 
+
   async function deleteReadNotifications(){
 
 
-    const readNotifications =
+    const read =
       notifications.filter(
-        n=>n.read
+        (n)=>n.read
       );
 
 
 
-    if(readNotifications.length===0){
+    for(
+      const n of read
+    ){
 
-      alert(
-        "Nema pročitanih obavijesti"
-      );
-
-      return;
-
-    }
-
-
-
-    if(!confirm(
-      "Obrisati sve pročitane obavijesti?"
-    )){
-
-      return;
-
-    }
-
-
-
-    const batch =
-      writeBatch(db);
-
-
-
-    readNotifications.forEach((n)=>{
-
-
-      batch.delete(
+      await deleteDoc(
 
         doc(
           db,
@@ -283,85 +452,49 @@ export default function NotificationsPage(){
 
       );
 
-
-    });
-
-
-
-    await batch.commit();
+    }
 
 
   }
+
+
+
+
 
 
 
 
   const filteredNotifications =
-    notifications.filter((n)=>{
+    notifications.filter(
+      (n)=>{
 
 
-      if(filter==="new"){
+        if(
+          filter === "new"
+        ){
 
-        return !n.read;
+          return !n.read;
+
+        }
+
+
+
+        if(
+          filter === "read"
+        ){
+
+          return n.read;
+
+        }
+
+
+
+        return true;
+
 
       }
+    );
 
-
-      if(filter==="read"){
-
-        return n.read;
-
-      }
-
-
-      return true;
-
-
-    });
-
-
-function notificationIcon(type?:string){
-
-  switch(type){
-
-    case "checkin":
-      return "📝";
-
-    case "chat":
-      return "💬";
-
-    case "workout":
-      return "🏋️";
-
-    case "measurement":
-      return "📏";
-
-    default:
-      return "🔔";
-
-  }
-
-}
-
-
-  function formatDate(timestamp:any){
-
-
-    if(!timestamp){
-
-      return "";
-
-    }
-
-
-    return timestamp
-      .toDate()
-      .toLocaleString(
-        "hr-HR"
-      );
-
-
-  }
 
 
 
@@ -370,59 +503,67 @@ function notificationIcon(type?:string){
 
   return (
 
-    <div className="p-6">
+    <div className="p-6 space-y-6">
 
 
-      <h1 className="text-2xl font-bold mb-6">
-        🔔 Povijest obavijesti
+
+      <h1 className="text-3xl font-bold">
+
+        🔔 Obavijesti
+
       </h1>
 
 
 
 
 
-      <div className="flex gap-3 mb-5 flex-wrap">
+      <div className="flex flex-wrap gap-3">
 
 
         <button
 
-          onClick={()=>
-            setFilter("all")
-          }
+          onClick={()=>setFilter("all")}
 
           className="px-4 py-2 rounded bg-gray-100"
 
         >
+
           Sve
+
         </button>
+
+
 
 
 
         <button
 
-          onClick={()=>
-            setFilter("new")
-          }
+          onClick={()=>setFilter("new")}
 
           className="px-4 py-2 rounded bg-gray-100"
 
         >
+
           Nove
+
         </button>
+
+
 
 
 
         <button
 
-          onClick={()=>
-            setFilter("read")
-          }
+          onClick={()=>setFilter("read")}
 
           className="px-4 py-2 rounded bg-gray-100"
 
         >
+
           Pročitane
+
         </button>
+
 
 
 
@@ -434,8 +575,11 @@ function notificationIcon(type?:string){
           className="px-4 py-2 rounded bg-blue-600 text-white"
 
         >
+
           ✅ Označi sve pročitano
+
         </button>
+
 
 
 
@@ -447,160 +591,188 @@ function notificationIcon(type?:string){
           className="px-4 py-2 rounded bg-red-600 text-white"
 
         >
+
           🗑 Obriši pročitane
+
         </button>
 
 
-
       </div>
-
-
-
-
-
-
 
       <div className="bg-white rounded-xl shadow p-4">
 
 
 
+        {
+          filteredNotifications.length === 0 ?
 
 
+          (
+
+            <p>
+              Nema obavijesti
+            </p>
+
+          )
+
+
+          :
+
+
+          filteredNotifications.map((n)=>(
+
+
+            <div
+
+              key={n.id}
+
+              className={`border-b py-4 px-3 rounded ${
+                !n.read
+                ?
+                "bg-blue-50"
+                :
+                ""
+              }`}
+
+            >
+
+
+
+              <button
+
+                type="button"
+
+                className="w-full text-left"
+
+           onClick={()=>{
+
+  alert("KLIK RADI");
+
+}}
+
+              >
+
+
+
+                <div className="flex justify-between">
+
+
+                  <b>
+
+                    {notificationIcon(n.type)} {n.title}
+
+                  </b>
+
+
+
+                  <span className="text-sm">
+
+                    {
+                      n.read
+                      ?
+                      "Pročitano"
+                      :
+                      "Novo"
+                    }
+
+                  </span>
+
+
+
+                </div>
+
+
+
+
+                <p>
+
+                  {n.message}
+
+                </p>
+
+<span className="text-xs text-gray-500 block mt-1">
+
+  {
+    n.createdAt?.toDate
+    ?
+    n.createdAt.toDate().toLocaleString(
+      "hr-HR",
       {
-        filteredNotifications.length===0 ?
+        day:"2-digit",
+        month:"2-digit",
+        year:"numeric",
+        hour:"2-digit",
+        minute:"2-digit"
+      }
+    )
+    :
+    ""
+  }
+
+</span>
 
 
-        (
+                <p className="text-sm text-gray-500 mt-1">
 
-          <p>
-            Nema obavijesti
-          </p>
+                  {formatDate(n.createdAt)}
 
-        )
-
-
-        :
-
-
-        filteredNotifications.map((n)=>(
-
-
-          <div
-
-            key={n.id}
-
-            className={`border-b py-4 px-3 rounded ${
-              !n.read
-              ?
-              "bg-blue-50"
-              :
-              ""
-            }`}
-
-          >
+                </p>
 
 
 
-            <button
 
-              className="w-full text-left"
+                <p className="text-xs text-gray-500 mt-2">
 
-              onClick={()=>{
+                  🕒 {formatNotificationTime(n.createdAt)}
 
-                if(n.link){
+                </p>
 
-                  router.push(
-                    n.link
+
+
+              </button>
+
+
+
+
+
+
+              <button
+
+                type="button"
+
+                onClick={(e)=>{
+
+
+                  e.stopPropagation();
+
+
+
+                  deleteNotification(
+                    n.id
                   );
 
-                }
 
-              }}
+                }}
 
-            >
+                className="mt-2 text-sm text-red-600 hover:underline"
 
+              >
 
-              <div className="flex justify-between">
+                🗑 Obriši
 
-
-          <b>
-  {notificationIcon(n.type)} {n.title}
-</b>
-
-
-                <span className="text-sm">
-
-                  {
-                    n.read
-                    ?
-                    "Pročitano"
-                    :
-                    "Novo"
-                  }
-
-                </span>
-
-
-              </div>
-
-
-
-
-              <p>
-                {n.message}
-              </p>
-
-
-
-
-              <p className="text-sm text-gray-500 mt-1">
-
-                {formatDate(n.createdAt)}
-
-              </p>
-
-
-
-            </button>
+              </button>
 
 
 
 
 
-            <button
-
-              type="button"
-
-              onClick={(e)=>{
-
-                e.stopPropagation();
-
-                deleteNotification(
-                  n.id
-                );
-
-              }}
-
-              className="mt-2 text-sm text-red-600 hover:underline"
-
-            >
-
-              🗑 Obriši
-
-            </button>
+            </div>
 
 
+          ))
 
 
-          </div>
-
-
-        ))
-
-
-      }
-
-
+        }
 
 
 
