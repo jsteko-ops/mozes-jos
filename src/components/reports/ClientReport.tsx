@@ -1,6 +1,10 @@
 "use client";
-
+import { useState } from "react";
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import WeightChart from "@/components/reports/WeightChart";
+import html2canvas from "html2canvas";
+import ReportStats from "@/components/reports/ReportStats";
 
 import {
   getClient,
@@ -14,7 +18,11 @@ import {
 type Props = {
   clientId:string;
 };
-
+type ReportPeriod =
+  | "all"
+  | "30"
+  | "90"
+  | "365";
 
 function formatDate(value:any){
 
@@ -38,6 +46,11 @@ export default function ClientReport({
   clientId,
 }:Props){
 
+const [period, setPeriod] =
+  useState<ReportPeriod>("all");
+
+const [measurements, setMeasurements] =
+  useState<any[]>([]);
 
 async function generatePDF(){
 
@@ -57,8 +70,10 @@ async function generatePDF(){
   }
 
 
-  const measurements =
-    await getMeasurements(clientId);
+  const loadedMeasurements =
+  await getMeasurements(clientId);
+
+setMeasurements(loadedMeasurements);
 
 
   const checkins =
@@ -73,12 +88,98 @@ async function generatePDF(){
     await getNutritionPlans(clientId);
 
 
+const now = new Date();
 
+const days =
+  period === "30"
+    ? 30
+    : period === "90"
+    ? 90
+    : period === "365"
+    ? 365
+    : null;
+
+const filteredMeasurements =
+  days === null
+    ? loadedMeasurements
+    : loadedMeasurements.filter((m: any) => {
+        const date = m.createdAt?.toDate
+          ? m.createdAt.toDate()
+          : new Date(m.createdAt);
+
+        return (
+          (now.getTime() - date.getTime()) /
+            (1000 * 60 * 60 * 24) <=
+          days
+        );
+      });
+
+const filteredCheckins =
+  days === null
+    ? checkins
+    : checkins.filter((c: any) => {
+        const date = c.createdAt?.toDate
+          ? c.createdAt.toDate()
+          : new Date(c.createdAt);
+
+        return (
+          (now.getTime() - date.getTime()) /
+            (1000 * 60 * 60 * 24) <=
+          days
+        );
+      });
 
   const pdf =
     new jsPDF();
 
+const chartElement =
+  document.getElementById(
+    "weight-chart"
+  );
 
+let chartImage = null;
+
+
+if(chartElement){
+
+  const canvas =
+    await html2canvas(
+      chartElement
+    );
+
+  chartImage =
+    canvas.toDataURL(
+      "image/png"
+    );
+
+}
+
+
+
+const chart =
+  document.getElementById("weight-chart");
+
+
+if(chart){
+
+  const canvas =
+    await html2canvas(chart);
+
+
+  const imgData =
+    canvas.toDataURL("image/png");
+
+
+  pdf.addImage(
+    imgData,
+    "PNG",
+    20,
+    20,
+    170,
+    85
+  );
+
+}
 
   let y = 20;
 
@@ -145,55 +246,125 @@ async function generatePDF(){
 
   y += 8;
 
+const firstMeasurement =
+  filteredMeasurements.length > 0
+    ? (filteredMeasurements[0] as any)
+    : null;
 
-  pdf.setFontSize(10);
+const lastMeasurement =
+  filteredMeasurements.length > 0
+    ? (filteredMeasurements[filteredMeasurements.length - 1] as any)
+    : null;
 
+let weightChange = 0;
 
+if (firstMeasurement && lastMeasurement) {
+  weightChange =
+    Number(lastMeasurement.weight) -
+    Number(firstMeasurement.weight);
+}
 
-  if(measurements.length===0){
+pdf.setFontSize(14);
 
-    pdf.text(
-      "Nema mjerenja.",
-      20,
-      y
-    );
+pdf.text(
+  "SAŽETAK",
+  20,
+  y
+);
 
-    y += 8;
+y += 8;
 
-  }
+pdf.setFontSize(11);
 
+pdf.text(
+ `Ukupno mjerenja: ${filteredMeasurements.length}`,
+  20,
+  y
+);
 
+y += 7;
 
-  measurements.forEach((m:any)=>{
+pdf.text(
+  `Ukupno check-inova: ${checkins.length}`,
+  20,
+  y
+);
 
+y += 7;
 
-    pdf.text(
+pdf.text(
+  `Početna težina: ${firstMeasurement ? firstMeasurement.weight : "-"} kg`,
+  20,
+  y
+);
 
-      `${formatDate(m.createdAt)} | ${m.weight} kg | struk ${m.waist} cm | prsa ${m.chest} cm | ruka ${m.arm} cm`,
+y += 7;
 
-      20,
+pdf.text(
+  `Trenutna težina: ${lastMeasurement ? lastMeasurement.weight : "-"} kg`,
+  20,
+  y
+);
 
-      y
+y += 7;
 
-    );
+pdf.text(
+  `Promjena težine: ${weightChange > 0 ? "+" : ""}${weightChange} kg`,
+  20,
+  y
+);
 
+y += 15;
 
-    y += 7;
+  pdf.setFontSize(14);
 
+pdf.text(
+  "MJERENJA",
+  20,
+  y
+);
 
+y += 5;
 
-    if(y>270){
+if (filteredMeasurements.length > 0) {
 
-      pdf.addPage();
-
-      y=20;
-
-    }
-
-
+  autoTable(pdf, {
+    startY: y,
+    head: [[
+      "Datum",
+      "Težina",
+      "Struk",
+      "Prsa",
+      "Ruka"
+    ]],
+   body: filteredMeasurements.map((m:any)=>[
+      formatDate(m.createdAt),
+      `${m.weight} kg`,
+      `${m.waist} cm`,
+      `${m.chest} cm`,
+      `${m.arm} cm`,
+    ]),
+    styles: {
+      fontSize: 10,
+    },
+    headStyles: {
+      fillColor: [30, 30, 30],
+    },
   });
 
+  y = (pdf as any).lastAutoTable.finalY + 10;
 
+} else {
+
+  pdf.text(
+    "Nema mjerenja.",
+    20,
+    y
+  );
+
+  y += 10;
+
+}
 
 
   y += 10;
@@ -216,7 +387,7 @@ async function generatePDF(){
 
 
 
-  if(checkins.length===0){
+if(filteredCheckins.length===0){
 
     pdf.text(
       "Nema check-inova.",
@@ -230,7 +401,7 @@ async function generatePDF(){
 
 
 
-  checkins.slice(0,10)
+  filteredCheckins.slice(0,10)
   .forEach((c:any)=>{
 
 
@@ -353,7 +524,28 @@ async function generatePDF(){
   );
 
 
+if(chartImage){
 
+  pdf.addPage();
+
+  pdf.setFontSize(16);
+
+  pdf.text(
+    "Graf promjene težine",
+    20,
+    20
+  );
+
+  pdf.addImage(
+    chartImage,
+    "PNG",
+    20,
+    30,
+    170,
+    80
+  );
+
+}
 
   pdf.save(
 
@@ -367,28 +559,71 @@ async function generatePDF(){
 
 
 
-
 return (
 
-<button
+  <div className="flex items-center gap-3">
 
-onClick={generatePDF}
-
-className="
-bg-black
-text-white
-px-5
-py-3
-rounded-xl
-"
-
+<div
+  id="weight-chart"
+  style={{
+  position:"absolute",
+left:"-9999px",
+width:"600px"
+  }}
 >
+<WeightChart
+  measurements={measurements}
+/>
+</div>
 
-📄 Generiraj PDF izvještaj
+    <select
+      value={period}
+      onChange={(e)=>
+        setPeriod(
+          e.target.value as ReportPeriod
+        )
+      }
+      className="
+      border
+      rounded-lg
+      px-3
+      py-2
+      "
+    >
 
-</button>
+      <option value="all">
+        Sve
+      </option>
+
+      <option value="30">
+        Zadnjih 30 dana
+      </option>
+
+      <option value="90">
+        Zadnjih 90 dana
+      </option>
+
+      <option value="365">
+        Zadnjih godinu dana
+      </option>
+
+    </select>
+
+    <button
+      onClick={generatePDF}
+      className="
+      bg-black
+      text-white
+      px-5
+      py-3
+      rounded-xl
+      "
+    >
+      📄 Generiraj PDF
+    </button>
+
+  </div>
 
 );
-
 
 }
