@@ -3,61 +3,179 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
+import { useEffect, useState } from "react";
 
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/components/auth/AuthProvider";
 
+import {
+  listenUnreadCheckins,
+} from "@/lib/services/notificationService";
+
+import {
+  listenUnreadTrainerMessages,
+} from "@/lib/services/chat/chatNotifications";
+
+
 export default function Sidebar() {
+
+
   const pathname = usePathname();
+
   const router = useRouter();
+
 
   const { userProfile } = useAuth();
 
+
+
+  const [messageCount, setMessageCount] =
+    useState(0);
+
+
+  const [checkinCount, setCheckinCount] =
+    useState(0);
+
+
+
+
+
+  useEffect(() => {
+
+
+    if (!userProfile?.uid) return;
+
+
+
+    const unsubscribeMessages =
+      listenUnreadTrainerMessages(
+
+        userProfile.uid,
+
+        (count)=>{
+
+          setMessageCount(count);
+
+        }
+
+      );
+
+
+
+
+    const unsubscribeCheckins =
+      listenUnreadCheckins(
+
+        userProfile.uid,
+
+        (count)=>{
+
+          setCheckinCount(count);
+
+        }
+
+      );
+
+
+
+
+
+    return () => {
+
+      unsubscribeMessages();
+
+      unsubscribeCheckins();
+
+    };
+
+
+
+  }, [userProfile]);
+
+
+
+
+
+
   const logout = async () => {
+
+
     await signOut(auth);
+
+
     router.replace("/login");
+
+
   };
 
 
-  const linkClass = (href: string) =>
+
+
+
+
+  const linkClass = (href:string) =>
+
+
     `block rounded-lg px-3 py-2 transition ${
+      
       pathname === href
-        ? "bg-blue-600 text-white"
-        : "text-gray-700 hover:bg-gray-100"
+
+      ?
+
+      "bg-blue-600 text-white"
+
+      :
+
+      "text-gray-700 hover:bg-gray-100"
+
     }`;
 
 
+
+
+
+
   if (!userProfile) {
+
     return null;
+
   }
 
 
 
+
   return (
+
     <aside className="w-64 min-h-screen border-r bg-white p-5 flex flex-col">
 
 
       <div className="mb-8">
 
+
         <h1 className="text-2xl font-bold">
           Možeš Još
         </h1>
 
+
         <p className="text-sm text-gray-500 mt-1">
           {userProfile.role}
         </p>
+
 
       </div>
 
 
 
 
+
       <nav className="flex flex-col gap-2">
 
-
+        
 
         {/* TRAINER MENU */}
+
         {userProfile.role === "trainer" && (
+
           <>
 
             <Link
@@ -67,12 +185,25 @@ export default function Sidebar() {
               Dashboard
             </Link>
 
-<Link
-  href="/dashboard/chat"
-  className={linkClass("/dashboard/chat")}
->
-  💬 Chat
-</Link>
+
+
+            <Link
+              href="/dashboard/chat"
+              className={linkClass("/dashboard/chat")}
+            >
+              💬 Chat
+              {
+                messageCount > 0 && (
+                  <span className="ml-2 bg-red-600 text-white text-xs rounded-full px-2">
+                    {messageCount}
+                  </span>
+                )
+              }
+            </Link>
+
+
+
+
 
             <Link
               href="/dashboard/trainer/klijenti"
@@ -80,6 +211,9 @@ export default function Sidebar() {
             >
               Klijenti
             </Link>
+
+
+
 
 
             <Link
@@ -90,27 +224,49 @@ export default function Sidebar() {
             </Link>
 
 
+
+
+
             <Link
               href="/dashboard/trainer/checkin"
               className={linkClass("/dashboard/trainer/checkin")}
             >
               Check-in
+
+              {
+                checkinCount > 0 && (
+                  <span className="ml-2 bg-red-600 text-white text-xs rounded-full px-2">
+                    {checkinCount}
+                  </span>
+                )
+              }
+
             </Link>
 
-<Link
-  href="/dashboard/notifications"
-  className={linkClass("/dashboard/notifications")}
->
-  🔔 Obavijesti
-</Link>
 
 
-         <Link
-  href="/dashboard/reports"
-  className={linkClass("/dashboard/reports")}
->
-  📄 Izvještaji
-</Link>
+
+
+            <Link
+              href="/dashboard/notifications"
+              className={linkClass("/dashboard/notifications")}
+            >
+              🔔 Obavijesti
+            </Link>
+
+
+
+
+
+            <Link
+              href="/dashboard/reports"
+              className={linkClass("/dashboard/reports")}
+            >
+              📄 Izvještaji
+            </Link>
+
+
+
 
 
             <Link
@@ -120,7 +276,9 @@ export default function Sidebar() {
               Naplata
             </Link>
 
+
           </>
+
         )}
 
 
@@ -128,8 +286,11 @@ export default function Sidebar() {
 
 
 
+
         {/* OWNER MENU */}
+
         {userProfile.role === "gym_owner" && (
+
           <>
 
             <Link
@@ -138,6 +299,8 @@ export default function Sidebar() {
             >
               Moja teretana
             </Link>
+
+
 
 
 
@@ -150,6 +313,8 @@ export default function Sidebar() {
 
 
 
+
+
             <Link
               href="/dashboard/owner/clients"
               className={linkClass("/dashboard/owner/clients")}
@@ -159,19 +324,29 @@ export default function Sidebar() {
 
 
 
-            <Link
-  href="/dashboard/reports"
-  className={linkClass("/dashboard/reports")}
->
-  📄 Izvještaji
-</Link>
 
-<Link
-  href="/dashboard/chat"
-  className={linkClass("/dashboard/chat")}
->
-  💬 Chat
-</Link>
+
+            <Link
+              href="/dashboard/reports"
+              className={linkClass("/dashboard/reports")}
+            >
+              📄 Izvještaji
+            </Link>
+
+
+
+
+
+            <Link
+              href="/dashboard/chat"
+              className={linkClass("/dashboard/chat")}
+            >
+              💬 Chat
+            </Link>
+
+
+
+
 
             <Link
               href="/dashboard/settings"
@@ -182,6 +357,7 @@ export default function Sidebar() {
 
 
           </>
+
         )}
 
 
@@ -189,61 +365,77 @@ export default function Sidebar() {
 
 
 
-{/* CLIENT MENU */}
-{userProfile.role === "client" && (
-  <>
 
-    <Link
-      href="/dashboard/client"
-      className={linkClass("/dashboard/client")}
-    >
-      Moj napredak
-    </Link>
+        {/* CLIENT MENU */}
 
+        {userProfile.role === "client" && (
 
-    <Link
-      href="/dashboard/client/workouts"
-      className={linkClass("/dashboard/client/workouts")}
-    >
-      Moji treninzi
-    </Link>
+          <>
 
-
-    <Link
-      href="/dashboard/client/measurements"
-      className={linkClass("/dashboard/client/measurements")}
-    >
-      Mjerenja
-    </Link>
-
-
-    <Link
-      href="/dashboard/chat"
-      className={linkClass("/dashboard/chat")}
-    >
-      💬 Chat
-    </Link>
-
-
-    <Link
-      href="/dashboard/settings"
-      className={linkClass("/dashboard/settings")}
-    >
-      Profil
-    </Link>
-
-
-  </>
-)}
+            <Link
+              href="/dashboard/client"
+              className={linkClass("/dashboard/client")}
+            >
+              Moj napredak
+            </Link>
 
 
 
 
 
+            <Link
+              href="/dashboard/client/workouts"
+              className={linkClass("/dashboard/client/workouts")}
+            >
+              Moji treninzi
+            </Link>
 
 
-        {/* ADMIN */}
+
+
+
+            <Link
+              href="/dashboard/client/measurements"
+              className={linkClass("/dashboard/client/measurements")}
+            >
+              Mjerenja
+            </Link>
+
+
+
+
+
+            <Link
+              href="/dashboard/chat"
+              className={linkClass("/dashboard/chat")}
+            >
+              💬 Chat
+            </Link>
+
+
+
+
+
+            <Link
+              href="/dashboard/settings"
+              className={linkClass("/dashboard/settings")}
+            >
+              Profil
+            </Link>
+
+
+          </>
+
+        )}
+
+
+        
+
+
+        {/* ADMIN MENU */}
+
         {userProfile.role === "admin" && (
+
           <>
 
             <Link
@@ -254,6 +446,7 @@ export default function Sidebar() {
             </Link>
 
           </>
+
         )}
 
 
@@ -265,14 +458,31 @@ export default function Sidebar() {
 
 
       <button
+
         onClick={logout}
-        className="mt-auto rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+
+        className="
+          mt-auto
+          rounded-lg
+          bg-red-600
+          px-4
+          py-2
+          text-white
+          hover:bg-red-700
+        "
+
       >
+
         Odjava
+
       </button>
 
 
 
+
     </aside>
+
   );
+
+
 }
