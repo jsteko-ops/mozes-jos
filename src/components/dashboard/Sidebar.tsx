@@ -178,28 +178,42 @@ export default function Sidebar() {
 
           <>
 
-            <Link
-              href="/dashboard/trainer"
-              className={linkClass("/dashboard/trainer")}
-            >
-              Dashboard
-            </Link>
+           <Link
+  href="/dashboard/chat"
+  className={linkClass("/dashboard/chat")}
+>
+
+  <div className="flex items-center justify-between">
+
+    <span>
+      💬 Chat
+    </span>
+
+
+    {messageCount > 0 && (
+
+      <span
+        className="
+          bg-red-600
+          text-white
+          text-xs
+          rounded-full
+          px-2
+          py-1
+          ml-2
+        "
+      >
+        {messageCount}
+      </span>
+
+    )}
+
+  </div>
+
+</Link>
 
 
 
-            <Link
-              href="/dashboard/chat"
-              className={linkClass("/dashboard/chat")}
-            >
-              💬 Chat
-              {
-                messageCount > 0 && (
-                  <span className="ml-2 bg-red-600 text-white text-xs rounded-full px-2">
-                    {messageCount}
-                  </span>
-                )
-              }
-            </Link>
 
 
 
