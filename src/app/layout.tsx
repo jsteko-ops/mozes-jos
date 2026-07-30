@@ -1,6 +1,12 @@
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import AuthGuard from "@/components/auth/AuthGuard";
+import localFont from "next/font/local";
+
+const dejavu = localFont({
+  src: "../fonts/DejaVuSans.ttf",
+  variable: "--font-dejavu",
+});
 
 export default function RootLayout({
   children,
@@ -9,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className={dejavu.variable}>
         <AuthProvider>
           <AuthGuard>{children}</AuthGuard>
         </AuthProvider>
