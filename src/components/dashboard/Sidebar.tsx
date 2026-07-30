@@ -28,15 +28,12 @@ export default function Sidebar() {
   const { userProfile } = useAuth();
 
 
-
   const [messageCount, setMessageCount] =
     useState(0);
 
 
   const [checkinCount, setCheckinCount] =
     useState(0);
-
-
 
 
 
@@ -62,7 +59,6 @@ export default function Sidebar() {
 
 
 
-
     const unsubscribeCheckins =
       listenUnreadCheckins(
 
@@ -78,8 +74,6 @@ export default function Sidebar() {
 
 
 
-
-
     return () => {
 
       unsubscribeMessages();
@@ -89,32 +83,21 @@ export default function Sidebar() {
     };
 
 
-
   }, [userProfile]);
-
-
-
 
 
 
   const logout = async () => {
 
-
     await signOut(auth);
 
-
     router.replace("/login");
-
 
   };
 
 
 
-
-
-
   const linkClass = (href:string) =>
-
 
     `block rounded-lg px-3 py-2 transition ${
       
@@ -132,15 +115,11 @@ export default function Sidebar() {
 
 
 
-
-
-
   if (!userProfile) {
 
     return null;
 
   }
-
 
 
 
@@ -151,26 +130,21 @@ export default function Sidebar() {
 
       <div className="mb-8">
 
-
         <h1 className="text-2xl font-bold">
           Možeš Još
         </h1>
-
 
         <p className="text-sm text-gray-500 mt-1">
           {userProfile.role}
         </p>
 
-
       </div>
-
-
 
 
 
       <nav className="flex flex-col gap-2">
 
-        
+
 
         {/* TRAINER MENU */}
 
@@ -178,43 +152,50 @@ export default function Sidebar() {
 
           <>
 
-           <Link
-  href="/dashboard/chat"
-  className={linkClass("/dashboard/chat")}
->
-
-  <div className="flex items-center justify-between">
-
-    <span>
-      💬 Chat
-    </span>
-
-
-    {messageCount > 0 && (
-
-      <span
-        className="
-          bg-red-600
-          text-white
-          text-xs
-          rounded-full
-          px-2
-          py-1
-          ml-2
-        "
-      >
-        {messageCount}
-      </span>
-
-    )}
-
-  </div>
-
-</Link>
+            <Link
+              href="/dashboard/trainer"
+              className={linkClass("/dashboard/trainer")}
+            >
+              Dashboard
+            </Link>
 
 
 
+            <Link
+              href="/dashboard/chat"
+              className={linkClass("/dashboard/chat")}
+            >
 
+              <div className="flex items-center justify-between">
+
+                <span>
+                  💬 Chat
+                </span>
+
+
+                {
+                  messageCount > 0 && (
+
+                    <span
+                      className="
+                        bg-red-600
+                        text-white
+                        text-xs
+                        rounded-full
+                        px-2
+                        py-1
+                      "
+                    >
+                      {messageCount}
+                    </span>
+
+                  )
+                }
+
+
+              </div>
+
+            </Link>
 
 
 
@@ -229,7 +210,6 @@ export default function Sidebar() {
 
 
 
-
             <Link
               href="/dashboard/trainer/mjerenja"
               className={linkClass("/dashboard/trainer/mjerenja")}
@@ -240,23 +220,41 @@ export default function Sidebar() {
 
 
 
-
             <Link
               href="/dashboard/trainer/checkin"
               className={linkClass("/dashboard/trainer/checkin")}
             >
-              Check-in
 
-              {
-                checkinCount > 0 && (
-                  <span className="ml-2 bg-red-600 text-white text-xs rounded-full px-2">
-                    {checkinCount}
-                  </span>
-                )
-              }
+              <div className="flex items-center justify-between">
+
+                <span>
+                  Check-in
+                </span>
+
+
+                {
+                  checkinCount > 0 && (
+
+                    <span
+                      className="
+                        bg-red-600
+                        text-white
+                        text-xs
+                        rounded-full
+                        px-2
+                        py-1
+                      "
+                    >
+                      {checkinCount}
+                    </span>
+
+                  )
+                }
+
+
+              </div>
 
             </Link>
-
 
 
 
@@ -271,14 +269,12 @@ export default function Sidebar() {
 
 
 
-
             <Link
               href="/dashboard/reports"
               className={linkClass("/dashboard/reports")}
             >
               📄 Izvještaji
             </Link>
-
 
 
 
@@ -300,7 +296,6 @@ export default function Sidebar() {
 
 
 
-
         {/* OWNER MENU */}
 
         {userProfile.role === "gym_owner" && (
@@ -316,16 +311,12 @@ export default function Sidebar() {
 
 
 
-
-
             <Link
               href="/dashboard/owner/trainers"
               className={linkClass("/dashboard/owner/trainers")}
             >
               Moji treneri
             </Link>
-
-
 
 
 
@@ -338,8 +329,6 @@ export default function Sidebar() {
 
 
 
-
-
             <Link
               href="/dashboard/reports"
               className={linkClass("/dashboard/reports")}
@@ -349,16 +338,12 @@ export default function Sidebar() {
 
 
 
-
-
             <Link
               href="/dashboard/chat"
               className={linkClass("/dashboard/chat")}
             >
               💬 Chat
             </Link>
-
-
 
 
 
@@ -375,9 +360,7 @@ export default function Sidebar() {
         )}
 
 
-
-
-
+        
 
 
         {/* CLIENT MENU */}
@@ -395,16 +378,12 @@ export default function Sidebar() {
 
 
 
-
-
             <Link
               href="/dashboard/client/workouts"
               className={linkClass("/dashboard/client/workouts")}
             >
               Moji treninzi
             </Link>
-
-
 
 
 
@@ -417,16 +396,12 @@ export default function Sidebar() {
 
 
 
-
-
             <Link
               href="/dashboard/chat"
               className={linkClass("/dashboard/chat")}
             >
               💬 Chat
             </Link>
-
-
 
 
 
@@ -443,7 +418,9 @@ export default function Sidebar() {
         )}
 
 
-        
+
+
+
 
 
         {/* ADMIN MENU */}
@@ -458,6 +435,7 @@ export default function Sidebar() {
             >
               Admin Dashboard
             </Link>
+
 
           </>
 
