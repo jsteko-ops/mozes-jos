@@ -4,7 +4,18 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import localFont from "next/font/local";
 
 const dejavu = localFont({
-  src: "../fonts/DejaVuSans.ttf",
+  src: [
+    {
+      path: "../fonts/DejaVuSans.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/DejaVuSans-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-dejavu",
 });
 
