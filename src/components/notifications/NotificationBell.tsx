@@ -372,10 +372,7 @@ async function openNotification(
   );
 
 }
-    const unread =
-    notifications.filter(
-      n=>!n.read
-    ).length;
+   const unread = notifications.length;
 
 
 
