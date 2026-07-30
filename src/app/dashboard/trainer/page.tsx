@@ -5,102 +5,70 @@ import { useRouter } from "next/navigation";
 
 import RoleGuard from "@/components/auth/RoleGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
+import Card from "@/components/ui/Card";
 
 import {
   getTrainerStats,
 } from "@/lib/services/klijentiService";
 
 
-
-export default function TrainerPage(){
-
+export default function TrainerPage() {
 
   const { user } = useAuth();
 
-
   const router = useRouter();
 
+  const [stats, setStats] = useState({
+    clientsCount: 0,
+    measurementsCount: 0,
+  });
+
+  const [loading, setLoading] = useState(true);
 
 
-  const [stats,setStats] =
-    useState({
+  useEffect(() => {
 
-      clientsCount:0,
+    async function loadStats() {
 
-      measurementsCount:0
-
-    });
-
-
-
-  const [loading,setLoading] =
-    useState(true);
-
-
-
-
-
-  useEffect(()=>{
-
-
-    async function loadStats(){
-
-
-      if(!user) return;
-
-
+      if (!user) return;
 
       const data =
-        await getTrainerStats(
-          user.uid
-        );
-
-
+        await getTrainerStats(user.uid);
 
       setStats(data);
 
-
-
       setLoading(false);
-
-
     }
-
 
 
     loadStats();
 
-
-  },[user]);
-
+  }, [user]);
 
 
 
-
-
-
-  return(
-
+  return (
 
     <RoleGuard allowedRoles={["trainer"]}>
-
 
       <div className="p-6 space-y-6">
 
 
+        <div>
 
-        <h1 className="text-3xl font-bold">
+          <h1 className="text-3xl font-bold">
+            🏋️ Trainer Dashboard
+          </h1>
 
-          🏋️ Trainer Dashboard
+          <p className="text-gray-500 mt-2">
+            Pregled aktivnosti i napretka klijenata
+          </p>
 
-        </h1>
-
-
+        </div>
 
 
 
         {loading ? (
-
 
           <p>
             Učitavanje statistike...
@@ -113,134 +81,111 @@ export default function TrainerPage(){
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
 
-
-
-
-            <div
-
-              className="border rounded-xl p-5 cursor-pointer hover:bg-gray-100"
-
-              onClick={()=>
-
-
-                router.push(
-                  "/dashboard/trainer/klijenti"
-                )
-
-              }
-
+            <Card
+              className="
+                cursor-pointer
+                hover:shadow-md
+                transition
+              "
             >
 
-              <h2 className="text-xl font-bold">
+              <div
+                onClick={() =>
+                  router.push(
+                    "/dashboard/trainer/klijenti"
+                  )
+                }
+              >
 
-                👥 Klijenti
+                <h2 className="text-xl font-bold">
+                  👥 Klijenti
+                </h2>
 
-              </h2>
+                <p className="text-4xl font-bold mt-3">
+                  {stats.clientsCount}
+                </p>
 
+                <p className="text-gray-500 mt-2">
+                  Aktivni klijenti
+                </p>
 
-              <p className="text-4xl mt-3">
+              </div>
 
-                {stats.clientsCount}
-
-              </p>
-
-
-            </div>
-
-
-
-
-
-
-            <div
-
-              className="border rounded-xl p-5 cursor-pointer hover:bg-gray-100"
-
-              onClick={()=>
+            </Card>
 
 
-                router.push(
-                  "/dashboard/trainer/mjerenja"
-                )
 
-              }
 
+
+            <Card
+              className="
+                cursor-pointer
+                hover:shadow-md
+                transition
+              "
             >
 
+              <div
+                onClick={() =>
+                  router.push(
+                    "/dashboard/trainer/mjerenja"
+                  )
+                }
+              >
+
+                <h2 className="text-xl font-bold">
+                  ⚖️ Mjerenja
+                </h2>
+
+                <p className="text-4xl font-bold mt-3">
+                  {stats.measurementsCount}
+                </p>
+
+                <p className="text-gray-500 mt-2">
+                  Ukupno mjerenja
+                </p>
+
+              </div>
+
+            </Card>
+
+
+
+
+
+            <Card>
+
               <h2 className="text-xl font-bold">
-
-                ⚖️ Mjerenja
-
-              </h2>
-
-
-              <p className="text-4xl mt-3">
-
-                {stats.measurementsCount}
-
-              </p>
-
-
-            </div>
-
-
-
-
-
-
-            <div className="border rounded-xl p-5">
-
-
-              <h2 className="text-xl font-bold">
-
                 🏆 Status
-
               </h2>
 
-
-              <p className="mt-3">
-
+              <p className="mt-3 text-gray-600">
                 Aktivan trener
-
               </p>
 
-
-            </div>
-
+            </Card>
 
 
 
 
 
-
-            <div className="border rounded-xl p-5">
-
+            <Card>
 
               <h2 className="text-xl font-bold">
-
                 🚀 Možeš Još
-
               </h2>
 
-
-              <p className="mt-3">
-
+              <p className="mt-3 text-gray-600">
                 Radi na napretku klijenata
-
               </p>
 
-
-            </div>
-
-
+            </Card>
 
 
 
           </div>
 
-
         )}
-
 
 
       </div>
@@ -248,8 +193,5 @@ export default function TrainerPage(){
 
     </RoleGuard>
 
-
   );
-
-
 }
