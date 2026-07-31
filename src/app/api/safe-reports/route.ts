@@ -174,11 +174,14 @@ async function findRecipient(
       adminSnapshot.docs[0];
 
 
-    if (!adminDocument) {
+   if (!adminDocument) {
 
-      return null;
+  return {
+    uid: null,
+    role: "admin" as const,
+  };
 
-    }
+}
 
 
     return {
@@ -575,7 +578,14 @@ export async function POST(
           location || null,
 
         status:
-          "submitted",
+  recipient.uid
+    ? "submitted"
+    : "pending_admin",
+
+assignmentStatus:
+  recipient.uid
+    ? "assigned"
+    : "unassigned",
 
         accessCodeHash,
 
