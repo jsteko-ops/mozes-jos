@@ -1077,7 +1077,34 @@ export async function getNutritionPlans(
 }
 
 
+export async function updateNutritionPlan(
+  clientId: string,
+  planId: string,
+  data: {
+    title: string;
+    meals: string;
+  }
+) {
 
+  await updateDoc(
+
+    doc(
+      db,
+      "clients",
+      clientId,
+      "nutrition",
+      planId
+    ),
+
+    {
+      title: data.title,
+      meals: data.meals,
+      updatedAt: serverTimestamp(),
+    }
+
+  );
+
+}
 
 
 export async function deleteNutritionPlan(

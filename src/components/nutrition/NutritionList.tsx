@@ -1,42 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import {
-  getNutritionPlans,
   deleteNutritionPlan,
+  getNutritionPlans,
+  updateNutritionPlan,
 } from "@/lib/services/klijentiService";
-
 
 
 type NutritionPlan = {
 
-  id:string;
+  id: string;
 
-  title:string;
+  title: string;
 
-  meals:string;
+  meals: string;
 
-  createdAt?:any;
+  createdAt?: any;
 
 };
-
 
 
 type Props = {
 
-  clientId:string;
+  clientId: string;
 
-  refresh?:boolean;
+  refresh?: boolean;
 
 };
 
 
+function formatDate(timestamp: any) {
 
-
-function formatDate(timestamp:any){
-
-  if(!timestamp) return "-";
+  if (!timestamp) return "-";
 
 
   const date =
@@ -45,12 +45,11 @@ function formatDate(timestamp:any){
       : new Date(timestamp);
 
 
-  return date.toLocaleDateString("hr-HR");
+  return date.toLocaleDateString(
+    "hr-HR"
+  );
 
 }
-
-
-
 
 
 export default function NutritionList({
@@ -59,17 +58,41 @@ export default function NutritionList({
 
   refresh,
 
-}:Props){
+}: Props) {
+
+
+  const [
+    plans,
+    setPlans,
+  ] = useState<NutritionPlan[]>([]);
+
+
+  const [
+    editingId,
+    setEditingId,
+  ] = useState<string | null>(null);
+
+
+  const [
+    editTitle,
+    setEditTitle,
+  ] = useState("");
+
+
+  const [
+    editMeals,
+    setEditMeals,
+  ] = useState("");
+
+
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
 
 
 
-  const [plans,setPlans] =
-    useState<NutritionPlan[]>([]);
-
-
-
-  async function load(){
-
+  async function load() {
 
     const data =
       await getNutritionPlans(
@@ -85,36 +108,137 @@ export default function NutritionList({
 
 
 
-
-  useEffect(()=>{
+  useEffect(() => {
 
     load();
 
-  },[
+  }, [
     clientId,
-    refresh
+    refresh,
   ]);
 
 
 
+  function startEdit(
+    plan: NutritionPlan
+  ) {
+
+    setEditingId(
+      plan.id
+    );
+
+    setEditTitle(
+      plan.title
+    );
+
+    setEditMeals(
+      plan.meals
+    );
+
+  }
 
 
 
-  async function remove(
-    id:string
-  ){
+  function cancelEdit() {
+
+    setEditingId(null);
+
+    setEditTitle("");
+
+    setEditMeals("");
+
+  }
 
 
-    if(
-      !confirm(
-        "Obrisati plan prehrane?"
-      )
-    ){
+
+  async function saveEdit() {
+
+    if (!editingId) return;
+
+
+    if (!editTitle.trim()) {
+
+      alert(
+        "Upiši naziv plana prehrane."
+      );
 
       return;
 
     }
 
+
+    if (!editMeals.trim()) {
+
+      alert(
+        "Upiši sadržaj plana prehrane."
+      );
+
+      return;
+
+    }
+
+
+    try {
+
+      setSaving(true);
+
+
+      await updateNutritionPlan(
+
+        clientId,
+
+        editingId,
+
+        {
+          title:
+            editTitle.trim(),
+
+          meals:
+            editMeals.trim(),
+        }
+
+      );
+
+
+      cancelEdit();
+
+      await load();
+
+    } catch (error) {
+
+      console.error(
+        "Greška kod uređivanja plana prehrane:",
+        error
+      );
+
+
+      alert(
+        "Plan prehrane nije moguće spremiti."
+      );
+
+    } finally {
+
+      setSaving(false);
+
+    }
+
+  }
+
+
+
+  async function remove(
+    id: string
+  ) {
+
+    if (
+      !confirm(
+        "Obrisati plan prehrane?"
+      )
+    ) {
+
+      return;
+
+    }
 
 
     await deleteNutritionPlan(
@@ -126,15 +250,16 @@ export default function NutritionList({
     );
 
 
+    if (editingId === id) {
 
-    load();
+      cancelEdit();
 
+    }
+
+
+    await load();
 
   }
-
-
-
-
 
 
 
@@ -150,86 +275,259 @@ export default function NutritionList({
       </h2>
 
 
-
-
       {
         plans.length === 0
 
-        ?
+          ? (
 
-        <p>
-          Nema spremljenih planova prehrane.
-        </p>
+            <p>
+              Nema spremljenih planova prehrane.
+            </p>
 
+          )
 
-        :
-
-
-        plans.map((plan)=>(
+          : plans.map((plan) => (
 
 
-          <div
+            <div
 
-            key={plan.id}
+              key={plan.id}
 
-            className="border rounded-xl p-5 space-y-3"
-
-          >
-
-
-            <div className="flex justify-between">
-
-              <h3 className="font-bold text-lg">
-
-                🥗 {plan.title}
-
-              </h3>
-
-
-              <span className="text-sm text-gray-500">
-
-                {formatDate(plan.createdAt)}
-
-              </span>
-
-
-            </div>
-
-
-
-
-            <div className="whitespace-pre-line">
-
-              {plan.meals}
-
-            </div>
-
-
-
-
-
-            <button
-
-              className="bg-red-600 text-white px-4 py-2 rounded"
-
-              onClick={()=>
-                remove(plan.id)
-              }
+              className="border rounded-xl p-5 space-y-4"
 
             >
 
-              🗑 Obriši
 
-            </button>
+              {
+                editingId === plan.id
 
+                  ? (
 
-
-          </div>
-
-
-        ))
+                    <div className="space-y-4">
 
 
+                      <div>
+
+                        <label className="block font-semibold mb-2">
+
+                          Naziv plana
+
+                        </label>
+
+
+                        <input
+
+                          type="text"
+
+                          value={editTitle}
+
+                          onChange={(event) =>
+                            setEditTitle(
+                              event.target.value
+                            )
+                          }
+
+                          className="
+                            w-full
+                            border
+                            rounded-lg
+                            px-4
+                            py-3
+                          "
+
+                        />
+
+                      </div>
+
+
+                      <div>
+
+                        <label className="block font-semibold mb-2">
+
+                          Obroci i upute
+
+                        </label>
+
+
+                        <textarea
+
+                          value={editMeals}
+
+                          onChange={(event) =>
+                            setEditMeals(
+                              event.target.value
+                            )
+                          }
+
+                          rows={10}
+
+                          className="
+                            w-full
+                            border
+                            rounded-lg
+                            px-4
+                            py-3
+                          "
+
+                        />
+
+                      </div>
+
+
+                      <div className="flex flex-wrap gap-3">
+
+                        <button
+
+                          type="button"
+
+                          onClick={saveEdit}
+
+                          disabled={saving}
+
+                          className="
+                            bg-blue-600
+                            text-white
+                            px-4
+                            py-2
+                            rounded-lg
+                            hover:bg-blue-700
+                            disabled:opacity-50
+                          "
+
+                        >
+
+                          {
+                            saving
+                              ? "Spremanje..."
+                              : "💾 Spremi izmjene"
+                          }
+
+                        </button>
+
+
+                        <button
+
+                          type="button"
+
+                          onClick={cancelEdit}
+
+                          disabled={saving}
+
+                          className="
+                            bg-gray-200
+                            text-gray-800
+                            px-4
+                            py-2
+                            rounded-lg
+                            hover:bg-gray-300
+                            disabled:opacity-50
+                          "
+
+                        >
+
+                          Odustani
+
+                        </button>
+
+                      </div>
+
+
+                    </div>
+
+                  )
+
+                  : (
+
+                    <>
+
+
+                      <div className="flex justify-between gap-4">
+
+                        <h3 className="font-bold text-lg">
+
+                          🥗 {plan.title}
+
+                        </h3>
+
+
+                        <span className="text-sm text-gray-500">
+
+                          {formatDate(plan.createdAt)}
+
+                        </span>
+
+                      </div>
+
+
+                      <div className="whitespace-pre-line">
+
+                        {plan.meals}
+
+                      </div>
+
+
+                      <div className="flex flex-wrap gap-3">
+
+                        <button
+
+                          type="button"
+
+                          onClick={() =>
+                            startEdit(plan)
+                          }
+
+                          className="
+                            bg-blue-600
+                            text-white
+                            px-4
+                            py-2
+                            rounded-lg
+                            hover:bg-blue-700
+                          "
+
+                        >
+
+                          ✏️ Uredi
+
+                        </button>
+
+
+                        <button
+
+                          type="button"
+
+                          onClick={() =>
+                            remove(plan.id)
+                          }
+
+                          className="
+                            bg-red-600
+                            text-white
+                            px-4
+                            py-2
+                            rounded-lg
+                            hover:bg-red-700
+                          "
+
+                        >
+
+                          🗑 Obriši
+
+                        </button>
+
+                      </div>
+
+
+                    </>
+
+                  )
+              }
+
+
+            </div>
+
+
+          ))
       }
 
 
