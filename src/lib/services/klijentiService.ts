@@ -14,7 +14,7 @@ import {
 
 import { db } from "@/lib/firebase";
 import { createNotification } from "@/lib/notifications";
-
+import { findUserByEmail } from "@/lib/findUserByEmail";
 
 // =======================
 // TIPOVI
@@ -1013,30 +1013,117 @@ export function listenCheckins(
 // =======================
 
 
-export async function addNutritionPlan(
-  clientId:string,
-  data:{
-    title:string;
-    meals:string;
+async function sendNutritionNotification(
+  clientId: string,
+  data: {
+    title: string;
+    message: string;
+    link: string;
   }
-){
+) {
 
-  await addDoc(
+  try {
 
-    collection(
-      db,
-      "clients",
-      clientId,
-      "nutrition"
-    ),
+    const client =
+      await getClient(
+        clientId
+      );
+
+
+    if (!client?.email) {
+
+      return;
+
+    }
+
+
+    const clientUser =
+      await findUserByEmail(
+        client.email
+      );
+
+
+    if (!clientUser?.uid) {
+
+      return;
+
+    }
+
+
+    await createNotification(
+
+      clientUser.uid,
+
+      {
+        title:
+          data.title,
+
+        message:
+          data.message,
+
+        type:
+          "nutrition",
+
+        link:
+          data.link,
+      }
+
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Greška kod slanja obavijesti o prehrani:",
+      error
+    );
+
+  }
+
+}
+
+
+
+export async function addNutritionPlan(
+  clientId: string,
+  data: {
+    title: string;
+    meals: string;
+  }
+) {
+
+  const planReference =
+    await addDoc(
+
+      collection(
+        db,
+        "clients",
+        clientId,
+        "nutrition"
+      ),
+
+      {
+        ...data,
+
+        createdAt:
+          serverTimestamp(),
+      }
+
+    );
+
+
+  await sendNutritionNotification(
+
+    clientId,
 
     {
+      title:
+        "Novi plan prehrane",
 
-      ...data,
+      message:
+        `Trener ti je dodao plan prehrane: ${data.title}.`,
 
-      createdAt:
-        serverTimestamp(),
-
+      link:
+        `/dashboard/nutrition?plan=${planReference.id}`,
     }
 
   );
@@ -1045,11 +1132,9 @@ export async function addNutritionPlan(
 
 
 
-
-
 export async function getNutritionPlans(
-  clientId:string
-){
+  clientId: string
+) {
 
   const snap =
     await getDocs(
@@ -1064,17 +1149,17 @@ export async function getNutritionPlans(
     );
 
 
-
-  return snap.docs.map((doc)=>({
+  return snap.docs.map((document) => ({
 
     id:
-      doc.id,
+      document.id,
 
-    ...doc.data(),
+    ...document.data(),
 
   }));
 
 }
+
 
 
 export async function updateNutritionPlan(
@@ -1097,9 +1182,32 @@ export async function updateNutritionPlan(
     ),
 
     {
-      title: data.title,
-      meals: data.meals,
-      updatedAt: serverTimestamp(),
+      title:
+        data.title,
+
+      meals:
+        data.meals,
+
+      updatedAt:
+        serverTimestamp(),
+    }
+
+  );
+
+
+  await sendNutritionNotification(
+
+    clientId,
+
+    {
+      title:
+        "Plan prehrane je ažuriran",
+
+      message:
+        `Trener je izmijenio tvoj plan prehrane: ${data.title}.`,
+
+      link:
+        `/dashboard/nutrition?plan=${planId}`,
     }
 
   );
@@ -1107,25 +1215,20 @@ export async function updateNutritionPlan(
 }
 
 
+
 export async function deleteNutritionPlan(
-  clientId:string,
-  planId:string
-){
+  clientId: string,
+  planId: string
+) {
 
   await deleteDoc(
 
     doc(
-
       db,
-
       "clients",
-
       clientId,
-
       "nutrition",
-
       planId
-
     )
 
   );

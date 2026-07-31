@@ -6,6 +6,10 @@ import {
 } from "react";
 
 import {
+  useSearchParams,
+} from "next/navigation";
+
+import {
   onAuthStateChanged,
 } from "firebase/auth";
 
@@ -22,6 +26,15 @@ import {
 
 
 export default function NutritionPage() {
+
+
+  const searchParams =
+    useSearchParams();
+
+
+  const selectedPlanId =
+    searchParams.get("plan");
+
 
   const [
     clientId,
@@ -77,8 +90,6 @@ export default function NutritionPage() {
                 "Klijentski profil nije pronađen."
               );
 
-              setLoading(false);
-
               return;
 
             }
@@ -94,6 +105,7 @@ export default function NutritionPage() {
               "Greška kod učitavanja prehrane:",
               error
             );
+
 
             setError(
               "Nije moguće učitati plan prehrane."
@@ -123,7 +135,9 @@ export default function NutritionPage() {
 
     <RoleGuard allowedRoles={["client"]}>
 
+
       <div className="space-y-6">
+
 
         <div>
 
@@ -132,6 +146,7 @@ export default function NutritionPage() {
             🥗 Moja prehrana
 
           </h1>
+
 
           <p className="mt-2 text-gray-600">
 
@@ -143,35 +158,58 @@ export default function NutritionPage() {
         </div>
 
 
-        {loading && (
+        {
+          loading && (
 
-          <p>
-            Učitavanje plana prehrane...
-          </p>
+            <p>
+              Učitavanje plana prehrane...
+            </p>
 
-        )}
-
-
-        {!loading && error && (
-
-          <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-700">
-
-            {error}
-
-          </div>
-
-        )}
+          )
+        }
 
 
-        {!loading && clientId && (
+        {
+          !loading &&
+          error && (
 
-          <ClientNutrition
-            clientId={clientId}
-          />
+            <div
+              className="
+                rounded-xl
+                border
+                border-red-200
+                bg-red-50
+                p-5
+                text-red-700
+              "
+            >
 
-        )}
+              {error}
+
+            </div>
+
+          )
+        }
+
+
+        {
+          !loading &&
+          clientId && (
+
+            <ClientNutrition
+
+              clientId={clientId}
+
+              selectedPlanId={selectedPlanId}
+
+            />
+
+          )
+        }
+
 
       </div>
+
 
     </RoleGuard>
 
