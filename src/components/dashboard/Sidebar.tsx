@@ -557,7 +557,14 @@ export default function Sidebar() {
 
             </Link>
 
-
+<Link
+  href="/dashboard/nutrition"
+  className={linkClass(
+    "/dashboard/nutrition"
+  )}
+>
+  🥗 Prehrana
+</Link>
 
             <Link
               href="/dashboard/chat"
