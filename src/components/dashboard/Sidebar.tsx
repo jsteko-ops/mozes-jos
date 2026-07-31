@@ -1,46 +1,93 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { useEffect, useState } from "react";
 
-import { auth } from "@/lib/firebase";
-import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
+
+import {
+  signOut,
+} from "firebase/auth";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+
+import {
+  auth,
+} from "@/lib/firebase";
+
+import {
+  useAuth,
+} from "@/components/auth/AuthProvider";
+
 
 import {
   listenUnreadCheckins,
+  listenUnreadNotifications,
 } from "@/lib/services/notificationService";
+
 
 import {
   listenUnreadTrainerMessages,
 } from "@/lib/services/chat/chatNotifications";
 
 
+
 export default function Sidebar() {
 
 
-  const pathname = usePathname();
-
-  const router = useRouter();
-
-
-  const { userProfile } = useAuth();
+  const pathname =
+    usePathname();
 
 
-  const [messageCount, setMessageCount] =
-    useState(0);
+  const router =
+    useRouter();
 
 
-  const [checkinCount, setCheckinCount] =
-    useState(0);
+  const {
+    userProfile,
+  } = useAuth();
+
+
+
+  const [
+    messageCount,
+    setMessageCount,
+  ] = useState(0);
+
+
+  const [
+    checkinCount,
+    setCheckinCount,
+  ] = useState(0);
+
+
+  const [
+    notificationCount,
+    setNotificationCount,
+  ] = useState(0);
 
 
 
   useEffect(() => {
 
 
-    if (!userProfile?.uid) return;
+    if (!userProfile?.uid) {
+
+      setMessageCount(0);
+
+      setCheckinCount(0);
+
+      setNotificationCount(0);
+
+      return;
+
+    }
 
 
 
@@ -49,7 +96,7 @@ export default function Sidebar() {
 
         userProfile.uid,
 
-        (count)=>{
+        (count) => {
 
           setMessageCount(count);
 
@@ -64,9 +111,24 @@ export default function Sidebar() {
 
         userProfile.uid,
 
-        (count)=>{
+        (count) => {
 
           setCheckinCount(count);
+
+        }
+
+      );
+
+
+
+    const unsubscribeNotifications =
+      listenUnreadNotifications(
+
+        userProfile.uid,
+
+        (count) => {
+
+          setNotificationCount(count);
 
         }
 
@@ -80,10 +142,12 @@ export default function Sidebar() {
 
       unsubscribeCheckins();
 
+      unsubscribeNotifications();
+
     };
 
 
-  }, [userProfile]);
+  }, [userProfile?.uid]);
 
 
 
@@ -97,19 +161,17 @@ export default function Sidebar() {
 
 
 
-  const linkClass = (href:string) =>
+  const linkClass = (
+    href: string
+  ) =>
 
     `block rounded-lg px-3 py-2 transition ${
       
       pathname === href
 
-      ?
+        ? "bg-blue-600 text-white"
 
-      "bg-blue-600 text-white"
-
-      :
-
-      "text-gray-700 hover:bg-gray-100"
+        : "text-gray-700 hover:bg-gray-100"
 
     }`;
 
@@ -125,17 +187,32 @@ export default function Sidebar() {
 
   return (
 
-    <aside className="w-64 min-h-screen border-r bg-white p-5 flex flex-col">
+    <aside
+      className="
+        w-64
+        min-h-screen
+        border-r
+        bg-white
+        p-5
+        flex
+        flex-col
+      "
+    >
 
 
       <div className="mb-8">
 
         <h1 className="text-2xl font-bold">
+
           Možeš Još
+
         </h1>
 
+
         <p className="text-sm text-gray-500 mt-1">
+
           {userProfile.role}
+
         </p>
 
       </div>
@@ -152,105 +229,121 @@ export default function Sidebar() {
 
           <>
 
+
             <Link
               href="/dashboard/trainer"
-              className={linkClass("/dashboard/trainer")}
+              className={linkClass(
+                "/dashboard/trainer"
+              )}
             >
+
               Dashboard
+
             </Link>
 
 
 
             <Link
               href="/dashboard/chat"
-              className={linkClass("/dashboard/chat")}
+              className={linkClass(
+                "/dashboard/chat"
+              )}
             >
 
               <div className="flex items-center justify-between">
 
                 <span>
+
                   💬 Chat
+
                 </span>
 
 
-                {
-                  messageCount > 0 && (
+                {messageCount > 0 && (
 
-                    <span
-                      className="
-                        bg-red-600
-                        text-white
-                        text-xs
-                        rounded-full
-                        px-2
-                        py-1
-                      "
-                    >
-                      {messageCount}
-                    </span>
+                  <span
+                    className="
+                      bg-red-600
+                      text-white
+                      text-xs
+                      rounded-full
+                      px-2
+                      py-1
+                    "
+                  >
 
-                  )
-                }
+                    {messageCount}
 
+                  </span>
+
+                )}
 
               </div>
 
             </Link>
-
 
 
 
             <Link
               href="/dashboard/trainer/klijenti"
-              className={linkClass("/dashboard/trainer/klijenti")}
+              className={linkClass(
+                "/dashboard/trainer/klijenti"
+              )}
             >
-              Klijenti
-            </Link>
 
+              Klijenti
+
+            </Link>
 
 
 
             <Link
               href="/dashboard/trainer/mjerenja"
-              className={linkClass("/dashboard/trainer/mjerenja")}
+              className={linkClass(
+                "/dashboard/trainer/mjerenja"
+              )}
             >
-              Mjerenja
-            </Link>
 
+              Mjerenja
+
+            </Link>
 
 
 
             <Link
               href="/dashboard/trainer/checkin"
-              className={linkClass("/dashboard/trainer/checkin")}
+              className={linkClass(
+                "/dashboard/trainer/checkin"
+              )}
             >
 
               <div className="flex items-center justify-between">
 
                 <span>
+
                   Check-in
+
                 </span>
 
 
-                {
-                  checkinCount > 0 && (
+                {checkinCount > 0 && (
 
-                    <span
-                      className="
-                        bg-red-600
-                        text-white
-                        text-xs
-                        rounded-full
-                        px-2
-                        py-1
-                      "
-                    >
-                      {checkinCount}
-                    </span>
+                  <span
+                    className="
+                      bg-red-600
+                      text-white
+                      text-xs
+                      rounded-full
+                      px-2
+                      py-1
+                    "
+                  >
 
-                  )
-                }
+                    {checkinCount}
 
+                  </span>
+
+                )}
 
               </div>
 
@@ -258,41 +351,75 @@ export default function Sidebar() {
 
 
 
-
             <Link
               href="/dashboard/notifications"
-              className={linkClass("/dashboard/notifications")}
+              className={linkClass(
+                "/dashboard/notifications"
+              )}
             >
-              🔔 Obavijesti
-            </Link>
 
+              <div className="flex items-center justify-between">
+
+                <span>
+
+                  🔔 Obavijesti
+
+                </span>
+
+
+                {notificationCount > 0 && (
+
+                  <span
+                    className="
+                      bg-red-600
+                      text-white
+                      text-xs
+                      rounded-full
+                      px-2
+                      py-1
+                    "
+                  >
+
+                    {notificationCount}
+
+                  </span>
+
+                )}
+
+              </div>
+
+            </Link>
 
 
 
             <Link
               href="/dashboard/reports"
-              className={linkClass("/dashboard/reports")}
+              className={linkClass(
+                "/dashboard/reports"
+              )}
             >
-              📄 Izvještaji
-            </Link>
 
+              📄 Izvještaji
+
+            </Link>
 
 
 
             <Link
               href="/dashboard/trainer/naplata"
-              className={linkClass("/dashboard/trainer/naplata")}
+              className={linkClass(
+                "/dashboard/trainer/naplata"
+              )}
             >
+
               Naplata
+
             </Link>
 
 
           </>
 
         )}
-
-
-
 
 
 
@@ -302,56 +429,81 @@ export default function Sidebar() {
 
           <>
 
+
             <Link
               href="/dashboard/owner"
-              className={linkClass("/dashboard/owner")}
+              className={linkClass(
+                "/dashboard/owner"
+              )}
             >
+
               Moja teretana
+
             </Link>
 
 
 
             <Link
               href="/dashboard/owner/trainers"
-              className={linkClass("/dashboard/owner/trainers")}
+              className={linkClass(
+                "/dashboard/owner/trainers"
+              )}
             >
+
               Moji treneri
+
             </Link>
 
 
 
             <Link
               href="/dashboard/owner/clients"
-              className={linkClass("/dashboard/owner/clients")}
+              className={linkClass(
+                "/dashboard/owner/clients"
+              )}
             >
+
               Moji klijenti
+
             </Link>
 
 
 
             <Link
               href="/dashboard/reports"
-              className={linkClass("/dashboard/reports")}
+              className={linkClass(
+                "/dashboard/reports"
+              )}
             >
+
               📄 Izvještaji
+
             </Link>
 
 
 
             <Link
               href="/dashboard/chat"
-              className={linkClass("/dashboard/chat")}
+              className={linkClass(
+                "/dashboard/chat"
+              )}
             >
+
               💬 Chat
+
             </Link>
 
 
 
             <Link
               href="/dashboard/settings"
-              className={linkClass("/dashboard/settings")}
+              className={linkClass(
+                "/dashboard/settings"
+              )}
             >
+
               Postavke
+
             </Link>
 
 
@@ -359,8 +511,6 @@ export default function Sidebar() {
 
         )}
 
-
-        
 
 
         {/* CLIENT MENU */}
@@ -369,57 +519,74 @@ export default function Sidebar() {
 
           <>
 
+
             <Link
               href="/dashboard/client"
-              className={linkClass("/dashboard/client")}
+              className={linkClass(
+                "/dashboard/client"
+              )}
             >
+
               Moj napredak
+
             </Link>
 
 
 
             <Link
               href="/dashboard/client/workouts"
-              className={linkClass("/dashboard/client/workouts")}
+              className={linkClass(
+                "/dashboard/client/workouts"
+              )}
             >
+
               Moji treninzi
+
             </Link>
 
 
 
             <Link
               href="/dashboard/client/measurements"
-              className={linkClass("/dashboard/client/measurements")}
+              className={linkClass(
+                "/dashboard/client/measurements"
+              )}
             >
+
               Mjerenja
+
             </Link>
 
 
 
             <Link
               href="/dashboard/chat"
-              className={linkClass("/dashboard/chat")}
+              className={linkClass(
+                "/dashboard/chat"
+              )}
             >
+
               💬 Chat
+
             </Link>
 
 
 
             <Link
               href="/dashboard/settings"
-              className={linkClass("/dashboard/settings")}
+              className={linkClass(
+                "/dashboard/settings"
+              )}
             >
+
               Profil
+
             </Link>
 
 
           </>
 
         )}
-
-
-
-
 
 
 
@@ -429,11 +596,16 @@ export default function Sidebar() {
 
           <>
 
+
             <Link
               href="/dashboard"
-              className={linkClass("/dashboard")}
+              className={linkClass(
+                "/dashboard"
+              )}
             >
+
               Admin Dashboard
+
             </Link>
 
 
@@ -444,8 +616,6 @@ export default function Sidebar() {
 
 
       </nav>
-
-
 
 
 
@@ -470,11 +640,8 @@ export default function Sidebar() {
       </button>
 
 
-
-
     </aside>
 
   );
-
 
 }
