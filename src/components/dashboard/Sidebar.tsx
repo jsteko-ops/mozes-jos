@@ -392,6 +392,15 @@ export default function Sidebar() {
                 "/dashboard/settings"
               )}
             >
+
+<Link
+  href="/dashboard/safe-report"
+  className={linkClass(
+    "/dashboard/safe-report"
+  )}
+>
+  🛡️ Sigurna prijava
+</Link>
               Profil
             </Link>
           </>
