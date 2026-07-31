@@ -1,4 +1,7 @@
-import { auth, db } from "@/lib/firebase";
+import {
+  auth,
+  db,
+} from "@/lib/firebase";
 
 import {
   createUserWithEmailAndPassword,
@@ -6,9 +9,15 @@ import {
 
 import {
   doc,
-  setDoc,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
+
+
+export type ClientGender =
+  | "male"
+  | "female"
+  | "prefer_not_to_say";
 
 
 export async function createClientForTrainer({
@@ -17,6 +26,7 @@ export async function createClientForTrainer({
   email,
   password,
   goal,
+  gender,
   trainerId,
   gymId,
 
@@ -26,6 +36,7 @@ export async function createClientForTrainer({
   email: string;
   password: string;
   goal: string;
+  gender: ClientGender;
   trainerId: string;
   gymId: string;
 
@@ -42,7 +53,8 @@ export async function createClientForTrainer({
     );
 
 
-  const uid = result.user.uid;
+  const uid =
+    result.user.uid;
 
 
 
@@ -57,29 +69,34 @@ export async function createClientForTrainer({
     ),
 
     {
-
       uid,
 
-      name: name.trim(),
+      name:
+        name.trim(),
 
-      email: email.trim(),
+      email:
+        email.trim(),
 
-      role: "client",
+      role:
+        "client",
+
+      gender,
 
       gymId,
 
       trainerId,
 
-      isPremium: false,
+      isPremium:
+        false,
 
-      subscriptionStatus: "inactive",
+      subscriptionStatus:
+        "inactive",
 
-      createdAt: serverTimestamp(),
-
+      createdAt:
+        serverTimestamp(),
     }
 
   );
-
 
 
 
@@ -94,26 +111,28 @@ export async function createClientForTrainer({
     ),
 
     {
-
       uid,
 
-      name: name.trim(),
+      name:
+        name.trim(),
 
-      email: email.trim(),
+      email:
+        email.trim(),
 
-      goal,
+      goal:
+        goal.trim(),
+
+      gender,
 
       gymId,
 
       trainerId,
 
-      createdAt: serverTimestamp(),
-
+      createdAt:
+        serverTimestamp(),
     }
 
   );
-
-
 
 
 
@@ -122,39 +141,36 @@ export async function createClientForTrainer({
   await setDoc(
 
     doc(
-
       db,
-
       "gymMembers",
-
       gymId,
-
       "members",
-
       uid
-
     ),
 
     {
-
       uid,
 
-      role: "client",
+      role:
+        "client",
 
-      name: name.trim(),
+      name:
+        name.trim(),
 
-      email: email.trim(),
+      email:
+        email.trim(),
+
+      gender,
 
       gymId,
 
       trainerId,
 
-      createdAt: serverTimestamp(),
-
+      createdAt:
+        serverTimestamp(),
     }
 
   );
-
 
 
   return uid;

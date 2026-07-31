@@ -1,20 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useState,
+} from "react";
 
 import {
   doc,
   getDoc,
 } from "firebase/firestore";
 
-import { db } from "@/lib/firebase";
+import {
+  db,
+} from "@/lib/firebase";
 
-import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  useAuth,
+} from "@/components/auth/AuthProvider";
 
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-import { createClientForTrainer } from "@/lib/createClientForTrainer";
+import {
+  ClientGender,
+  createClientForTrainer,
+} from "@/lib/createClientForTrainer";
 
 
 export default function ClientForm({
@@ -24,27 +33,100 @@ export default function ClientForm({
 }) {
 
 
-  const { user } = useAuth();
+  const {
+    user,
+  } = useAuth();
 
 
-  const [name, setName] = useState("");
-
-  const [email, setEmail] = useState("");
-
-  const [password, setPassword] = useState("");
-
-  const [goal, setGoal] = useState("");
+  const [
+    name,
+    setName,
+  ] = useState("");
 
 
-  const [loading, setLoading] = useState(false);
+  const [
+    email,
+    setEmail,
+  ] = useState("");
+
+
+  const [
+    password,
+    setPassword,
+  ] = useState("");
+
+
+  const [
+    goal,
+    setGoal,
+  ] = useState("");
+
+
+  const [
+    gender,
+    setGender,
+  ] = useState<ClientGender | "">("");
+
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
 
 
   async function addClient() {
 
 
-    if (!user) return;
+    if (!user) {
 
+      return;
+
+    }
+
+
+    if (!name.trim()) {
+
+      alert(
+        "Upiši ime klijenta."
+      );
+
+      return;
+
+    }
+
+
+    if (!email.trim()) {
+
+      alert(
+        "Upiši email klijenta."
+      );
+
+      return;
+
+    }
+
+
+    if (!password) {
+
+      alert(
+        "Upiši privremenu lozinku."
+      );
+
+      return;
+
+    }
+
+
+    if (!gender) {
+
+      alert(
+        "Odaberi spol klijenta."
+      );
+
+      return;
+
+    }
 
 
     try {
@@ -56,14 +138,16 @@ export default function ClientForm({
 
       // Dohvati podatke trenera
 
-      const trainerSnap = await getDoc(
-        doc(
-          db,
-          "users",
-          user.uid
-        )
-      );
+      const trainerSnap =
+        await getDoc(
 
+          doc(
+            db,
+            "users",
+            user.uid
+          )
+
+        );
 
 
       if (!trainerSnap.exists()) {
@@ -75,13 +159,12 @@ export default function ClientForm({
       }
 
 
+      const trainerData =
+        trainerSnap.data();
 
-      const trainerData = trainerSnap.data();
 
-
-
-      const gymId = trainerData.gymId;
-
+      const gymId =
+        trainerData.gymId;
 
 
       if (!gymId) {
@@ -106,7 +189,10 @@ export default function ClientForm({
 
         goal,
 
-        trainerId: user.uid,
+        gender,
+
+        trainerId:
+          user.uid,
 
         gymId,
 
@@ -114,7 +200,7 @@ export default function ClientForm({
 
 
 
-      // čišćenje forme
+      // Čišćenje forme
 
       setName("");
 
@@ -124,10 +210,10 @@ export default function ClientForm({
 
       setGoal("");
 
+      setGender("");
 
 
       onCreatedAction();
-
 
 
       alert(
@@ -135,8 +221,7 @@ export default function ClientForm({
       );
 
 
-
-    } catch (error: any) {
+    } catch (error: unknown) {
 
 
       console.error(
@@ -145,11 +230,15 @@ export default function ClientForm({
       );
 
 
-      alert(
-        error.message ||
-        "Greška kod dodavanja klijenta"
-      );
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Greška kod dodavanja klijenta";
 
+
+      alert(
+        message
+      );
 
 
     } finally {
@@ -164,10 +253,9 @@ export default function ClientForm({
 
 
 
-
   return (
 
-    <div className="bg-white p-4 border rounded-xl space-y-4">
+    <div className="space-y-4 rounded-xl border bg-white p-4">
 
 
       <Input
@@ -178,12 +266,13 @@ export default function ClientForm({
 
         value={name}
 
-        onChange={(e) =>
-          setName(e.target.value)
+        onChange={(event) =>
+          setName(
+            event.target.value
+          )
         }
 
       />
-
 
 
       <Input
@@ -194,12 +283,13 @@ export default function ClientForm({
 
         value={email}
 
-        onChange={(e) =>
-          setEmail(e.target.value)
+        onChange={(event) =>
+          setEmail(
+            event.target.value
+          )
         }
 
       />
-
 
 
       <Input
@@ -210,12 +300,76 @@ export default function ClientForm({
 
         value={password}
 
-        onChange={(e) =>
-          setPassword(e.target.value)
+        onChange={(event) =>
+          setPassword(
+            event.target.value
+          )
         }
 
       />
 
+
+      <div>
+
+        <label className="mb-2 block font-medium">
+
+          Spol
+
+        </label>
+
+
+        <select
+
+          value={gender}
+
+          onChange={(event) =>
+            setGender(
+              event.target.value as
+                ClientGender | ""
+            )
+          }
+
+          className="
+            w-full
+            rounded-lg
+            border
+            bg-white
+            px-3
+            py-2
+          "
+
+        >
+
+          <option value="">
+
+            Odaberi spol
+
+          </option>
+
+
+          <option value="male">
+
+            Muški
+
+          </option>
+
+
+          <option value="female">
+
+            Ženski
+
+          </option>
+
+
+          <option value="prefer_not_to_say">
+
+            Ne želim se izjasniti
+
+          </option>
+
+        </select>
+
+      </div>
 
 
       <Input
@@ -226,12 +380,13 @@ export default function ClientForm({
 
         value={goal}
 
-        onChange={(e) =>
-          setGoal(e.target.value)
+        onChange={(event) =>
+          setGoal(
+            event.target.value
+          )
         }
 
       />
-
 
 
       <Button
@@ -247,7 +402,6 @@ export default function ClientForm({
         Dodaj klijenta
 
       </Button>
-
 
 
     </div>
