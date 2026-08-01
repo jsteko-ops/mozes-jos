@@ -338,6 +338,30 @@ export async function GET(
               assignmentStatus:
                 data.assignmentStatus ?? "assigned",
 
+              response:
+                typeof data.response === "string"
+
+                  ? data.response
+
+                  : null,
+
+              respondedByRole:
+                typeof data.respondedByRole === "string"
+
+                  ? data.respondedByRole
+
+                  : null,
+
+              responseAt:
+                toIsoString(
+                  data.responseAt
+                ),
+
+              statusChangedAt:
+                toIsoString(
+                  data.statusChangedAt
+                ),
+
               createdAt:
                 toIsoString(
                   data.createdAt
