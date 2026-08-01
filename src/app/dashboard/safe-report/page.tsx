@@ -12,7 +12,7 @@ import {
 } from "@/components/auth/AuthProvider";
 
 
-type ApiResponse = {
+type SubmitApiResponse = {
 
   ok?: boolean;
 
@@ -25,6 +25,238 @@ type ApiResponse = {
   accessCode?: string;
 
 };
+
+
+type SafeReportStatus = {
+
+  reportNumber: string;
+
+  anonymous: boolean;
+
+  accused: {
+    role: string;
+    name: string;
+  };
+
+  category: string;
+
+  status: string;
+
+  assignmentStatus: string;
+
+  response: string | null;
+
+  responseAt: string | null;
+
+  statusChangedAt: string | null;
+
+  createdAt: string | null;
+
+  updatedAt: string | null;
+
+};
+
+
+type StatusApiResponse = {
+
+  report?: SafeReportStatus;
+
+  error?: string;
+
+};
+
+
+function formatDate(
+  value: string | null
+) {
+
+  if (!value) {
+
+    return "-";
+
+  }
+
+
+  const date =
+    new Date(value);
+
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+
+    return value;
+
+  }
+
+
+  return date.toLocaleString(
+    "hr-HR"
+  );
+
+}
+
+
+function formatStatus(
+  status: string
+) {
+
+  switch (status) {
+
+    case "submitted":
+
+      return "Nova prijava";
+
+
+    case "pending_admin":
+
+      return "Čeka administratora";
+
+
+    case "in_review":
+
+      return "U obradi";
+
+
+    case "resolved":
+
+      return "Riješeno";
+
+
+    case "closed":
+
+      return "Zatvoreno";
+
+
+    default:
+
+      return status;
+
+  }
+
+}
+
+
+function statusBadgeClass(
+  status: string
+) {
+
+  switch (status) {
+
+    case "in_review":
+
+      return "bg-blue-100 text-blue-800";
+
+
+    case "resolved":
+
+      return "bg-green-100 text-green-800";
+
+
+    case "closed":
+
+      return "bg-gray-200 text-gray-800";
+
+
+    case "pending_admin":
+
+      return "bg-amber-100 text-amber-800";
+
+
+    default:
+
+      return "bg-red-100 text-red-800";
+
+  }
+
+}
+
+
+function formatAccusedRole(
+  role: string
+) {
+
+  switch (role) {
+
+    case "trainer":
+
+      return "Trener";
+
+
+    case "gym_owner":
+
+      return "Vlasnik teretane";
+
+
+    case "staff":
+
+      return "Drugi zaposlenik";
+
+
+    default:
+
+      return "Druga osoba";
+
+  }
+
+}
+
+
+function formatCategory(
+  category: string
+) {
+
+  switch (category) {
+
+    case "inappropriate_comments":
+
+      return "Neprimjereni komentari";
+
+
+    case "sexual_harassment":
+
+      return "Seksualno uznemiravanje";
+
+
+    case "unwanted_touching":
+
+      return "Neželjeno dodirivanje";
+
+
+    case "threats":
+
+      return "Prijetnje ili zastrašivanje";
+
+
+    case "discrimination":
+
+      return "Diskriminacija";
+
+
+    case "violence":
+
+      return "Fizičko nasilje";
+
+
+    case "privacy":
+
+      return "Narušavanje privatnosti";
+
+
+    case "unsafe_behavior":
+
+      return "Nesigurno ponašanje ili ugrožavanje";
+
+
+    default:
+
+      return "Drugo";
+
+  }
+
+}
 
 
 export default function SafeReportPage() {
@@ -78,21 +310,51 @@ export default function SafeReportPage() {
 
 
   const [
-    loading,
-    setLoading,
+    submitLoading,
+    setSubmitLoading,
   ] = useState(false);
 
 
   const [
-    error,
-    setError,
+    submitError,
+    setSubmitError,
   ] = useState("");
 
 
   const [
     result,
     setResult,
-  ] = useState<ApiResponse | null>(null);
+  ] = useState<SubmitApiResponse | null>(null);
+
+
+  const [
+    lookupReportNumber,
+    setLookupReportNumber,
+  ] = useState("");
+
+
+  const [
+    lookupAccessCode,
+    setLookupAccessCode,
+  ] = useState("");
+
+
+  const [
+    lookupLoading,
+    setLookupLoading,
+  ] = useState(false);
+
+
+  const [
+    lookupError,
+    setLookupError,
+  ] = useState("");
+
+
+  const [
+    lookupResult,
+    setLookupResult,
+  ] = useState<SafeReportStatus | null>(null);
 
 
 
@@ -105,7 +367,7 @@ export default function SafeReportPage() {
 
     if (!user) {
 
-      setError(
+      setSubmitError(
         "Moraš biti prijavljen kako bi poslao prijavu."
       );
 
@@ -116,7 +378,7 @@ export default function SafeReportPage() {
 
     if (!accusedRole) {
 
-      setError(
+      setSubmitError(
         "Odaberi na koga se prijava odnosi."
       );
 
@@ -127,7 +389,7 @@ export default function SafeReportPage() {
 
     if (!accusedName.trim()) {
 
-      setError(
+      setSubmitError(
         "Upiši ime ili opis osobe."
       );
 
@@ -138,7 +400,7 @@ export default function SafeReportPage() {
 
     if (!category) {
 
-      setError(
+      setSubmitError(
         "Odaberi vrstu ponašanja."
       );
 
@@ -147,9 +409,11 @@ export default function SafeReportPage() {
     }
 
 
-    if (description.trim().length < 20) {
+    if (
+      description.trim().length < 20
+    ) {
 
-      setError(
+      setSubmitError(
         "Opis mora sadržavati najmanje 20 znakova."
       );
 
@@ -160,9 +424,9 @@ export default function SafeReportPage() {
 
     try {
 
-      setLoading(true);
+      setSubmitLoading(true);
 
-      setError("");
+      setSubmitError("");
 
       setResult(null);
 
@@ -205,7 +469,8 @@ export default function SafeReportPage() {
 
 
       const data =
-        await response.json() as ApiResponse;
+        await response.json() as
+          SubmitApiResponse;
 
 
       if (!response.ok) {
@@ -219,6 +484,22 @@ export default function SafeReportPage() {
 
 
       setResult(data);
+
+
+      if (
+        data.reportNumber &&
+        data.accessCode
+      ) {
+
+        setLookupReportNumber(
+          data.reportNumber
+        );
+
+        setLookupAccessCode(
+          data.accessCode
+        );
+
+      }
 
 
       setAccusedRole("");
@@ -243,7 +524,7 @@ export default function SafeReportPage() {
       );
 
 
-      setError(
+      setSubmitError(
 
         error instanceof Error
 
@@ -256,7 +537,152 @@ export default function SafeReportPage() {
 
     } finally {
 
-      setLoading(false);
+      setSubmitLoading(false);
+
+    }
+
+  }
+
+
+
+  async function lookupReport(
+    event: FormEvent<HTMLFormElement>
+  ) {
+
+    event.preventDefault();
+
+
+    if (!user) {
+
+      setLookupError(
+        "Moraš biti prijavljen kako bi provjerio prijavu."
+      );
+
+      return;
+
+    }
+
+
+    const normalizedReportNumber =
+      lookupReportNumber
+        .trim()
+        .toUpperCase();
+
+
+    const normalizedAccessCode =
+      lookupAccessCode
+        .trim()
+        .toUpperCase();
+
+
+    if (
+      !normalizedReportNumber ||
+      !normalizedAccessCode
+    ) {
+
+      setLookupError(
+        "Upiši broj prijave i tajni pristupni kod."
+      );
+
+      return;
+
+    }
+
+
+    try {
+
+      setLookupLoading(true);
+
+      setLookupError("");
+
+      setLookupResult(null);
+
+
+      const token =
+        await user.getIdToken();
+
+
+      const response =
+        await fetch(
+          "/api/safe-reports/status",
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            body:
+              JSON.stringify({
+                reportNumber:
+                  normalizedReportNumber,
+
+                accessCode:
+                  normalizedAccessCode,
+              }),
+          }
+        );
+
+
+      const data =
+        await response.json() as
+          StatusApiResponse;
+
+
+      if (
+        !response.ok ||
+        !data.report
+      ) {
+
+        throw new Error(
+          data.error ||
+          "Status prijave nije moguće provjeriti."
+        );
+
+      }
+
+
+      setLookupReportNumber(
+        normalizedReportNumber
+      );
+
+      setLookupAccessCode(
+        normalizedAccessCode
+      );
+
+      setLookupResult(
+        data.report
+      );
+
+
+    } catch (error: unknown) {
+
+
+      console.error(
+        "Greška kod provjere prijave:",
+        error
+      );
+
+
+      setLookupError(
+
+        error instanceof Error
+
+          ? error.message
+
+          : "Status prijave nije moguće provjeriti."
+
+      );
+
+
+    } finally {
+
+      setLookupLoading(false);
 
     }
 
@@ -269,7 +695,7 @@ export default function SafeReportPage() {
     <RoleGuard allowedRoles={["client"]}>
 
 
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-3xl space-y-8">
 
 
         <div>
@@ -372,6 +798,448 @@ export default function SafeReportPage() {
           )
         }
 
+        <section
+          className="
+            space-y-5
+            rounded-xl
+            border
+            border-violet-200
+            bg-violet-50
+            p-6
+          "
+        >
+
+
+          <div>
+
+            <h2 className="text-2xl font-bold text-violet-950">
+
+              🔎 Provjeri status prijave
+
+            </h2>
+
+
+            <p className="mt-2 text-sm text-violet-800">
+
+              Za provjeru su potrebni broj prijave
+              i tajni pristupni kod koji si dobio
+              nakon slanja.
+
+            </p>
+
+          </div>
+
+
+
+          <form
+            onSubmit={lookupReport}
+            className="space-y-4"
+          >
+
+
+            <div>
+
+              <label className="mb-2 block font-semibold">
+
+                Broj prijave
+
+              </label>
+
+
+              <input
+                type="text"
+                value={lookupReportNumber}
+                onChange={(event) =>
+                  setLookupReportNumber(
+                    event.target.value
+                      .toUpperCase()
+                  )
+                }
+                placeholder="MJ-20260801-A0F216"
+                autoComplete="off"
+                className="
+                  w-full
+                  rounded-lg
+                  border
+                  border-violet-300
+                  bg-white
+                  px-4
+                  py-3
+                  font-mono
+                  uppercase
+                "
+              />
+
+            </div>
+
+
+
+            <div>
+
+              <label className="mb-2 block font-semibold">
+
+                Tajni pristupni kod
+
+              </label>
+
+
+              <input
+                type="text"
+                value={lookupAccessCode}
+                onChange={(event) =>
+                  setLookupAccessCode(
+                    event.target.value
+                      .toUpperCase()
+                  )
+                }
+                placeholder="AB12-CD34-EF56"
+                autoComplete="off"
+                className="
+                  w-full
+                  rounded-lg
+                  border
+                  border-violet-300
+                  bg-white
+                  px-4
+                  py-3
+                  font-mono
+                  uppercase
+                "
+              />
+
+            </div>
+
+
+
+            {
+              lookupError && (
+
+                <div
+                  className="
+                    rounded-lg
+                    border
+                    border-red-200
+                    bg-red-50
+                    p-4
+                    text-red-700
+                  "
+                >
+
+                  {lookupError}
+
+                </div>
+
+              )
+            }
+
+
+
+            <button
+              type="submit"
+              disabled={lookupLoading}
+              className="
+                w-full
+                rounded-xl
+                bg-violet-700
+                px-6
+                py-3
+                font-bold
+                text-white
+                hover:bg-violet-800
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+
+              {
+                lookupLoading
+
+                  ? "Provjera..."
+
+                  : "Provjeri status i odgovor"
+              }
+
+            </button>
+
+          </form>
+
+
+
+          {
+            lookupResult && (
+
+              <div
+                className="
+                  space-y-5
+                  rounded-xl
+                  border
+                  border-violet-300
+                  bg-white
+                  p-6
+                "
+              >
+
+
+                <div
+                  className="
+                    flex
+                    flex-wrap
+                    items-start
+                    justify-between
+                    gap-4
+                  "
+                >
+
+
+                  <div>
+
+                    <p className="text-sm text-gray-500">
+
+                      Broj prijave
+
+                    </p>
+
+
+                    <p className="font-mono text-xl font-bold">
+
+                      {lookupResult.reportNumber}
+
+                    </p>
+
+                  </div>
+
+
+                  <span
+                    className={`
+                      rounded-full
+                      px-3
+                      py-1
+                      text-sm
+                      font-bold
+                      ${statusBadgeClass(
+                        lookupResult.status
+                      )}
+                    `}
+                  >
+
+                    {formatStatus(
+                      lookupResult.status
+                    )}
+
+                  </span>
+
+                </div>
+
+
+
+                <div className="grid gap-4 md:grid-cols-2">
+
+
+                  <div>
+
+                    <p className="text-sm text-gray-500">
+
+                      Prijava se odnosi na
+
+                    </p>
+
+
+                    <p className="font-semibold">
+
+                      {formatAccusedRole(
+                        lookupResult.accused.role
+                      )}
+
+                    </p>
+
+
+                    <p>
+
+                      {lookupResult.accused.name}
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-gray-500">
+
+                      Vrsta ponašanja
+
+                    </p>
+
+
+                    <p className="font-semibold">
+
+                      {formatCategory(
+                        lookupResult.category
+                      )}
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-gray-500">
+
+                      Prijava zaprimljena
+
+                    </p>
+
+
+                    <p>
+
+                      {formatDate(
+                        lookupResult.createdAt
+                      )}
+
+                    </p>
+
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-gray-500">
+
+                      Zadnja promjena statusa
+
+                    </p>
+
+
+                    <p>
+
+                      {formatDate(
+                        lookupResult.statusChangedAt
+                      )}
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+
+
+                <div
+                  className="
+                    rounded-lg
+                    border
+                    border-blue-200
+                    bg-blue-50
+                    p-4
+                  "
+                >
+
+                  <p className="font-semibold text-blue-900">
+
+                    Trenutačni status
+
+                  </p>
+
+
+                  <p className="mt-1 text-blue-800">
+
+                    {formatStatus(
+                      lookupResult.status
+                    )}
+
+                  </p>
+
+                </div>
+
+
+
+                {
+                  lookupResult.response
+
+                    ? (
+
+                      <div
+                        className="
+                          rounded-lg
+                          border
+                          border-green-200
+                          bg-green-50
+                          p-5
+                        "
+                      >
+
+                        <h3 className="font-bold text-green-900">
+
+                          Odgovor ovlaštene osobe
+
+                        </h3>
+
+
+                        <p className="mt-3 whitespace-pre-line">
+
+                          {lookupResult.response}
+
+                        </p>
+
+
+                        <p className="mt-4 text-sm text-green-800">
+
+                          Odgovor spremljen:{" "}
+
+                          {formatDate(
+                            lookupResult.responseAt
+                          )}
+
+                        </p>
+
+                      </div>
+
+                    )
+
+                    : (
+
+                      <div
+                        className="
+                          rounded-lg
+                          border
+                          border-amber-200
+                          bg-amber-50
+                          p-4
+                          text-amber-900
+                        "
+                      >
+
+                        Ovlaštena osoba još nije ostavila odgovor.
+
+                      </div>
+
+                    )
+                }
+
+              </div>
+
+            )
+          }
+
+
+        </section>
+
+
+
+        <div className="border-t pt-8">
+
+          <h2 className="text-2xl font-bold">
+
+            Pošalji novu prijavu
+
+          </h2>
+
+        </div>
+
 
 
         <form
@@ -398,19 +1266,13 @@ export default function SafeReportPage() {
             <label className="flex items-start gap-3">
 
               <input
-
                 type="radio"
-
                 name="reportPrivacy"
-
                 checked={anonymous}
-
                 onChange={() =>
                   setAnonymous(true)
                 }
-
                 className="mt-1"
-
               />
 
 
@@ -433,19 +1295,13 @@ export default function SafeReportPage() {
             <label className="mt-3 flex items-start gap-3">
 
               <input
-
                 type="radio"
-
                 name="reportPrivacy"
-
                 checked={!anonymous}
-
                 onChange={() =>
                   setAnonymous(false)
                 }
-
                 className="mt-1"
-
               />
 
 
@@ -478,17 +1334,13 @@ export default function SafeReportPage() {
 
 
             <select
-
               value={accusedRole}
-
               onChange={(event) =>
                 setAccusedRole(
                   event.target.value
                 )
               }
-
               required
-
               className="
                 w-full
                 rounded-lg
@@ -549,23 +1401,16 @@ export default function SafeReportPage() {
 
 
             <input
-
               type="text"
-
               value={accusedName}
-
               onChange={(event) =>
                 setAccusedName(
                   event.target.value
                 )
               }
-
               maxLength={120}
-
               required
-
               placeholder="Primjer: trener Marko ili osoba na recepciji"
-
               className="
                 w-full
                 rounded-lg
@@ -573,7 +1418,6 @@ export default function SafeReportPage() {
                 px-4
                 py-3
               "
-
             />
 
           </div>
@@ -590,17 +1434,13 @@ export default function SafeReportPage() {
 
 
             <select
-
               value={category}
-
               onChange={(event) =>
                 setCategory(
                   event.target.value
                 )
               }
-
               required
-
               className="
                 w-full
                 rounded-lg
@@ -684,8 +1524,6 @@ export default function SafeReportPage() {
 
           </div>
 
-
-
           <div>
 
             <label className="mb-2 block font-semibold">
@@ -696,25 +1534,17 @@ export default function SafeReportPage() {
 
 
             <textarea
-
               value={description}
-
               onChange={(event) =>
                 setDescription(
                   event.target.value
                 )
               }
-
               minLength={20}
-
               maxLength={5000}
-
               required
-
               rows={9}
-
               placeholder="Napiši što se dogodilo, što je osoba rekla ili napravila i sve druge važne pojedinosti."
-
               className="
                 w-full
                 rounded-lg
@@ -722,7 +1552,6 @@ export default function SafeReportPage() {
                 px-4
                 py-3
               "
-
             />
 
 
@@ -746,17 +1575,13 @@ export default function SafeReportPage() {
 
 
             <input
-
               type="datetime-local"
-
               value={occurredAt}
-
               onChange={(event) =>
                 setOccurredAt(
                   event.target.value
                 )
               }
-
               className="
                 w-full
                 rounded-lg
@@ -764,7 +1589,6 @@ export default function SafeReportPage() {
                 px-4
                 py-3
               "
-
             />
 
           </div>
@@ -781,21 +1605,15 @@ export default function SafeReportPage() {
 
 
             <input
-
               type="text"
-
               value={location}
-
               onChange={(event) =>
                 setLocation(
                   event.target.value
                 )
               }
-
               maxLength={200}
-
               placeholder="Primjer: svlačionica, recepcija ili dvorana"
-
               className="
                 w-full
                 rounded-lg
@@ -803,7 +1621,6 @@ export default function SafeReportPage() {
                 px-4
                 py-3
               "
-
             />
 
           </div>
@@ -811,7 +1628,7 @@ export default function SafeReportPage() {
 
 
           {
-            error && (
+            submitError && (
 
               <div
                 className="
@@ -824,7 +1641,7 @@ export default function SafeReportPage() {
                 "
               >
 
-                {error}
+                {submitError}
 
               </div>
 
@@ -834,11 +1651,8 @@ export default function SafeReportPage() {
 
 
           <button
-
             type="submit"
-
-            disabled={loading}
-
+            disabled={submitLoading}
             className="
               w-full
               rounded-xl
@@ -851,11 +1665,10 @@ export default function SafeReportPage() {
               disabled:cursor-not-allowed
               disabled:opacity-50
             "
-
           >
 
             {
-              loading
+              submitLoading
 
                 ? "Slanje prijave..."
 
