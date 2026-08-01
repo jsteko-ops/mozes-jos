@@ -192,6 +192,9 @@ function notificationIcon(type?:string){
 case "safe_report":
   return "🛡️";
 
+case "safe_report_update":
+  return "🛡️";
+
 default:
   return "🔔";
 

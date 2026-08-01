@@ -352,6 +352,58 @@ export async function PATCH(
     }
 
 
+    const privateReporterReference =
+      reportReference
+        .collection("private")
+        .doc("reporter");
+
+
+    const privateReporterSnapshot =
+      await privateReporterReference.get();
+
+
+    if (!privateReporterSnapshot.exists) {
+
+      return NextResponse.json(
+        {
+          error:
+            "Podaci prijavitelja nisu pronađeni.",
+        },
+        {
+          status: 404,
+        }
+      );
+
+    }
+
+
+    const privateReporterData =
+      privateReporterSnapshot.data();
+
+
+    const reporterUid =
+      typeof privateReporterData?.reporterUid === "string"
+
+        ? privateReporterData.reporterUid
+
+        : "";
+
+
+    if (!reporterUid) {
+
+      return NextResponse.json(
+        {
+          error:
+            "Korisnik kojem pripada prijava nije pronađen.",
+        },
+        {
+          status: 404,
+        }
+      );
+
+    }
+
+
     const body =
       await request.json() as
         UpdateReportBody;
@@ -462,7 +514,6 @@ export async function PATCH(
 
     }
 
-
     const currentStatus =
       isCurrentStatus(
         reportData?.status
@@ -571,6 +622,36 @@ export async function PATCH(
         .doc();
 
 
+    const notificationReference =
+      adminDb
+        .collection("notifications")
+        .doc();
+
+
+    const notificationTitle =
+      responseText && newStatus
+
+        ? "Novi odgovor i status prijave"
+
+        : responseText
+
+          ? "Novi odgovor na prijavu"
+
+          : "Promijenjen status prijave";
+
+
+    const notificationMessage =
+      responseText && newStatus
+
+        ? "Na tvojoj sigurnoj prijavi spremljeni su novi odgovor i status."
+
+        : responseText
+
+          ? "Ovlaštena osoba odgovorila je na tvoju sigurnu prijavu."
+
+          : "Status tvoje sigurne prijave je promijenjen.";
+
+
     const batch =
       adminDb.batch();
 
@@ -611,6 +692,36 @@ export async function PATCH(
 
         actorRole:
           userRole,
+
+        createdAt:
+          FieldValue.serverTimestamp(),
+      }
+
+    );
+
+
+    batch.set(
+
+      notificationReference,
+
+      {
+        userId:
+          reporterUid,
+
+        title:
+          notificationTitle,
+
+        message:
+          notificationMessage,
+
+        type:
+          "safe_report_update",
+
+        link:
+          "/dashboard/safe-report",
+
+        read:
+          false,
 
         createdAt:
           FieldValue.serverTimestamp(),
