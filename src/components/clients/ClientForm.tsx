@@ -4,20 +4,8 @@ import {
   useState,
 } from "react";
 
-import {
-  doc,
-  getDoc,
-} from "firebase/firestore";
-
-import {
-  db,
-} from "@/lib/firebase";
-
-import {
-  useAuth,
-} from "@/components/auth/AuthProvider";
-
 import Button from "@/components/ui/Button";
+
 import Input from "@/components/ui/Input";
 
 import {
@@ -27,15 +15,15 @@ import {
 
 
 export default function ClientForm({
+
   onCreatedAction,
+
 }: {
-  onCreatedAction: () => void;
+
+  onCreatedAction:
+    () => void;
+
 }) {
-
-
-  const {
-    user,
-  } = useAuth();
 
 
   const [
@@ -65,7 +53,9 @@ export default function ClientForm({
   const [
     gender,
     setGender,
-  ] = useState<ClientGender | "">("");
+  ] = useState<
+    ClientGender | ""
+  >("");
 
 
   const [
@@ -74,15 +64,7 @@ export default function ClientForm({
   ] = useState(false);
 
 
-
   async function addClient() {
-
-
-    if (!user) {
-
-      return;
-
-    }
 
 
     if (!name.trim()) {
@@ -99,7 +81,7 @@ export default function ClientForm({
     if (!email.trim()) {
 
       alert(
-        "Upiši email klijenta."
+        "Upiši e-mail klijenta."
       );
 
       return;
@@ -107,10 +89,12 @@ export default function ClientForm({
     }
 
 
-    if (!password) {
+    if (
+      password.length < 6
+    ) {
 
       alert(
-        "Upiši privremenu lozinku."
+        "Privremena lozinka mora imati najmanje 6 znakova."
       );
 
       return;
@@ -131,76 +115,23 @@ export default function ClientForm({
 
     try {
 
-
       setLoading(true);
 
 
+      await createClientForTrainer(
+        {
+          name,
 
-      // Dohvati podatke trenera
+          email,
 
-      const trainerSnap =
-        await getDoc(
+          password,
 
-          doc(
-            db,
-            "users",
-            user.uid
-          )
+          goal,
 
-        );
+          gender,
+        }
+      );
 
-
-      if (!trainerSnap.exists()) {
-
-        throw new Error(
-          "Trener nije pronađen."
-        );
-
-      }
-
-
-      const trainerData =
-        trainerSnap.data();
-
-
-      const gymId =
-        trainerData.gymId;
-
-
-      if (!gymId) {
-
-        throw new Error(
-          "Trener nema povezanu teretanu."
-        );
-
-      }
-
-
-
-      // Kreiranje kompletnog klijenta
-
-      await createClientForTrainer({
-
-        name,
-
-        email,
-
-        password,
-
-        goal,
-
-        gender,
-
-        trainerId:
-          user.uid,
-
-        gymId,
-
-      });
-
-
-
-      // Čišćenje forme
 
       setName("");
 
@@ -213,16 +144,19 @@ export default function ClientForm({
       setGender("");
 
 
-      onCreatedAction();
-
-
-      alert(
-        "Klijent uspješno dodan ✅"
+      await Promise.resolve(
+        onCreatedAction()
       );
 
 
-    } catch (error: unknown) {
+      alert(
+        "Klijent je uspješno dodan ✅"
+      );
 
+
+    } catch (
+      error: unknown
+    ) {
 
       console.error(
         "Greška kod dodavanja klijenta:",
@@ -232,8 +166,10 @@ export default function ClientForm({
 
       const message =
         error instanceof Error
+
           ? error.message
-          : "Greška kod dodavanja klijenta";
+
+          : "Greška kod dodavanja klijenta.";
 
 
       alert(
@@ -243,14 +179,11 @@ export default function ClientForm({
 
     } finally {
 
-
       setLoading(false);
-
 
     }
 
   }
-
 
 
   return (
@@ -277,9 +210,9 @@ export default function ClientForm({
 
       <Input
 
-        label="Email"
+        label="E-mail"
 
-        placeholder="Email klijenta"
+        placeholder="E-mail klijenta"
 
         value={email}
 

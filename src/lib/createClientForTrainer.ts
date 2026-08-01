@@ -1,17 +1,6 @@
 import {
   auth,
-  db,
 } from "@/lib/firebase";
-
-import {
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
-
-import {
-  doc,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
 
 
 export type ClientGender =
@@ -20,159 +9,107 @@ export type ClientGender =
   | "prefer_not_to_say";
 
 
+type CreateClientData = {
+
+  name: string;
+
+  email: string;
+
+  password: string;
+
+  goal: string;
+
+  gender: ClientGender;
+
+};
+
+
 export async function createClientForTrainer({
 
   name,
+
   email,
+
   password,
+
   goal,
+
   gender,
-  trainerId,
-  gymId,
 
-}: {
-
-  name: string;
-  email: string;
-  password: string;
-  goal: string;
-  gender: ClientGender;
-  trainerId: string;
-  gymId: string;
-
-}) {
+}: CreateClientData) {
 
 
-  // 1. Kreiranje Firebase Auth korisnika
+  const currentUser =
+    auth.currentUser;
 
-  const result =
-    await createUserWithEmailAndPassword(
-      auth,
-      email.trim(),
-      password
+
+  if (!currentUser) {
+
+    throw new Error(
+      "Moraš biti prijavljen."
+    );
+
+  }
+
+
+  const token =
+    await currentUser.getIdToken();
+
+
+  const response =
+    await fetch(
+      "/api/clients",
+      {
+        method:
+          "POST",
+
+        headers: {
+
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`,
+
+        },
+
+        body:
+          JSON.stringify({
+            name:
+              name.trim(),
+
+            email:
+              email.trim(),
+
+            password,
+
+            goal:
+              goal.trim(),
+
+            gender,
+          }),
+      }
     );
 
 
-  const uid =
-    result.user.uid;
+  const data =
+    await response
+      .json()
+      .catch(
+        () => null
+      );
 
 
+  if (!response.ok) {
 
-  // 2. users dokument
+    throw new Error(
+      data?.error ||
+      "Klijenta nije moguće stvoriti."
+    );
 
-  await setDoc(
-
-    doc(
-      db,
-      "users",
-      uid
-    ),
-
-    {
-      uid,
-
-      name:
-        name.trim(),
-
-      email:
-        email.trim(),
-
-      role:
-        "client",
-
-      gender,
-
-      gymId,
-
-      trainerId,
-
-      isPremium:
-        false,
-
-      subscriptionStatus:
-        "inactive",
-
-      createdAt:
-        serverTimestamp(),
-    }
-
-  );
+  }
 
 
-
-  // 3. clients dokument
-
-  await setDoc(
-
-    doc(
-      db,
-      "clients",
-      uid
-    ),
-
-    {
-      uid,
-
-      name:
-        name.trim(),
-
-      email:
-        email.trim(),
-
-      goal:
-        goal.trim(),
-
-      gender,
-
-      gymId,
-
-      trainerId,
-
-      createdAt:
-        serverTimestamp(),
-    }
-
-  );
-
-
-
-  // 4. gymMembers veza
-
-  await setDoc(
-
-    doc(
-      db,
-      "gymMembers",
-      gymId,
-      "members",
-      uid
-    ),
-
-    {
-      uid,
-
-      role:
-        "client",
-
-      name:
-        name.trim(),
-
-      email:
-        email.trim(),
-
-      gender,
-
-      gymId,
-
-      trainerId,
-
-      createdAt:
-        serverTimestamp(),
-    }
-
-  );
-
-
-  return uid;
+  return data.client.uid as string;
 
 }
