@@ -295,6 +295,32 @@ export default function Sidebar() {
 
 
             <Link
+              href="/dashboard/safe-reports-inbox"
+              className={linkClass(
+                "/dashboard/safe-reports-inbox"
+              )}
+            >
+              🛡️ Sigurne prijave
+            </Link>
+
+
+            <Link
+              href="/dashboard/notifications"
+              className={linkClass(
+                "/dashboard/notifications"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span>
+                  🔔 Obavijesti
+                </span>
+
+                {badge(notificationCount)}
+              </div>
+            </Link>
+
+
+            <Link
               href="/dashboard/chat"
               className={linkClass(
                 "/dashboard/chat"
@@ -387,20 +413,21 @@ export default function Sidebar() {
 
 
             <Link
+              href="/dashboard/safe-report"
+              className={linkClass(
+                "/dashboard/safe-report"
+              )}
+            >
+              🛡️ Sigurna prijava
+            </Link>
+
+
+            <Link
               href="/dashboard/settings"
               className={linkClass(
                 "/dashboard/settings"
               )}
             >
-
-<Link
-  href="/dashboard/safe-report"
-  className={linkClass(
-    "/dashboard/safe-report"
-  )}
->
-  🛡️ Sigurna prijava
-</Link>
               Profil
             </Link>
           </>
@@ -418,6 +445,32 @@ export default function Sidebar() {
               )}
             >
               Admin Dashboard
+            </Link>
+
+
+            <Link
+              href="/dashboard/safe-reports-inbox"
+              className={linkClass(
+                "/dashboard/safe-reports-inbox"
+              )}
+            >
+              🛡️ Sigurne prijave
+            </Link>
+
+
+            <Link
+              href="/dashboard/notifications"
+              className={linkClass(
+                "/dashboard/notifications"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span>
+                  🔔 Obavijesti
+                </span>
+
+                {badge(notificationCount)}
+              </div>
             </Link>
           </>
         )}

@@ -525,6 +525,14 @@ export async function POST(
         .collection("private")
         .doc("reporter");
 
+const notificationReference =
+  recipient.uid
+
+    ? adminDb
+        .collection("notifications")
+        .doc()
+
+    : null;
 
     const batch =
       adminDb.batch();
@@ -618,6 +626,41 @@ assignmentStatus:
 
     );
 
+if (
+  notificationReference &&
+  recipient.uid
+) {
+
+  batch.set(
+
+    notificationReference,
+
+    {
+      userId:
+        recipient.uid,
+
+      title:
+        "Nova sigurna prijava",
+
+      message:
+        `Zaprimljena je nova sigurna prijava ${reportNumber}.`,
+
+      type:
+        "safe_report",
+
+      link:
+        `/dashboard/safe-reports-inbox?report=${reportReference.id}`,
+
+      read:
+        false,
+
+      createdAt:
+        FieldValue.serverTimestamp(),
+    }
+
+  );
+
+}
 
     await batch.commit();
 

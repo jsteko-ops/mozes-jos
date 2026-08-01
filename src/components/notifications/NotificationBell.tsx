@@ -186,11 +186,14 @@ function notificationIcon(type?:string){
     case "workout":
       return "🏋️";
 
-    case "measurement":
-      return "📏";
+   case "measurement":
+  return "📏";
 
-    default:
-      return "🔔";
+case "safe_report":
+  return "🛡️";
+
+default:
+  return "🔔";
 
   }
 
