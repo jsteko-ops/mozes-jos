@@ -45,6 +45,8 @@ type SafeReportBody = {
 
   accusedRole: AccusedRole;
 
+  accusedUid?: string;
+
   accusedName: string;
 
   category: ReportCategory;
@@ -151,49 +153,110 @@ function createAccessCode() {
 }
 
 
-async function findRecipient(
-  gymId: string,
-  accusedRole: AccusedRole
+function getPersonName(
+  data: Record<string, unknown>
 ) {
 
-  if (accusedRole === "gym_owner") {
+  if (
+    typeof data.name === "string" &&
+    data.name.trim()
+  ) {
 
-    const adminSnapshot =
-      await adminDb
-        .collection("users")
-        .where(
-          "role",
-          "==",
-          "admin"
-        )
-        .limit(1)
-        .get();
+    return data.name.trim();
+
+  }
 
 
-    const adminDocument =
-      adminSnapshot.docs[0];
+  const firstName =
+    typeof data.firstName === "string"
+
+      ? data.firstName.trim()
+
+      : "";
 
 
-   if (!adminDocument) {
+  const lastName =
+    typeof data.lastName === "string"
+
+      ? data.lastName.trim()
+
+      : "";
+
+
+  const fullName =
+    [
+      firstName,
+      lastName,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+
+  if (fullName) {
+
+    return fullName;
+
+  }
+
+
+  if (
+    typeof data.email === "string" &&
+    data.email.trim()
+  ) {
+
+    return data.email.trim();
+
+  }
+
+
+  return "Trener";
+
+}
+
+
+async function findAdministrator() {
+
+  const adminSnapshot =
+    await adminDb
+      .collection("users")
+      .where(
+        "role",
+        "==",
+        "admin"
+      )
+      .limit(1)
+      .get();
+
+
+  const adminDocument =
+    adminSnapshot.docs[0];
+
+
+  if (!adminDocument) {
+
+    return {
+      uid: null,
+      role: "admin" as const,
+    };
+
+  }
+
 
   return {
-    uid: null,
-    role: "admin" as const,
+    uid:
+      adminDocument.id,
+
+    role:
+      "admin" as const,
   };
 
 }
 
 
-    return {
-      uid:
-        adminDocument.id,
-
-      role:
-        "admin",
-    };
-
-  }
-
+async function findGymOwner(
+  gymId: string
+) {
 
   const ownerSnapshot =
     await adminDb
@@ -212,24 +275,152 @@ async function findRecipient(
       .get();
 
 
-  const ownerDocument =
-    ownerSnapshot.docs[0];
+  return ownerSnapshot.docs[0] || null;
+
+}
 
 
-  if (!ownerDocument) {
+async function isEligibleRecipient(
+  uid: string,
+  gymId: string
+) {
 
-    return null;
+  const userSnapshot =
+    await adminDb
+      .collection("users")
+      .doc(uid)
+      .get();
+
+
+  if (!userSnapshot.exists) {
+
+    return false;
 
   }
 
 
-  return {
-    uid:
-      ownerDocument.id,
+  const data =
+    userSnapshot.data();
 
-    role:
-      "gym_owner",
-  };
+
+  return (
+    data?.gymId === gymId &&
+    (
+      data?.role === "gym_owner" ||
+      data?.role === "trainer"
+    )
+  );
+
+}
+
+
+async function findRecipient(
+  gymId: string,
+  accusedRole: AccusedRole,
+  accusedUid: string | null
+) {
+
+  if (
+    accusedRole === "gym_owner"
+  ) {
+
+    return findAdministrator();
+
+  }
+
+
+  const gymReference =
+    adminDb
+      .collection("gyms")
+      .doc(gymId);
+
+
+  const [
+    gymSnapshot,
+    ownerDocument,
+  ] = await Promise.all([
+
+    gymReference.get(),
+
+    findGymOwner(
+      gymId
+    ),
+
+  ]);
+
+
+  const gymData =
+    gymSnapshot.data();
+
+
+  const primaryUid =
+    typeof gymData?.safeReportPrimaryUid ===
+    "string"
+
+      ? gymData.safeReportPrimaryUid.trim()
+
+      : "";
+
+
+  const backupUid =
+    typeof gymData?.safeReportBackupUid ===
+    "string"
+
+      ? gymData.safeReportBackupUid.trim()
+
+      : "";
+
+
+  const ownerUid =
+    ownerDocument?.id || "";
+
+
+  const candidateUids =
+    [
+      primaryUid,
+      backupUid,
+      ownerUid,
+    ]
+      .filter(
+        (
+          uid,
+          index,
+          values
+        ) =>
+          Boolean(uid) &&
+          uid !== accusedUid &&
+          values.indexOf(uid) === index
+      );
+
+
+  for (
+    const candidateUid
+    of candidateUids
+  ) {
+
+    const eligible =
+      await isEligibleRecipient(
+        candidateUid,
+        gymId
+      );
+
+
+    if (eligible) {
+
+      return {
+        uid:
+          candidateUid,
+
+        role:
+          "responsible_person" as const,
+      };
+
+    }
+
+  }
+
+
+  return null;
 
 }
 
@@ -311,7 +502,9 @@ export async function POST(
       userSnapshot.data();
 
 
-    if (userData?.role !== "client") {
+    if (
+      userData?.role !== "client"
+    ) {
 
       return NextResponse.json(
         {
@@ -328,7 +521,9 @@ export async function POST(
 
     const gymId =
       typeof userData.gymId === "string"
-        ? userData.gymId
+
+        ? userData.gymId.trim()
+
         : "";
 
 
@@ -352,31 +547,11 @@ export async function POST(
         Partial<SafeReportBody>;
 
 
-    const accusedName =
-      typeof body.accusedName === "string"
-        ? body.accusedName.trim()
-        : "";
-
-
-    const description =
-      typeof body.description === "string"
-        ? body.description.trim()
-        : "";
-
-
-    const occurredAt =
-      typeof body.occurredAt === "string"
-        ? body.occurredAt.trim()
-        : "";
-
-
-    const location =
-      typeof body.location === "string"
-        ? body.location.trim()
-        : "";
-
-
-    if (!isAccusedRole(body.accusedRole)) {
+    if (
+      !isAccusedRole(
+        body.accusedRole
+      )
+    ) {
 
       return NextResponse.json(
         {
@@ -391,7 +566,11 @@ export async function POST(
     }
 
 
-    if (!isReportCategory(body.category)) {
+    if (
+      !isReportCategory(
+        body.category
+      )
+    ) {
 
       return NextResponse.json(
         {
@@ -406,22 +585,28 @@ export async function POST(
     }
 
 
-    if (
-      accusedName.length < 2 ||
-      accusedName.length > 120
-    ) {
+    const description =
+      typeof body.description === "string"
 
-      return NextResponse.json(
-        {
-          error:
-            "Upiši ime ili opis osobe.",
-        },
-        {
-          status: 400,
-        }
-      );
+        ? body.description.trim()
 
-    }
+        : "";
+
+
+    const occurredAt =
+      typeof body.occurredAt === "string"
+
+        ? body.occurredAt.trim()
+
+        : "";
+
+
+    const location =
+      typeof body.location === "string"
+
+        ? body.location.trim()
+
+        : "";
 
 
     if (
@@ -442,7 +627,9 @@ export async function POST(
     }
 
 
-    if (location.length > 200) {
+    if (
+      location.length > 200
+    ) {
 
       return NextResponse.json(
         {
@@ -457,10 +644,126 @@ export async function POST(
     }
 
 
+    let accusedUid:
+      string | null =
+        null;
+
+
+    let accusedName =
+      typeof body.accusedName === "string"
+
+        ? body.accusedName.trim()
+
+        : "";
+
+
+    if (
+      body.accusedRole === "trainer"
+    ) {
+
+      accusedUid =
+        typeof body.accusedUid === "string"
+
+          ? body.accusedUid.trim()
+
+          : "";
+
+
+      if (!accusedUid) {
+
+        return NextResponse.json(
+          {
+            error:
+              "Odaberi trenera s popisa.",
+          },
+          {
+            status: 400,
+          }
+        );
+
+      }
+
+
+      const trainerSnapshot =
+        await adminDb
+          .collection("users")
+          .doc(accusedUid)
+          .get();
+
+
+      if (!trainerSnapshot.exists) {
+
+        return NextResponse.json(
+          {
+            error:
+              "Odabrani trener nije pronađen.",
+          },
+          {
+            status: 400,
+          }
+        );
+
+      }
+
+
+      const trainerData =
+        trainerSnapshot.data();
+
+
+      if (
+        trainerData?.role !== "trainer" ||
+        trainerData?.gymId !== gymId
+      ) {
+
+        return NextResponse.json(
+          {
+            error:
+              "Odabrani trener nije član tvoje teretane.",
+          },
+          {
+            status: 400,
+          }
+        );
+
+      }
+
+
+      accusedName =
+        getPersonName(
+          trainerData
+        );
+
+    } else {
+
+      accusedUid =
+        null;
+
+
+      if (
+        accusedName.length < 2 ||
+        accusedName.length > 120
+      ) {
+
+        return NextResponse.json(
+          {
+            error:
+              "Upiši ime ili opis osobe.",
+          },
+          {
+            status: 400,
+          }
+        );
+
+      }
+
+    }
+
+
     const recipient =
       await findRecipient(
         gymId,
-        body.accusedRole
+        body.accusedRole,
+        accusedUid
       );
 
 
@@ -469,7 +772,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Nije pronađena ovlaštena osoba koja treba primiti prijavu.",
+            "Nije pronađena ovlaštena osoba koja smije primiti ovu prijavu.",
         },
         {
           status: 503,
@@ -499,13 +802,16 @@ export async function POST(
 
     const reporterName =
       typeof userData.name === "string"
+
         ? userData.name
+
         : [
             userData.firstName,
             userData.lastName,
           ]
             .filter(Boolean)
-            .join(" ") || "Klijent";
+            .join(" ") ||
+          "Klijent";
 
 
     const reporterEmail =
@@ -525,23 +831,23 @@ export async function POST(
         .collection("private")
         .doc("reporter");
 
-const notificationReference =
-  recipient.uid
 
-    ? adminDb
-        .collection("notifications")
-        .doc()
+    const notificationReference =
+      recipient.uid
 
-    : null;
+        ? adminDb
+            .collection("notifications")
+            .doc()
+
+        : null;
+
 
     const batch =
       adminDb.batch();
 
 
     batch.set(
-
       reportReference,
-
       {
         reportNumber,
 
@@ -557,7 +863,9 @@ const notificationReference =
 
         reporter:
           anonymous
+
             ? null
+
             : {
                 name:
                   reporterName,
@@ -567,6 +875,9 @@ const notificationReference =
               },
 
         accused: {
+          uid:
+            accusedUid,
+
           role:
             body.accusedRole,
 
@@ -586,14 +897,18 @@ const notificationReference =
           location || null,
 
         status:
-  recipient.uid
-    ? "submitted"
-    : "pending_admin",
+          recipient.uid
 
-assignmentStatus:
-  recipient.uid
-    ? "assigned"
-    : "unassigned",
+            ? "submitted"
+
+            : "pending_admin",
+
+        assignmentStatus:
+          recipient.uid
+
+            ? "assigned"
+
+            : "unassigned",
 
         accessCodeHash,
 
@@ -603,14 +918,11 @@ assignmentStatus:
         updatedAt:
           FieldValue.serverTimestamp(),
       }
-
     );
 
 
     batch.set(
-
       privateReference,
-
       {
         reporterUid:
           decodedToken.uid,
@@ -623,44 +935,42 @@ assignmentStatus:
         createdAt:
           FieldValue.serverTimestamp(),
       }
-
     );
 
-if (
-  notificationReference &&
-  recipient.uid
-) {
 
-  batch.set(
+    if (
+      notificationReference &&
+      recipient.uid
+    ) {
 
-    notificationReference,
+      batch.set(
+        notificationReference,
+        {
+          userId:
+            recipient.uid,
 
-    {
-      userId:
-        recipient.uid,
+          title:
+            "Nova sigurna prijava",
 
-      title:
-        "Nova sigurna prijava",
+          message:
+            `Zaprimljena je nova sigurna prijava ${reportNumber}.`,
 
-      message:
-        `Zaprimljena je nova sigurna prijava ${reportNumber}.`,
+          type:
+            "safe_report",
 
-      type:
-        "safe_report",
+          link:
+            `/dashboard/safe-reports-inbox?report=${reportReference.id}`,
 
-      link:
-        `/dashboard/safe-reports-inbox?report=${reportReference.id}`,
+          read:
+            false,
 
-      read:
-        false,
+          createdAt:
+            FieldValue.serverTimestamp(),
+        }
+      );
 
-      createdAt:
-        FieldValue.serverTimestamp(),
     }
 
-  );
-
-}
 
     await batch.commit();
 

@@ -938,10 +938,11 @@ export default function SafeReportsInboxPage() {
   return (
 
     <RoleGuard
-      allowedRoles={[
-        "gym_owner",
-        "admin",
-      ]}
+    allowedRoles={[
+  "gym_owner",
+  "trainer",
+  "admin",
+]}
     >
 
 

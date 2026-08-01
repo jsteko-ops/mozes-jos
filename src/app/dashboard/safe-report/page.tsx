@@ -2,35 +2,29 @@
 
 import {
   FormEvent,
+  useEffect,
   useState,
 } from "react";
 
 import RoleGuard from "@/components/auth/RoleGuard";
 import ResetAccessCode from "@/components/safe-reports/ResetAccessCode";
+
 import {
   useAuth,
 } from "@/components/auth/AuthProvider";
 
 
 type SubmitApiResponse = {
-
   ok?: boolean;
-
   error?: string;
-
   reportId?: string;
-
   reportNumber?: string;
-
   accessCode?: string;
-
 };
 
 
 type SafeReportStatus = {
-
   reportNumber: string;
-
   anonymous: boolean;
 
   accused: {
@@ -39,229 +33,152 @@ type SafeReportStatus = {
   };
 
   category: string;
-
   status: string;
-
   assignmentStatus: string;
-
   response: string | null;
-
   responseAt: string | null;
-
   statusChangedAt: string | null;
-
   createdAt: string | null;
-
   updatedAt: string | null;
-
 };
 
 
 type StatusApiResponse = {
-
   report?: SafeReportStatus;
-
   error?: string;
+};
 
+
+type TrainerOption = {
+  uid: string;
+  name: string;
+};
+
+
+type PeopleApiResponse = {
+  trainers?: TrainerOption[];
+  error?: string;
 };
 
 
 function formatDate(
   value: string | null
 ) {
-
   if (!value) {
-
     return "-";
-
   }
 
+  const date = new Date(value);
 
-  const date =
-    new Date(value);
-
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-
+  if (Number.isNaN(date.getTime())) {
     return value;
-
   }
 
-
-  return date.toLocaleString(
-    "hr-HR"
-  );
-
+  return date.toLocaleString("hr-HR");
 }
 
 
 function formatStatus(
   status: string
 ) {
-
   switch (status) {
-
     case "submitted":
-
       return "Nova prijava";
 
-
     case "pending_admin":
-
       return "Čeka administratora";
 
-
     case "in_review":
-
       return "U obradi";
 
-
     case "resolved":
-
       return "Riješeno";
 
-
     case "closed":
-
       return "Zatvoreno";
 
-
     default:
-
       return status;
-
   }
-
 }
 
 
 function statusBadgeClass(
   status: string
 ) {
-
   switch (status) {
-
     case "in_review":
-
       return "bg-blue-100 text-blue-800";
 
-
     case "resolved":
-
       return "bg-green-100 text-green-800";
 
-
     case "closed":
-
       return "bg-gray-200 text-gray-800";
 
-
     case "pending_admin":
-
       return "bg-amber-100 text-amber-800";
 
-
     default:
-
       return "bg-red-100 text-red-800";
-
   }
-
 }
 
 
 function formatAccusedRole(
   role: string
 ) {
-
   switch (role) {
-
     case "trainer":
-
       return "Trener";
 
-
     case "gym_owner":
-
       return "Vlasnik teretane";
 
-
     case "staff":
-
       return "Drugi zaposlenik";
 
-
     default:
-
       return "Druga osoba";
-
   }
-
 }
 
 
 function formatCategory(
   category: string
 ) {
-
   switch (category) {
-
     case "inappropriate_comments":
-
       return "Neprimjereni komentari";
 
-
     case "sexual_harassment":
-
       return "Seksualno uznemiravanje";
 
-
     case "unwanted_touching":
-
       return "Neželjeno dodirivanje";
 
-
     case "threats":
-
       return "Prijetnje ili zastrašivanje";
 
-
     case "discrimination":
-
       return "Diskriminacija";
 
-
     case "violence":
-
       return "Fizičko nasilje";
 
-
     case "privacy":
-
       return "Narušavanje privatnosti";
 
-
     case "unsafe_behavior":
-
       return "Nesigurno ponašanje ili ugrožavanje";
 
-
     default:
-
       return "Drugo";
-
   }
-
 }
 
 
 export default function SafeReportPage() {
-
-
   const {
     user,
   } = useAuth();
@@ -280,8 +197,32 @@ export default function SafeReportPage() {
 
 
   const [
+    accusedUid,
+    setAccusedUid,
+  ] = useState("");
+
+
+  const [
     accusedName,
     setAccusedName,
+  ] = useState("");
+
+
+  const [
+    trainers,
+    setTrainers,
+  ] = useState<TrainerOption[]>([]);
+
+
+  const [
+    trainersLoading,
+    setTrainersLoading,
+  ] = useState(false);
+
+
+  const [
+    trainersError,
+    setTrainersError,
   ] = useState("");
 
 
@@ -358,89 +299,158 @@ export default function SafeReportPage() {
 
 
 
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadTrainers() {
+      try {
+        setTrainersLoading(true);
+        setTrainersError("");
+
+        const token =
+          await user!.getIdToken();
+
+        const response =
+          await fetch(
+            "/api/safe-reports/people",
+            {
+              method: "GET",
+
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+
+              cache: "no-store",
+            }
+          );
+
+        const data =
+          await response.json() as
+            PeopleApiResponse;
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+            "Popis trenera nije moguće učitati."
+          );
+        }
+
+        if (!cancelled) {
+          setTrainers(
+            data.trainers || []
+          );
+        }
+
+      } catch (error: unknown) {
+        console.error(
+          "Greška kod učitavanja trenera:",
+          error
+        );
+
+        if (!cancelled) {
+          setTrainersError(
+            error instanceof Error
+              ? error.message
+              : "Popis trenera nije moguće učitati."
+          );
+        }
+
+      } finally {
+        if (!cancelled) {
+          setTrainersLoading(false);
+        }
+      }
+    }
+
+    loadTrainers();
+
+    return () => {
+      cancelled = true;
+    };
+
+  }, [user]);
+
+
+
   async function submitReport(
     event: FormEvent<HTMLFormElement>
   ) {
-
     event.preventDefault();
 
-
     if (!user) {
-
       setSubmitError(
         "Moraš biti prijavljen kako bi poslao prijavu."
       );
 
       return;
-
     }
 
-
     if (!accusedRole) {
-
       setSubmitError(
         "Odaberi na koga se prijava odnosi."
       );
 
       return;
-
     }
 
+    if (
+      accusedRole === "trainer" &&
+      !accusedUid
+    ) {
+      setSubmitError(
+        "Odaberi trenera s popisa."
+      );
 
-    if (!accusedName.trim()) {
+      return;
+    }
 
+    if (
+      accusedRole !== "trainer" &&
+      !accusedName.trim()
+    ) {
       setSubmitError(
         "Upiši ime ili opis osobe."
       );
 
       return;
-
     }
 
-
     if (!category) {
-
       setSubmitError(
         "Odaberi vrstu ponašanja."
       );
 
       return;
-
     }
-
 
     if (
       description.trim().length < 20
     ) {
-
       setSubmitError(
         "Opis mora sadržavati najmanje 20 znakova."
       );
 
       return;
-
     }
 
-
     try {
-
       setSubmitLoading(true);
-
       setSubmitError("");
-
       setResult(null);
-
 
       const token =
         await user.getIdToken();
-
 
       const response =
         await fetch(
           "/api/safe-reports",
           {
-            method:
-              "POST",
+            method: "POST",
 
             headers: {
               "Content-Type":
@@ -453,44 +463,50 @@ export default function SafeReportPage() {
             body:
               JSON.stringify({
                 anonymous,
+
                 accusedRole,
+
+                accusedUid:
+                  accusedRole === "trainer"
+                    ? accusedUid
+                    : undefined,
+
                 accusedName:
-                  accusedName.trim(),
+                  accusedRole === "trainer"
+                    ? ""
+                    : accusedName.trim(),
+
                 category,
+
                 description:
                   description.trim(),
+
                 occurredAt:
                   occurredAt || undefined,
+
                 location:
                   location.trim() || undefined,
               }),
           }
         );
 
-
       const data =
         await response.json() as
           SubmitApiResponse;
 
-
       if (!response.ok) {
-
         throw new Error(
           data.error ||
           "Prijavu nije moguće poslati."
         );
-
       }
 
-
       setResult(data);
-
 
       if (
         data.reportNumber &&
         data.accessCode
       ) {
-
         setLookupReportNumber(
           data.reportNumber
         );
@@ -498,49 +514,31 @@ export default function SafeReportPage() {
         setLookupAccessCode(
           data.accessCode
         );
-
       }
 
-
       setAccusedRole("");
-
+      setAccusedUid("");
       setAccusedName("");
-
       setCategory("");
-
       setDescription("");
-
       setOccurredAt("");
-
       setLocation("");
 
-
     } catch (error: unknown) {
-
-
       console.error(
         "Greška kod slanja prijave:",
         error
       );
 
-
       setSubmitError(
-
         error instanceof Error
-
           ? error.message
-
           : "Prijavu nije moguće poslati."
-
       );
 
-
     } finally {
-
       setSubmitLoading(false);
-
     }
-
   }
 
 
@@ -548,66 +546,50 @@ export default function SafeReportPage() {
   async function lookupReport(
     event: FormEvent<HTMLFormElement>
   ) {
-
     event.preventDefault();
 
-
     if (!user) {
-
       setLookupError(
         "Moraš biti prijavljen kako bi provjerio prijavu."
       );
 
       return;
-
     }
-
 
     const normalizedReportNumber =
       lookupReportNumber
         .trim()
         .toUpperCase();
 
-
     const normalizedAccessCode =
       lookupAccessCode
         .trim()
         .toUpperCase();
 
-
     if (
       !normalizedReportNumber ||
       !normalizedAccessCode
     ) {
-
       setLookupError(
         "Upiši broj prijave i tajni pristupni kod."
       );
 
       return;
-
     }
 
-
     try {
-
       setLookupLoading(true);
-
       setLookupError("");
-
       setLookupResult(null);
-
 
       const token =
         await user.getIdToken();
-
 
       const response =
         await fetch(
           "/api/safe-reports/status",
           {
-            method:
-              "POST",
+            method: "POST",
 
             headers: {
               "Content-Type":
@@ -628,24 +610,19 @@ export default function SafeReportPage() {
           }
         );
 
-
       const data =
         await response.json() as
           StatusApiResponse;
-
 
       if (
         !response.ok ||
         !data.report
       ) {
-
         throw new Error(
           data.error ||
           "Status prijave nije moguće provjeriti."
         );
-
       }
-
 
       setLookupReportNumber(
         normalizedReportNumber
@@ -659,63 +636,39 @@ export default function SafeReportPage() {
         data.report
       );
 
-
     } catch (error: unknown) {
-
-
       console.error(
         "Greška kod provjere prijave:",
         error
       );
 
-
       setLookupError(
-
         error instanceof Error
-
           ? error.message
-
           : "Status prijave nije moguće provjeriti."
-
       );
 
-
     } finally {
-
       setLookupLoading(false);
-
     }
-
   }
 
 
 
   return (
-
     <RoleGuard allowedRoles={["client"]}>
-
-
       <div className="mx-auto max-w-3xl space-y-8">
 
-
         <div>
-
           <h1 className="text-3xl font-bold">
-
             🛡️ Sigurna prijava
-
           </h1>
 
-
           <p className="mt-2 text-gray-600">
-
             Ovdje možeš prijaviti neprimjereno,
             uznemirujuće ili nesigurno ponašanje.
-
           </p>
-
         </div>
-
 
 
         <div
@@ -729,13 +682,10 @@ export default function SafeReportPage() {
             text-blue-900
           "
         >
-
           Prijava se neće poslati osobi protiv koje
           je podnesena. Kod anonimne prijave primatelj
           ne vidi tvoje ime ni e-mail.
-
         </div>
-
 
 
         {
@@ -752,47 +702,30 @@ export default function SafeReportPage() {
                 p-6
               "
             >
-
               <h2 className="text-xl font-bold text-green-800">
-
                 Prijava je uspješno poslana ✅
-
               </h2>
 
-
               <div>
-
                 <b>Broj prijave:</b>{" "}
 
                 <span className="font-mono">
-
                   {result.reportNumber}
-
                 </span>
-
               </div>
 
-
               <div>
-
                 <b>Tajni pristupni kod:</b>{" "}
 
                 <span className="font-mono">
-
                   {result.accessCode}
-
                 </span>
-
               </div>
 
-
               <p className="font-semibold text-red-700">
-
                 Spremi ili fotografiraj ove podatke.
                 Tajni kod se poslije neće ponovno prikazati.
-
               </p>
-
             </div>
 
           )
@@ -808,43 +741,27 @@ export default function SafeReportPage() {
             p-6
           "
         >
-
-
           <div>
-
             <h2 className="text-2xl font-bold text-violet-950">
-
               🔎 Provjeri status prijave
-
             </h2>
 
-
             <p className="mt-2 text-sm text-violet-800">
-
               Za provjeru su potrebni broj prijave
               i tajni pristupni kod koji si dobio
               nakon slanja.
-
             </p>
-
           </div>
-
 
 
           <form
             onSubmit={lookupReport}
             className="space-y-4"
           >
-
-
             <div>
-
               <label className="mb-2 block font-semibold">
-
                 Broj prijave
-
               </label>
-
 
               <input
                 type="text"
@@ -869,19 +786,13 @@ export default function SafeReportPage() {
                   uppercase
                 "
               />
-
             </div>
 
 
-
             <div>
-
               <label className="mb-2 block font-semibold">
-
                 Tajni pristupni kod
-
               </label>
-
 
               <input
                 type="text"
@@ -906,14 +817,11 @@ export default function SafeReportPage() {
                   uppercase
                 "
               />
-
             </div>
-
 
 
             {
               lookupError && (
-
                 <div
                   className="
                     rounded-lg
@@ -924,14 +832,10 @@ export default function SafeReportPage() {
                     text-red-700
                   "
                 >
-
                   {lookupError}
-
                 </div>
-
               )
             }
-
 
 
             <button
@@ -950,24 +854,20 @@ export default function SafeReportPage() {
                 disabled:opacity-50
               "
             >
-
               {
                 lookupLoading
-
                   ? "Provjera..."
-
                   : "Provjeri status i odgovor"
               }
-
             </button>
-
           </form>
+
 
           <ResetAccessCode />
 
+
           {
             lookupResult && (
-
               <div
                 className="
                   space-y-5
@@ -978,8 +878,6 @@ export default function SafeReportPage() {
                   p-6
                 "
               >
-
-
                 <div
                   className="
                     flex
@@ -989,25 +887,15 @@ export default function SafeReportPage() {
                     gap-4
                   "
                 >
-
-
                   <div>
-
                     <p className="text-sm text-gray-500">
-
                       Broj prijave
-
                     </p>
-
 
                     <p className="font-mono text-xl font-bold">
-
                       {lookupResult.reportNumber}
-
                     </p>
-
                   </div>
-
 
                   <span
                     className={`
@@ -1021,111 +909,69 @@ export default function SafeReportPage() {
                       )}
                     `}
                   >
-
                     {formatStatus(
                       lookupResult.status
                     )}
-
                   </span>
-
                 </div>
-
 
 
                 <div className="grid gap-4 md:grid-cols-2">
-
-
                   <div>
-
                     <p className="text-sm text-gray-500">
-
                       Prijava se odnosi na
-
                     </p>
 
-
                     <p className="font-semibold">
-
                       {formatAccusedRole(
                         lookupResult.accused.role
                       )}
-
                     </p>
-
 
                     <p>
-
                       {lookupResult.accused.name}
-
                     </p>
-
                   </div>
 
 
-
                   <div>
-
                     <p className="text-sm text-gray-500">
-
                       Vrsta ponašanja
-
                     </p>
 
-
                     <p className="font-semibold">
-
                       {formatCategory(
                         lookupResult.category
                       )}
-
                     </p>
-
                   </div>
 
 
-
                   <div>
-
                     <p className="text-sm text-gray-500">
-
                       Prijava zaprimljena
-
                     </p>
 
-
                     <p>
-
                       {formatDate(
                         lookupResult.createdAt
                       )}
-
                     </p>
-
                   </div>
-
 
 
                   <div>
-
                     <p className="text-sm text-gray-500">
-
                       Zadnja promjena statusa
-
                     </p>
 
-
                     <p>
-
                       {formatDate(
                         lookupResult.statusChangedAt
                       )}
-
                     </p>
-
                   </div>
-
                 </div>
-
 
 
                 <div
@@ -1137,31 +983,21 @@ export default function SafeReportPage() {
                     p-4
                   "
                 >
-
                   <p className="font-semibold text-blue-900">
-
                     Trenutačni status
-
                   </p>
 
-
                   <p className="mt-1 text-blue-800">
-
                     {formatStatus(
                       lookupResult.status
                     )}
-
                   </p>
-
                 </div>
-
 
 
                 {
                   lookupResult.response
-
                     ? (
-
                       <div
                         className="
                           rounded-lg
@@ -1171,37 +1007,24 @@ export default function SafeReportPage() {
                           p-5
                         "
                       >
-
                         <h3 className="font-bold text-green-900">
-
                           Odgovor ovlaštene osobe
-
                         </h3>
 
-
                         <p className="mt-3 whitespace-pre-line">
-
                           {lookupResult.response}
-
                         </p>
 
-
                         <p className="mt-4 text-sm text-green-800">
-
                           Odgovor spremljen:{" "}
 
                           {formatDate(
                             lookupResult.responseAt
                           )}
-
                         </p>
-
                       </div>
-
                     )
-
                     : (
-
                       <div
                         className="
                           rounded-lg
@@ -1212,34 +1035,21 @@ export default function SafeReportPage() {
                           text-amber-900
                         "
                       >
-
                         Ovlaštena osoba još nije ostavila odgovor.
-
                       </div>
-
                     )
                 }
-
               </div>
-
             )
           }
-
-
         </section>
 
 
-
         <div className="border-t pt-8">
-
           <h2 className="text-2xl font-bold">
-
             Pošalji novu prijavu
-
           </h2>
-
         </div>
-
 
 
         <form
@@ -1252,19 +1062,13 @@ export default function SafeReportPage() {
             p-6
           "
         >
-
-
           <div>
-
             <h2 className="mb-3 text-lg font-bold">
-
               Način slanja
-
             </h2>
 
 
             <label className="flex items-start gap-3">
-
               <input
                 type="radio"
                 name="reportPrivacy"
@@ -1275,25 +1079,18 @@ export default function SafeReportPage() {
                 className="mt-1"
               />
 
-
               <span>
-
                 <b>Anonimna prijava</b>
 
                 <span className="block text-sm text-gray-600">
-
                   Primatelj prijave neće vidjeti tvoje
                   ime ni e-mail.
-
                 </span>
-
               </span>
-
             </label>
 
 
             <label className="mt-3 flex items-start gap-3">
-
               <input
                 type="radio"
                 name="reportPrivacy"
@@ -1304,42 +1101,37 @@ export default function SafeReportPage() {
                 className="mt-1"
               />
 
-
               <span>
-
                 <b>Povjerljiva prijava</b>
 
                 <span className="block text-sm text-gray-600">
-
                   Ovlaštena osoba može vidjeti tvoje
                   podatke radi povratnog kontakta.
-
                 </span>
-
               </span>
-
             </label>
-
           </div>
 
 
-
           <div>
-
             <label className="mb-2 block font-semibold">
-
               Na koga se prijava odnosi?
-
             </label>
-
 
             <select
               value={accusedRole}
-              onChange={(event) =>
+              onChange={(event) => {
+                const nextRole =
+                  event.target.value;
+
                 setAccusedRole(
-                  event.target.value
-                )
-              }
+                  nextRole
+                );
+
+                setAccusedUid("");
+                setAccusedName("");
+                setSubmitError("");
+              }}
               required
               className="
                 w-full
@@ -1350,88 +1142,136 @@ export default function SafeReportPage() {
                 py-3
               "
             >
-
               <option value="">
-
                 Odaberi
-
               </option>
-
 
               <option value="trainer">
-
                 Trener
-
               </option>
-
 
               <option value="gym_owner">
-
                 Vlasnik teretane
-
               </option>
-
 
               <option value="staff">
-
                 Drugi zaposlenik
-
               </option>
-
 
               <option value="other">
-
                 Druga osoba
-
               </option>
-
             </select>
-
           </div>
 
 
+          {
+            accusedRole === "trainer" && (
+              <div>
+                <label className="mb-2 block font-semibold">
+                  Odaberi trenera
+                </label>
+
+                <select
+                  value={accusedUid}
+                  onChange={(event) =>
+                    setAccusedUid(
+                      event.target.value
+                    )
+                  }
+                  disabled={trainersLoading}
+                  required
+                  className="
+                    w-full
+                    rounded-lg
+                    border
+                    bg-white
+                    px-4
+                    py-3
+                    disabled:opacity-60
+                  "
+                >
+                  <option value="">
+                    {
+                      trainersLoading
+                        ? "Učitavanje trenera..."
+                        : "Odaberi trenera"
+                    }
+                  </option>
+
+                  {
+                    trainers.map(
+                      (trainer) => (
+                        <option
+                          key={trainer.uid}
+                          value={trainer.uid}
+                        >
+                          {trainer.name}
+                        </option>
+                      )
+                    )
+                  }
+                </select>
+
+
+                {
+                  !trainersLoading &&
+                  trainers.length === 0 &&
+                  !trainersError && (
+                    <p className="mt-2 text-sm text-amber-700">
+                      U ovoj teretani nema pronađenih trenera.
+                    </p>
+                  )
+                }
+
+
+                {
+                  trainersError && (
+                    <p className="mt-2 text-sm text-red-700">
+                      {trainersError}
+                    </p>
+                  )
+                }
+              </div>
+            )
+          }
+
+
+          {
+            accusedRole &&
+            accusedRole !== "trainer" && (
+              <div>
+                <label className="mb-2 block font-semibold">
+                  Ime ili opis osobe
+                </label>
+
+                <input
+                  type="text"
+                  value={accusedName}
+                  onChange={(event) =>
+                    setAccusedName(
+                      event.target.value
+                    )
+                  }
+                  maxLength={120}
+                  required
+                  placeholder="Primjer: osoba na recepciji"
+                  className="
+                    w-full
+                    rounded-lg
+                    border
+                    px-4
+                    py-3
+                  "
+                />
+              </div>
+            )
+          }
 
           <div>
-
             <label className="mb-2 block font-semibold">
-
-              Ime ili opis osobe
-
-            </label>
-
-
-            <input
-              type="text"
-              value={accusedName}
-              onChange={(event) =>
-                setAccusedName(
-                  event.target.value
-                )
-              }
-              maxLength={120}
-              required
-              placeholder="Primjer: trener Marko ili osoba na recepciji"
-              className="
-                w-full
-                rounded-lg
-                border
-                px-4
-                py-3
-              "
-            />
-
-          </div>
-
-
-
-          <div>
-
-            <label className="mb-2 block font-semibold">
-
               Vrsta ponašanja
-
             </label>
-
 
             <select
               value={category}
@@ -1450,88 +1290,53 @@ export default function SafeReportPage() {
                 py-3
               "
             >
-
               <option value="">
-
                 Odaberi
-
               </option>
-
 
               <option value="inappropriate_comments">
-
                 Neprimjereni komentari
-
               </option>
-
 
               <option value="sexual_harassment">
-
                 Seksualno uznemiravanje
-
               </option>
-
 
               <option value="unwanted_touching">
-
                 Neželjeno dodirivanje
-
               </option>
-
 
               <option value="threats">
-
                 Prijetnje ili zastrašivanje
-
               </option>
-
 
               <option value="discrimination">
-
                 Diskriminacija
-
               </option>
-
 
               <option value="violence">
-
                 Fizičko nasilje
-
               </option>
-
 
               <option value="privacy">
-
                 Narušavanje privatnosti
-
               </option>
-
 
               <option value="unsafe_behavior">
-
                 Nesigurno ponašanje ili ugrožavanje
-
               </option>
-
 
               <option value="other">
-
                 Drugo
-
               </option>
-
             </select>
-
           </div>
 
+
           <div>
-
             <label className="mb-2 block font-semibold">
-
               Opiši što se dogodilo
-
             </label>
-
 
             <textarea
               value={description}
@@ -1554,25 +1359,16 @@ export default function SafeReportPage() {
               "
             />
 
-
             <p className="mt-1 text-right text-xs text-gray-500">
-
               {description.length}/5000
-
             </p>
-
           </div>
 
 
-
           <div>
-
             <label className="mb-2 block font-semibold">
-
               Datum i vrijeme događaja
-
             </label>
-
 
             <input
               type="datetime-local"
@@ -1590,19 +1386,13 @@ export default function SafeReportPage() {
                 py-3
               "
             />
-
           </div>
 
 
-
           <div>
-
             <label className="mb-2 block font-semibold">
-
               Mjesto događaja
-
             </label>
-
 
             <input
               type="text"
@@ -1622,14 +1412,11 @@ export default function SafeReportPage() {
                 py-3
               "
             />
-
           </div>
-
 
 
           {
             submitError && (
-
               <div
                 className="
                   rounded-lg
@@ -1640,14 +1427,10 @@ export default function SafeReportPage() {
                   text-red-700
                 "
               >
-
                 {submitError}
-
               </div>
-
             )
           }
-
 
 
           <button
@@ -1666,26 +1449,15 @@ export default function SafeReportPage() {
               disabled:opacity-50
             "
           >
-
             {
               submitLoading
-
                 ? "Slanje prijave..."
-
                 : "🛡️ Pošalji sigurnu prijavu"
             }
-
           </button>
-
-
         </form>
 
-
       </div>
-
-
     </RoleGuard>
-
   );
-
 }

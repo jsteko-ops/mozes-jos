@@ -272,6 +272,7 @@ export async function PATCH(
 
     if (
       userRole !== "gym_owner" &&
+      userRole !== "trainer" &&
       userRole !== "admin"
     ) {
 
@@ -317,10 +318,14 @@ export async function PATCH(
       reportSnapshot.data();
 
 
-    const ownerHasAccess =
-      userRole === "gym_owner" &&
+    const responsiblePersonHasAccess =
+      (
+        userRole === "gym_owner" ||
+        userRole === "trainer"
+      ) &&
       reportData?.recipientUid === decodedToken.uid &&
       reportData?.gymId === userData?.gymId &&
+      reportData?.accused?.uid !== decodedToken.uid &&
       reportData?.accused?.role !== "gym_owner";
 
 
@@ -335,7 +340,7 @@ export async function PATCH(
 
 
     if (
-      !ownerHasAccess &&
+      !responsiblePersonHasAccess &&
       !adminHasAccess
     ) {
 

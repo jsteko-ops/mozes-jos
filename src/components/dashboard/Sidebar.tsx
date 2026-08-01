@@ -227,6 +227,14 @@ export default function Sidebar() {
               </div>
             </Link>
 
+            <Link
+              href="/dashboard/safe-reports-inbox"
+              className={linkClass(
+                "/dashboard/safe-reports-inbox"
+              )}
+            >
+              🛡️ Sigurne prijave
+            </Link>
 
             <Link
               href="/dashboard/reports"

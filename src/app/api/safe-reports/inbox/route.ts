@@ -193,6 +193,7 @@ export async function GET(
 
     if (
       role !== "gym_owner" &&
+      role !== "trainer" &&
       role !== "admin"
     ) {
 
@@ -211,22 +212,24 @@ export async function GET(
 
     const gymId =
       typeof userData?.gymId === "string"
+
         ? userData.gymId
+
         : null;
 
 
     let snapshot;
 
 
-    if (role === "gym_owner") {
+    if (role === "admin") {
 
       snapshot =
         await adminDb
           .collection("safeReports")
           .where(
-            "recipientUid",
+            "recipientRole",
             "==",
-            decodedToken.uid
+            "admin"
           )
           .limit(200)
           .get();
@@ -237,9 +240,9 @@ export async function GET(
         await adminDb
           .collection("safeReports")
           .where(
-            "recipientRole",
+            "recipientUid",
             "==",
-            "admin"
+            decodedToken.uid
           )
           .limit(200)
           .get();
@@ -267,12 +270,16 @@ export async function GET(
               ? {
                   name:
                     typeof data.reporter.name === "string"
+
                       ? data.reporter.name
+
                       : null,
 
                   email:
                     typeof data.reporter.email === "string"
+
                       ? data.reporter.email
+
                       : null,
                 }
 
@@ -289,6 +296,9 @@ export async function GET(
 
             reportGymId:
               data.gymId ?? null,
+
+            accusedUid:
+              data.accused?.uid ?? null,
 
             accusedRole:
               data.accused?.role ?? null,
@@ -311,6 +321,9 @@ export async function GET(
               reporter,
 
               accused: {
+
+                uid:
+                  data.accused?.uid ?? null,
 
                 role:
                   data.accused?.role ?? "other",
@@ -392,7 +405,8 @@ export async function GET(
                 row.recipientRole === "admin" &&
                 (
                   row.recipientUid === null ||
-                  row.recipientUid === decodedToken.uid
+                  row.recipientUid ===
+                    decodedToken.uid
                 )
               );
 
@@ -400,9 +414,13 @@ export async function GET(
 
 
             return (
-              row.recipientUid === decodedToken.uid &&
+              row.recipientUid ===
+                decodedToken.uid &&
               row.reportGymId === gymId &&
-              row.accusedRole !== "gym_owner"
+              row.accusedUid !==
+                decodedToken.uid &&
+              row.accusedRole !==
+                "gym_owner"
             );
 
           }
@@ -428,10 +446,8 @@ export async function GET(
         status: 200,
 
         headers: {
-
           "Cache-Control":
             "private, no-store, max-age=0",
-
         },
       }
     );
