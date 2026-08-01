@@ -6,7 +6,7 @@ import {
 } from "react";
 
 import RoleGuard from "@/components/auth/RoleGuard";
-
+import ResetAccessCode from "@/components/safe-reports/ResetAccessCode";
 import {
   useAuth,
 } from "@/components/auth/AuthProvider";
@@ -963,7 +963,7 @@ export default function SafeReportPage() {
 
           </form>
 
-
+          <ResetAccessCode />
 
           {
             lookupResult && (
