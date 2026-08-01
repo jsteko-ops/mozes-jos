@@ -1,66 +1,98 @@
-import { db } from "@/lib/firebase";
 import {
-  doc,
-  setDoc,
-  serverTimestamp,
-  updateDoc,
-} from "firebase/firestore";
+  auth,
+} from "@/lib/firebase";
 
-import { findUserByEmail } from "@/lib/findUserByEmail";
+
+type MemberRole =
+  | "trainer"
+  | "client";
+
+
+type AddGymMemberData = {
+
+  gymId: string;
+
+  email: string;
+
+  role: MemberRole;
+
+  addedBy: string;
+
+};
+
 
 export async function addGymMember({
-  gymId,
+
   email,
+
   role,
-  addedBy,
-}: {
-  gymId: string;
-  email: string;
-  role: "trainer" | "client";
-  addedBy: string;
-}) {
-  const user = await findUserByEmail(email);
 
-  if (!user) {
-    throw new Error("Korisnik nije pronađen.");
-  }
+}: AddGymMemberData) {
 
-  if (user.role !== role) {
+
+  const currentUser =
+    auth.currentUser;
+
+
+  if (!currentUser) {
+
     throw new Error(
-      `Korisnik nije ${role}.`
+      "Moraš biti prijavljen."
     );
+
   }
 
-  // 1. dodaj člana u teretanu
-  await setDoc(
-    doc(
-      db,
-      "gymMembers",
-      gymId,
-      "members",
-      user.uid
-    ),
-    {
-      role,
-      email: user.email,
-      name: user.name,
-      addedBy,
-      createdAt: serverTimestamp(),
-    }
-  );
 
-  // 2. poveži korisnika s teretanom
-  await updateDoc(
-    doc(db, "users", user.uid),
-    {
-      gymId,
-    }
-  );
+  const token =
+    await currentUser.getIdToken();
 
-  console.log(
-    "Member added to gym:",
-    user.uid
-  );
 
-  return user;
+  const response =
+    await fetch(
+      "/api/gym/members",
+      {
+        method:
+          "POST",
+
+        headers: {
+
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`,
+
+        },
+
+        body:
+          JSON.stringify({
+            email:
+              email.trim(),
+
+            role,
+          }),
+      }
+    );
+
+
+  const data =
+    await response
+      .json()
+      .catch(
+        () => null
+      );
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      data?.error ||
+      "Člana nije moguće dodati."
+    );
+
+  }
+
+
+  return data.member;
+
 }
