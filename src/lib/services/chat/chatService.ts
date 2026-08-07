@@ -144,27 +144,7 @@ const receiverId =
 
   );
 
-  await createNotification(
 
-    receiverId,
-
-    {
-
-      title:
-        "Nova poruka",
-
-      message:
-        "Dobili ste novu poruku.",
-
-      type:
-        "chat",
-
-      link:
-        "/dashboard/chat",
-
-    }
-
-  );
 
   await updateDoc(
 
