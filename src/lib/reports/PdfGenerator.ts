@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+﻿import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 
@@ -29,6 +29,46 @@ function formatDate(value:any){
 
 
 
+async function loadPdfFonts(pdf: jsPDF) {
+  const loadFont = async (
+    url: string,
+    fileName: string,
+    fontName: string,
+    fontStyle: "normal" | "bold"
+  ) => {
+    const response = await fetch(url);
+    const buffer = await response.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+
+    let binary = "";
+
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+
+    const base64 = btoa(binary);
+
+    pdf.addFileToVFS(fileName, base64);
+    pdf.addFont(fileName, fontName, fontStyle);
+  };
+
+  await loadFont(
+    "/fonts/DejaVuSans.ttf",
+    "DejaVuSans.ttf",
+    "DejaVuSans",
+    "normal"
+  );
+
+  await loadFont(
+    "/fonts/DejaVuSans-Bold.ttf",
+    "DejaVuSans-Bold.ttf",
+    "DejaVuSans",
+    "bold"
+  );
+
+  pdf.setFont("DejaVuSans", "normal");
+}
+
 export async function generateClientPdf({
 
   client,
@@ -42,6 +82,8 @@ export async function generateClientPdf({
 
 const pdf =
   new jsPDF();
+
+await loadPdfFonts(pdf);
 
 
 let y = 20;
@@ -110,6 +152,8 @@ y += 5;
 
 
 autoTable(pdf,{
+styles: { font: "DejaVuSans" },
+headStyles: { font: "DejaVuSans", fontStyle: "bold" },
 
 startY:y,
 
@@ -170,36 +214,18 @@ y += 5;
 if(measurements.length > 0){
 
 autoTable(pdf,{
+styles: { font: "DejaVuSans" },
+headStyles: { font: "DejaVuSans", fontStyle: "bold" },
 
 startY:y,
 
-head:[
+head: [["Datum", "Težina", "Tjelesna mast", "Bilješke"]],
 
-[
-"Datum",
-"Težina",
-"Struk",
-"Prsa",
-"Ruka"
-]
-
-],
-
-
-body:
-
-measurements.map((m:any)=>[
-
-formatDate(m.createdAt),
-
-`${m.weight ?? "-"} kg`,
-
-`${m.waist ?? "-"} cm`,
-
-`${m.chest ?? "-"} cm`,
-
-`${m.arm ?? "-"} cm`
-
+body: measurements.map((m: any) => [
+  formatDate(m.createdAt),
+  `${m.weight ?? "-"} kg`,
+  m.bodyFat !== null && m.bodyFat !== undefined ? `${m.bodyFat}%` : "-",
+  m.notes || "-",
 ])
 
 
@@ -244,6 +270,8 @@ y += 5;
 
 
 autoTable(pdf,{
+styles: { font: "DejaVuSans" },
+headStyles: { font: "DejaVuSans", fontStyle: "bold" },
 
 startY:y,
 
@@ -303,6 +331,8 @@ pdf.text(
 
 
 autoTable(pdf,{
+styles: { font: "DejaVuSans" },
+headStyles: { font: "DejaVuSans", fontStyle: "bold" },
 
 startY:y+5,
 
@@ -360,3 +390,8 @@ pdf.save(
 
 
 }
+
+
+
+
+
