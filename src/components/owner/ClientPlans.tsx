@@ -8,6 +8,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 
@@ -64,7 +65,8 @@ export default function ClientPlans({
 
 
 
-
+const [editingPlanId, setEditingPlanId] =
+  useState<string | null>(null);
 
 
 
@@ -128,101 +130,72 @@ export default function ClientPlans({
 
 
 
+async function savePlan() {
+  if (!title.trim()) {
+    alert("Upiši naziv plana");
+    return;
+  }
 
-
-
-
-
-
-
-  async function savePlan() {
-
-
-    if (!title) {
-
-
-      alert(
-        "Upiši naziv plana"
-      );
-
-
-      return;
-
-
-    }
-
-
-
-
+  try {
     setLoading(true);
 
+    if (editingPlanId) {
+      await updateDoc(
+        doc(
+          db,
+          "clients",
+          clientId,
+          "workouts",
+          editingPlanId
+        ),
+        {
+          title: title.trim(),
+          exercises,
+          updatedAt: serverTimestamp(),
+        }
+      );
 
-
-
-    await addDoc(
-
-      collection(
-
-        db,
-
-        "clients",
-
-        clientId,
-
-        "workouts"
-
-      ),
-
-      {
-
-
-        title,
-
-
-        exercises,
-
-
-        createdAt:
-          serverTimestamp(),
-
-
-      }
-
-    );
-
-
-
-
+      setEditingPlanId(null);
+    } else {
+      await addDoc(
+        collection(
+          db,
+          "clients",
+          clientId,
+          "workouts"
+        ),
+        {
+          title: title.trim(),
+          exercises,
+          createdAt: serverTimestamp(),
+        }
+      );
+    }
 
     setTitle("");
-
     setExercises("");
-
-
-
 
     await loadPlans();
 
-
-
-
-    setLoading(false);
-
-
-
-
-    alert(
-      "Trening plan spremljen ✅"
+    alert("Trening plan spremljen ✅");
+  } catch (error) {
+    console.error(
+      "Greška kod spremanja plana:",
+      error
     );
 
-
+    alert("Plan se nije mogao spremiti.");
+  } finally {
+    setLoading(false);
   }
+}
 
 
-
-
-
-
+function editPlan(plan: Plan) {
+  setEditingPlanId(plan.id);
+  setTitle(plan.title);
+  setExercises(plan.exercises);
+}
 
 
 
@@ -331,10 +304,12 @@ export default function ClientPlans({
 
         >
 
-          {loading
-            ? "Spremanje..."
-            : "Spremi plan"
-          }
+       {loading
+  ? "Spremanje..."
+  : editingPlanId
+    ? "Spremi promjene"
+    : "Spremi plan"
+}
 
 
         </button>
@@ -415,19 +390,21 @@ export default function ClientPlans({
 
 
 
-                  <button
+               <div className="flex gap-4 mt-3">
+  <button
+    onClick={() => editPlan(plan)}
+    className="text-blue-600"
+  >
+    ✏️ Uredi
+  </button>
 
-                    onClick={()=>
-                      removePlan(plan.id)
-                    }
-
-                    className="text-red-600 mt-3"
-
-                  >
-
-                    🗑 Obriši
-
-                  </button>
+  <button
+    onClick={() => removePlan(plan.id)}
+    className="text-red-600"
+  >
+    🗑 Obriši
+  </button>
+</div>
 
 
 

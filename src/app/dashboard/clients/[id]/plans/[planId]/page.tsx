@@ -264,14 +264,13 @@ export default function PlanDetailPage() {
           exercises.map((exercise) => (
 
 
-        <ExerciseItem
+<ExerciseItem
   key={exercise.id}
   exercise={exercise}
   clientId={clientId}
   planId={planId}
-  onDeleted={fetchData}
+  onChanged={fetchData}
 />
-
 
           ))
 
