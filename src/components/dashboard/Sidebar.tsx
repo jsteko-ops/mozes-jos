@@ -1,12 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { useEffect, useState } from "react";
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
 
-import { auth } from "@/lib/firebase";
-import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  signOut,
+} from "firebase/auth";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  auth,
+} from "@/lib/firebase";
+
+import {
+  useAuth,
+} from "@/components/auth/AuthProvider";
 
 import {
   listenUnreadCheckins,
@@ -19,19 +34,31 @@ import {
 
 
 export default function Sidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
+  const pathname =
+    usePathname();
 
-  const { userProfile } = useAuth();
+  const router =
+    useRouter();
 
-  const [messageCount, setMessageCount] =
-    useState(0);
+  const {
+    userProfile,
+  } = useAuth();
 
-  const [checkinCount, setCheckinCount] =
-    useState(0);
 
-  const [notificationCount, setNotificationCount] =
-    useState(0);
+  const [
+    messageCount,
+    setMessageCount,
+  ] = useState(0);
+
+  const [
+    checkinCount,
+    setCheckinCount,
+  ] = useState(0);
+
+  const [
+    notificationCount,
+    setNotificationCount,
+  ] = useState(0);
 
 
   useEffect(() => {
@@ -86,15 +113,58 @@ export default function Sidebar() {
   };
 
 
-  const linkClass = (href: string) =>
-    `block rounded-lg px-3 py-2 transition ${
-      pathname === href
-        ? "bg-blue-600 text-white"
-        : "text-gray-700 hover:bg-gray-100"
-    }`;
+  const isActive = (
+    href: string
+  ) => {
+    if (
+      href === "/dashboard"
+    ) {
+      return pathname === href;
+    }
+
+    return (
+      pathname === href ||
+      pathname.startsWith(
+        `${href}/`
+      )
+    );
+  };
 
 
-  const badge = (count: number) => {
+  const linkClass = (
+    href: string
+  ) =>
+    `
+      group
+      flex
+      min-h-11
+      items-center
+      rounded-xl
+      px-3
+      py-2.5
+      text-sm
+      font-medium
+      transition-all
+      duration-200
+      ${
+        isActive(href)
+          ? `
+            bg-[#C8D52B]
+            text-[#111317]
+            shadow-sm
+          `
+          : `
+            text-white/75
+            hover:bg-white/10
+            hover:text-white
+          `
+      }
+    `;
+
+
+  const badge = (
+    count: number
+  ) => {
     if (count <= 0) {
       return null;
     }
@@ -102,17 +172,45 @@ export default function Sidebar() {
     return (
       <span
         className="
+          ml-auto
+          flex
+          min-w-6
+          items-center
+          justify-center
           rounded-full
-          bg-red-600
+          bg-[#16A6A1]
           px-2
           py-1
-          text-xs
+          text-[11px]
+          font-bold
           text-white
         "
       >
         {count}
       </span>
     );
+  };
+
+
+  const roleLabel = () => {
+    switch (
+      userProfile?.role
+    ) {
+      case "trainer":
+        return "Trener";
+
+      case "gym_owner":
+        return "Vlasnik teretane";
+
+      case "client":
+        return "Klijent";
+
+      case "admin":
+        return "Administrator";
+
+      default:
+        return "";
+    }
   };
 
 
@@ -124,31 +222,152 @@ export default function Sidebar() {
   return (
     <aside
       className="
+        sticky
+        top-0
         flex
-        min-h-screen
+        h-screen
         w-64
+        shrink-0
         flex-col
-        border-r
-        bg-white
-        p-5
+        overflow-y-auto
+        bg-[#111317]
+        px-4
+        py-5
+        text-white
       "
     >
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">
-          Možeš Još
-        </h1>
 
-        <p className="mt-1 text-sm text-gray-500">
-          {userProfile.role}
-        </p>
+      {/* BRAND */}
+
+      <div
+        className="
+          mb-7
+          rounded-2xl
+          border
+          border-white/10
+          bg-white/[0.04]
+          p-4
+        "
+      >
+        <div
+          className="
+            flex
+            items-center
+            gap-3
+          "
+        >
+          <div
+            className="
+              flex
+              h-11
+              w-11
+              items-center
+              justify-center
+              rounded-xl
+              bg-[#C8D52B]
+              text-lg
+              font-black
+              text-[#111317]
+              shadow-lg
+              shadow-[#C8D52B]/10
+            "
+          >
+            MJ
+          </div>
+
+
+          <div className="min-w-0">
+            <h1
+              className="
+                text-lg
+                font-black
+                tracking-tight
+                text-white
+              "
+            >
+              Možeš Još
+            </h1>
+
+            <p
+              className="
+                text-xs
+                font-medium
+                text-[#16A6A1]
+              "
+            >
+              {roleLabel()}
+            </p>
+          </div>
+        </div>
+
+
+        {userProfile.isPremium && (
+          <div
+            className="
+              mt-4
+              inline-flex
+              items-center
+              gap-2
+              rounded-full
+              border
+              border-[#C8D52B]/30
+              bg-[#C8D52B]/10
+              px-3
+              py-1.5
+            "
+          >
+            <span
+              className="
+                h-2
+                w-2
+                rounded-full
+                bg-[#C8D52B]
+              "
+            />
+
+            <span
+              className="
+                text-[11px]
+                font-bold
+                uppercase
+                tracking-wider
+                text-[#DDE84B]
+              "
+            >
+              Pro aktivan
+            </span>
+          </div>
+        )}
       </div>
 
 
-      <nav className="flex flex-col gap-2">
+      <p
+        className="
+          mb-2
+          px-3
+          text-[10px]
+          font-bold
+          uppercase
+          tracking-[0.2em]
+          text-white/35
+        "
+      >
+        Navigacija
+      </p>
 
-        {/* TRAINER MENU */}
 
-        {userProfile.role === "trainer" && (
+      <nav
+        className="
+          flex
+          flex-col
+          gap-1
+        "
+      >
+
+        {/* TRAINER */}
+
+        {userProfile.role ===
+          "trainer" && (
           <>
             <Link
               href="/dashboard/trainer"
@@ -156,6 +375,10 @@ export default function Sidebar() {
                 "/dashboard/trainer"
               )}
             >
+              <span className="mr-3">
+                ◫
+              </span>
+
               Dashboard
             </Link>
 
@@ -166,13 +389,15 @@ export default function Sidebar() {
                 "/dashboard/chat"
               )}
             >
-              <div className="flex items-center justify-between">
-                <span>
-                  💬 Chat
-                </span>
+              <span className="mr-3">
+                💬
+              </span>
 
-                {badge(messageCount)}
-              </div>
+              Chat
+
+              {badge(
+                messageCount
+              )}
             </Link>
 
 
@@ -182,6 +407,10 @@ export default function Sidebar() {
                 "/dashboard/trainer/klijenti"
               )}
             >
+              <span className="mr-3">
+                👥
+              </span>
+
               Klijenti
             </Link>
 
@@ -192,6 +421,10 @@ export default function Sidebar() {
                 "/dashboard/trainer/mjerenja"
               )}
             >
+              <span className="mr-3">
+                📏
+              </span>
+
               Mjerenja
             </Link>
 
@@ -202,13 +435,15 @@ export default function Sidebar() {
                 "/dashboard/trainer/checkin"
               )}
             >
-              <div className="flex items-center justify-between">
-                <span>
-                  Check-in
-                </span>
+              <span className="mr-3">
+                ✓
+              </span>
 
-                {badge(checkinCount)}
-              </div>
+              Check-in
+
+              {badge(
+                checkinCount
+              )}
             </Link>
 
 
@@ -218,14 +453,17 @@ export default function Sidebar() {
                 "/dashboard/notifications"
               )}
             >
-              <div className="flex items-center justify-between">
-                <span>
-                  🔔 Obavijesti
-                </span>
+              <span className="mr-3">
+                🔔
+              </span>
 
-                {badge(notificationCount)}
-              </div>
+              Obavijesti
+
+              {badge(
+                notificationCount
+              )}
             </Link>
+
 
             <Link
               href="/dashboard/safe-reports-inbox"
@@ -233,8 +471,13 @@ export default function Sidebar() {
                 "/dashboard/safe-reports-inbox"
               )}
             >
-              🛡️ Sigurne prijave
+              <span className="mr-3">
+                🛡️
+              </span>
+
+              Sigurne prijave
             </Link>
+
 
             <Link
               href="/dashboard/reports"
@@ -242,7 +485,11 @@ export default function Sidebar() {
                 "/dashboard/reports"
               )}
             >
-              📄 Izvještaji
+              <span className="mr-3">
+                📄
+              </span>
+
+              Izvještaji
             </Link>
 
 
@@ -252,15 +499,20 @@ export default function Sidebar() {
                 "/dashboard/trainer/naplata"
               )}
             >
+              <span className="mr-3">
+                💳
+              </span>
+
               Naplata
             </Link>
           </>
         )}
 
 
-        {/* OWNER MENU */}
+        {/* OWNER */}
 
-        {userProfile.role === "gym_owner" && (
+        {userProfile.role ===
+          "gym_owner" && (
           <>
             <Link
               href="/dashboard/owner"
@@ -268,6 +520,10 @@ export default function Sidebar() {
                 "/dashboard/owner"
               )}
             >
+              <span className="mr-3">
+                ◫
+              </span>
+
               Moja teretana
             </Link>
 
@@ -278,6 +534,10 @@ export default function Sidebar() {
                 "/dashboard/owner/trainers"
               )}
             >
+              <span className="mr-3">
+                🏋️
+              </span>
+
               Moji treneri
             </Link>
 
@@ -288,6 +548,10 @@ export default function Sidebar() {
                 "/dashboard/owner/clients"
               )}
             >
+              <span className="mr-3">
+                👥
+              </span>
+
               Moji klijenti
             </Link>
 
@@ -298,7 +562,11 @@ export default function Sidebar() {
                 "/dashboard/reports"
               )}
             >
-              📄 Izvještaji
+              <span className="mr-3">
+                📄
+              </span>
+
+              Izvještaji
             </Link>
 
 
@@ -308,7 +576,11 @@ export default function Sidebar() {
                 "/dashboard/safe-reports-inbox"
               )}
             >
-              🛡️ Sigurne prijave
+              <span className="mr-3">
+                🛡️
+              </span>
+
+              Sigurne prijave
             </Link>
 
 
@@ -318,13 +590,15 @@ export default function Sidebar() {
                 "/dashboard/notifications"
               )}
             >
-              <div className="flex items-center justify-between">
-                <span>
-                  🔔 Obavijesti
-                </span>
+              <span className="mr-3">
+                🔔
+              </span>
 
-                {badge(notificationCount)}
-              </div>
+              Obavijesti
+
+              {badge(
+                notificationCount
+              )}
             </Link>
 
 
@@ -334,7 +608,11 @@ export default function Sidebar() {
                 "/dashboard/chat"
               )}
             >
-              💬 Chat
+              <span className="mr-3">
+                💬
+              </span>
+
+              Chat
             </Link>
 
 
@@ -344,15 +622,20 @@ export default function Sidebar() {
                 "/dashboard/settings"
               )}
             >
+              <span className="mr-3">
+                ⚙️
+              </span>
+
               Postavke
             </Link>
           </>
         )}
 
 
-        {/* CLIENT MENU */}
+        {/* CLIENT */}
 
-        {userProfile.role === "client" && (
+        {userProfile.role ===
+          "client" && (
           <>
             <Link
               href="/dashboard/client"
@@ -360,6 +643,10 @@ export default function Sidebar() {
                 "/dashboard/client"
               )}
             >
+              <span className="mr-3">
+                ◫
+              </span>
+
               Moj napredak
             </Link>
 
@@ -370,6 +657,10 @@ export default function Sidebar() {
                 "/dashboard/client/workouts"
               )}
             >
+              <span className="mr-3">
+                🏋️
+              </span>
+
               Moji treninzi
             </Link>
 
@@ -380,6 +671,10 @@ export default function Sidebar() {
                 "/dashboard/client/measurements"
               )}
             >
+              <span className="mr-3">
+                📏
+              </span>
+
               Mjerenja
             </Link>
 
@@ -390,7 +685,11 @@ export default function Sidebar() {
                 "/dashboard/nutrition"
               )}
             >
-              🥗 Prehrana
+              <span className="mr-3">
+                🥗
+              </span>
+
+              Prehrana
             </Link>
 
 
@@ -400,7 +699,11 @@ export default function Sidebar() {
                 "/dashboard/chat"
               )}
             >
-              💬 Chat
+              <span className="mr-3">
+                💬
+              </span>
+
+              Chat
             </Link>
 
 
@@ -410,13 +713,15 @@ export default function Sidebar() {
                 "/dashboard/notifications"
               )}
             >
-              <div className="flex items-center justify-between">
-                <span>
-                  🔔 Obavijesti
-                </span>
+              <span className="mr-3">
+                🔔
+              </span>
 
-                {badge(notificationCount)}
-              </div>
+              Obavijesti
+
+              {badge(
+                notificationCount
+              )}
             </Link>
 
 
@@ -426,7 +731,11 @@ export default function Sidebar() {
                 "/dashboard/safe-report"
               )}
             >
-              🛡️ Sigurna prijava
+              <span className="mr-3">
+                🛡️
+              </span>
+
+              Sigurna prijava
             </Link>
 
 
@@ -436,15 +745,20 @@ export default function Sidebar() {
                 "/dashboard/settings"
               )}
             >
+              <span className="mr-3">
+                👤
+              </span>
+
               Profil
             </Link>
           </>
         )}
 
 
-        {/* ADMIN MENU */}
+        {/* ADMIN */}
 
-        {userProfile.role === "admin" && (
+        {userProfile.role ===
+          "admin" && (
           <>
             <Link
               href="/dashboard"
@@ -452,6 +766,10 @@ export default function Sidebar() {
                 "/dashboard"
               )}
             >
+              <span className="mr-3">
+                ◫
+              </span>
+
               Admin Dashboard
             </Link>
 
@@ -462,7 +780,11 @@ export default function Sidebar() {
                 "/dashboard/safe-reports-inbox"
               )}
             >
-              🛡️ Sigurne prijave
+              <span className="mr-3">
+                🛡️
+              </span>
+
+              Sigurne prijave
             </Link>
 
 
@@ -472,35 +794,82 @@ export default function Sidebar() {
                 "/dashboard/notifications"
               )}
             >
-              <div className="flex items-center justify-between">
-                <span>
-                  🔔 Obavijesti
-                </span>
+              <span className="mr-3">
+                🔔
+              </span>
 
-                {badge(notificationCount)}
-              </div>
+              Obavijesti
+
+              {badge(
+                notificationCount
+              )}
             </Link>
           </>
         )}
-
       </nav>
 
 
-      <button
-        type="button"
-        onClick={logout}
+      <div
         className="
           mt-auto
-          rounded-lg
-          bg-red-600
-          px-4
-          py-2
-          text-white
-          hover:bg-red-700
+          pt-6
         "
       >
-        Odjava
-      </button>
+        <div
+          className="
+            mb-4
+            h-px
+            bg-white/10
+          "
+        />
+
+
+        <button
+          type="button"
+          onClick={logout}
+          className="
+            flex
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            border
+            border-white/10
+            bg-white/[0.05]
+            px-4
+            py-3
+            text-sm
+            font-semibold
+            text-white/80
+            transition
+            hover:border-red-400/30
+            hover:bg-red-500/10
+            hover:text-red-300
+          "
+        >
+          <span>
+            ↪
+          </span>
+
+          Odjava
+        </button>
+
+
+        <p
+          className="
+            mt-4
+            text-center
+            text-[10px]
+            uppercase
+            tracking-[0.15em]
+            text-white/20
+          "
+        >
+          JoŠ bolje • JoŠ jače
+        </p>
+      </div>
+
     </aside>
   );
 }

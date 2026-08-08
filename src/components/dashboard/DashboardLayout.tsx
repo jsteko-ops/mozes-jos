@@ -2,27 +2,71 @@
 
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
-import { useAuth } from "@/components/auth/AuthProvider";
+
+import {
+  useAuth,
+} from "@/components/auth/AuthProvider";
+
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
+  const {
+    user,
+  } = useAuth();
+
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar />
+    <div
+      className="
+        min-h-screen
+        bg-[#F4F6F2]
+        text-[#15171A]
+      "
+    >
+      <div className="flex min-h-screen">
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        {/* Topbar */}
-        <Topbar user={user} />
+        <Sidebar />
 
-        {/* Page content */}
-        <main className="p-6">{children}</main>
+
+        <div
+          className="
+            flex
+            min-w-0
+            flex-1
+            flex-col
+          "
+        >
+
+          <Topbar
+            user={user}
+          />
+
+
+          <main
+            className="
+              flex-1
+              bg-[#F4F6F2]
+              p-4
+              sm:p-6
+              lg:p-8
+            "
+          >
+            <div
+              className="
+                mx-auto
+                w-full
+                max-w-[1600px]
+              "
+            >
+              {children}
+            </div>
+          </main>
+
+        </div>
+
       </div>
     </div>
   );
