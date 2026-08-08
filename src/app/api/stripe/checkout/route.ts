@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { adminDb } from "@/lib/firebase-admin";
-
+import {
+  adminAuth,
+  adminDb,
+} from "@/lib/firebase-admin";
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY!,
   {
@@ -9,6 +11,21 @@ const stripe = new Stripe(
   }
 );
 
+function getToken(request: Request) {
+  const authorization =
+    request.headers.get("authorization");
+
+  if (
+    !authorization ||
+    !authorization.startsWith("Bearer ")
+  ) {
+    return null;
+  }
+
+  return authorization
+    .slice(7)
+    .trim();
+}
 
 export async function POST(req: Request) {
 
@@ -19,25 +36,46 @@ export async function POST(req: Request) {
       "http://localhost:3000";
 
 
-    const body = await req.json();
+    const token =
+  getToken(req);
 
-
-    const userId = body.userId;
-    const email = body.email;
-
-
-    if (!userId) {
-
-      return NextResponse.json(
-        {
-          error: "Nedostaje userId",
-        },
-        {
-          status: 400,
-        }
-      );
-
+if (!token) {
+  return NextResponse.json(
+    {
+      error:
+        "Moraš biti prijavljen.",
+    },
+    {
+      status: 401,
     }
+  );
+}
+
+let decodedToken;
+
+try {
+  decodedToken =
+    await adminAuth.verifyIdToken(
+      token,
+      true
+    );
+} catch {
+  return NextResponse.json(
+    {
+      error:
+        "Prijava korisnika nije valjana.",
+    },
+    {
+      status: 401,
+    }
+  );
+}
+
+const userId =
+  decodedToken.uid;
+
+const email =
+  decodedToken.email || undefined;
 
 
 

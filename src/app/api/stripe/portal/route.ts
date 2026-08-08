@@ -1,29 +1,67 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { adminDb } from "@/lib/firebase-admin";
+import {
+  adminAuth,
+  adminDb,
+} from "@/lib/firebase-admin";
 
+function getToken(request: Request) {
+  const authorization =
+    request.headers.get("authorization");
+
+  if (
+    !authorization ||
+    !authorization.startsWith("Bearer ")
+  ) {
+    return null;
+  }
+
+  return authorization
+    .slice(7)
+    .trim();
+}
 
 export async function POST(req: Request) {
 
   try {
 
-    const body = await req.json();
+const token =
+  getToken(req);
 
-    const userId = body.userId;
-
-
-    if(!userId){
-
-      return NextResponse.json(
-        {
-          error:"Nedostaje userId"
-        },
-        {
-          status:400
-        }
-      );
-
+if (!token) {
+  return NextResponse.json(
+    {
+      error:
+        "Moraš biti prijavljen.",
+    },
+    {
+      status: 401,
     }
+  );
+}
+
+let decodedToken;
+
+try {
+  decodedToken =
+    await adminAuth.verifyIdToken(
+      token,
+      true
+    );
+} catch {
+  return NextResponse.json(
+    {
+      error:
+        "Prijava korisnika nije valjana.",
+    },
+    {
+      status: 401,
+    }
+  );
+}
+
+const userId =
+  decodedToken.uid;
 
 
 
