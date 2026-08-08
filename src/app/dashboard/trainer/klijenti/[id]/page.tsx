@@ -14,6 +14,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import PremiumGuard from "@/components/auth/PremiumGuard";
 
 import RoleGuard from "@/components/auth/RoleGuard";
 import ClientPlans from "@/components/owner/ClientPlans";
@@ -452,11 +453,11 @@ const plansContent = (
 
 const nutritionContent = (
 
-  <ClientNutrition
-
-    clientId={id}
-
-  />
+  <PremiumGuard>
+    <ClientNutrition
+      clientId={id}
+    />
+  </PremiumGuard>
 
 );
 
