@@ -7,6 +7,7 @@ import {
 import {
   addDoc,
   collection,
+  getDocs,
   serverTimestamp,
 } from "firebase/firestore";
 
@@ -27,9 +28,10 @@ export default function MeasurementForm({
   onCreated: () => void;
 }) {
 
-  const {
-    user,
-  } = useAuth();
+ const {
+  user,
+  userProfile,
+} = useAuth();
 
 
   const [
@@ -139,6 +141,33 @@ export default function MeasurementForm({
 
     }
 
+const existingMeasurements =
+  await getDocs(
+    collection(
+      db,
+      "clients",
+      cleanClientId,
+      "measurements"
+    )
+  );
+
+const hasExistingMeasurement =
+  !existingMeasurements.empty;
+
+const hasPro =
+  userProfile?.isPremium === true &&
+  userProfile?.subscriptionStatus === "active";
+
+if (
+  hasExistingMeasurement &&
+  !hasPro
+) {
+  alert(
+    "Prvo mjerenje je besplatno. Za dodatna mjerenja i praćenje napretka potreban je Možeš Još Pro."
+  );
+
+  return;
+}
 
     try {
 
