@@ -9,8 +9,12 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default function Topbar({
   user,
+  onMenuClick,
+  mobileMenuOpen,
 }: {
   user: User | null;
+  onMenuClick: () => void;
+  mobileMenuOpen: boolean;
 }) {
   return (
     <header
@@ -30,40 +34,153 @@ export default function Topbar({
           h-16
           items-center
           justify-between
+          gap-3
           px-4
           sm:px-6
           lg:px-8
         "
       >
-        <div className="min-w-0">
 
-          <p
+        {/* LEFT */}
+
+        <div
+          className="
+            flex
+            min-w-0
+            items-center
+            gap-3
+          "
+        >
+
+          {/* MOBILE MENU BUTTON */}
+
+          <button
+            type="button"
+            aria-label={
+              mobileMenuOpen
+                ? "Zatvori navigaciju"
+                : "Otvori navigaciju"
+            }
+            aria-expanded={
+              mobileMenuOpen
+            }
+            onClick={
+              onMenuClick
+            }
             className="
-              text-[11px]
-              font-semibold
-              uppercase
-              tracking-[0.18em]
-              text-[#16A6A1]
+              flex
+              h-10
+              w-10
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              border
+              border-[#E5E7EB]
+              bg-white
+              text-[#15171A]
+              shadow-sm
+              transition
+              hover:border-[#C8D52B]
+              hover:bg-[#F7F8F5]
+              active:scale-95
+              lg:hidden
             "
           >
-            Možeš Još
-          </p>
+            <span
+              className="
+                flex
+                h-5
+                w-5
+                flex-col
+                items-center
+                justify-center
+                gap-[4px]
+              "
+            >
+              <span
+                className="
+                  block
+                  h-[2px]
+                  w-5
+                  rounded-full
+                  bg-[#15171A]
+                "
+              />
 
-          <p
-            className="
-              truncate
-              text-sm
-              font-medium
-              text-[#667085]
-            "
-          >
-            {user?.email ?? "Učitavanje korisnika..."}
-          </p>
+              <span
+                className="
+                  block
+                  h-[2px]
+                  w-5
+                  rounded-full
+                  bg-[#15171A]
+                "
+              />
 
+              <span
+                className="
+                  block
+                  h-[2px]
+                  w-5
+                  rounded-full
+                  bg-[#15171A]
+                "
+              />
+            </span>
+          </button>
+
+
+          {/* USER */}
+
+          <div className="min-w-0">
+
+            <p
+              className="
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.18em]
+                text-[#16A6A1]
+                sm:text-[11px]
+              "
+            >
+              Možeš Još
+            </p>
+
+
+            <p
+              className="
+                max-w-[150px]
+                truncate
+                text-xs
+                font-medium
+                text-[#667085]
+                sm:max-w-[280px]
+                sm:text-sm
+              "
+            >
+              {user?.email ??
+                "Učitavanje korisnika..."}
+            </p>
+
+          </div>
         </div>
 
 
-        <div className="flex items-center gap-3">
+        {/* RIGHT */}
+
+        <div
+          className="
+            flex
+            shrink-0
+            items-center
+            gap-2
+            sm:gap-3
+          "
+        >
+
+          {/* NOTIFICATIONS */}
 
           <div
             className="
@@ -82,6 +199,8 @@ export default function Topbar({
             <NotificationBell />
           </div>
 
+
+          {/* BRAND PILL */}
 
           <div
             className="
@@ -104,6 +223,7 @@ export default function Topbar({
               "
             />
 
+
             <span
               className="
                 text-xs
@@ -120,6 +240,8 @@ export default function Topbar({
       </div>
 
 
+      {/* ACCENT LINE */}
+
       <div
         className="
           h-[3px]
@@ -129,6 +251,7 @@ export default function Topbar({
           to-[#C8D52B]
         "
       />
+
     </header>
   );
 }
