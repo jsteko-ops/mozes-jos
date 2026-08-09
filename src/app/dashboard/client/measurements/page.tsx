@@ -1,133 +1,601 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import Link from "next/link";
+
+import {
+  onAuthStateChanged,
+} from "firebase/auth";
 
 import RoleGuard from "@/components/auth/RoleGuard";
 import ClientMeasurementsView from "@/components/client/ClientMeasurementsView";
 
-import { auth, db } from "@/lib/firebase";
-
-import { onAuthStateChanged } from "firebase/auth";
+import {
+  auth,
+} from "@/lib/firebase";
 
 import {
-  doc,
-  getDoc,
-} from "firebase/firestore";
+  getClientByEmail,
+} from "@/lib/services/klijentiService";
+
+
+type ClientProfile = {
+  id: string;
+  name?: string;
+  email?: string;
+  goal?: string;
+};
 
 
 export default function ClientMeasurementsPage() {
+  const [
+    client,
+    setClient,
+  ] =
+    useState<ClientProfile | null>(
+      null
+    );
 
 
-  const [clientId,setClientId] =
-    useState<string | null>(null);
-
-
-  const [loading,setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
 
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
 
-  useEffect(()=>{
+
+  useEffect(() => {
+    let cancelled =
+      false;
 
 
-    const unsub =
+    const unsubscribe =
       onAuthStateChanged(
         auth,
-        async(user)=>{
+        async (user) => {
+          if (!user) {
+            if (!cancelled) {
+              setLoading(
+                false
+              );
+            }
 
-
-          if(!user){
-
-            setLoading(false);
             return;
-
           }
 
 
-          const snap =
-            await getDoc(
-              doc(
-                db,
-                "clients",
-                user.uid
-              )
+          try {
+            if (!cancelled) {
+              setLoading(
+                true
+              );
+
+              setError(
+                ""
+              );
+            }
+
+
+            if (!user.email) {
+              throw new Error(
+                "Tvoj korisnički račun nema email adresu."
+              );
+            }
+
+
+            /*
+             * Klijentski dokument nije
+             * nužno spremljen pod
+             * Firebase Auth UID-em.
+             *
+             * Zato prvo pronalazimo
+             * pravi zapis u kolekciji
+             * clients.
+             */
+            const foundClient =
+              await getClientByEmail(
+                user.email
+              );
+
+
+            if (cancelled) {
+              return;
+            }
+
+
+            if (!foundClient) {
+              setClient(
+                null
+              );
+
+              setError(
+                "Klijentski profil nije pronađen. Obrati se svom treneru."
+              );
+
+              return;
+            }
+
+
+            setClient(
+              foundClient as ClientProfile
+            );
+          } catch (
+            loadError
+          ) {
+            console.error(
+              "Greška kod učitavanja klijentskih mjerenja:",
+              loadError
             );
 
 
-          if(snap.exists()){
-
-            setClientId(
-              user.uid
-            );
-
+            if (!cancelled) {
+              setError(
+                loadError instanceof Error
+                  ? loadError.message
+                  : "Mjerenja trenutno nije moguće učitati."
+              );
+            }
+          } finally {
+            if (!cancelled) {
+              setLoading(
+                false
+              );
+            }
           }
-
-
-          setLoading(false);
-
-
         }
       );
 
 
-    return ()=>unsub();
+    return () => {
+      cancelled = true;
 
-
-  },[]);
-
-
-
+      unsubscribe();
+    };
+  }, []);
 
 
   return (
+    <RoleGuard
+      allowedRoles={[
+        "client",
+      ]}
+    >
+      <div className="space-y-7">
 
-    <RoleGuard allowedRoles={["client"]}>
+        {/* BACK */}
+
+        <Link
+          href="/dashboard/client"
+          className="
+            inline-flex
+            items-center
+            gap-2
+            text-sm
+            font-bold
+            text-[#667085]
+            transition
+            hover:text-[#15171A]
+          "
+        >
+          <span
+            className="
+              text-[#16A6A1]
+            "
+          >
+            ←
+          </span>
+
+          Natrag na Moj napredak
+        </Link>
 
 
-      <div className="p-6 space-y-6">
+        {/* HEADER */}
+
+        <div
+          className="
+            flex
+            flex-col
+            gap-4
+            sm:flex-row
+            sm:items-end
+            sm:justify-between
+          "
+        >
+          <div>
+            <p
+              className="
+                text-xs
+                font-bold
+                uppercase
+                tracking-[0.16em]
+                text-[#16A6A1]
+              "
+            >
+              Praćenje napretka
+            </p>
 
 
-        <h1 className="text-3xl font-bold">
-          📏 Moja mjerenja
-        </h1>
+            <h1
+              className="
+                mt-1
+                text-3xl
+                font-black
+                tracking-tight
+                text-[#15171A]
+                sm:text-4xl
+              "
+            >
+              Moja mjerenja
+            </h1>
 
 
-
-        {
-          loading
-
-          ?
-
-          <p>
-            Učitavanje...
-          </p>
-
-
-          :
-
-          clientId
-
-          ?
-
-          <ClientMeasurementsView
-            clientId={clientId}
-          />
+            <p
+              className="
+                mt-2
+                max-w-2xl
+                text-sm
+                leading-6
+                text-[#667085]
+              "
+            >
+              Prati svoju težinu,
+              tjelesnu mast i ostala
+              mjerenja koja trener
+              evidentira kroz vrijeme.
+            </p>
+          </div>
 
 
-          :
+          {!loading &&
+            client && (
+              <div
+                className="
+                  inline-flex
+                  w-fit
+                  items-center
+                  gap-3
+                  rounded-2xl
+                  border
+                  border-[#E5E7EB]
+                  bg-white
+                  px-4
+                  py-3
+                  shadow-sm
+                "
+              >
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-[#16A6A1]/10
+                    text-xs
+                    font-black
+                    text-[#128D89]
+                  "
+                >
+                  {getInitials(
+                    client.name ||
+                      client.email ||
+                      "K"
+                  )}
+                </div>
 
-          <p>
-            Klijent nije pronađen.
-          </p>
 
-        }
+                <div>
+                  <p
+                    className="
+                      text-[9px]
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-[#98A2B3]
+                    "
+                  >
+                    Klijent
+                  </p>
 
+
+                  <p
+                    className="
+                      max-w-48
+                      truncate
+                      text-xs
+                      font-black
+                      text-[#15171A]
+                    "
+                  >
+                    {client.name ||
+                      client.email ||
+                      "Moj profil"}
+                  </p>
+                </div>
+              </div>
+            )}
+        </div>
+
+
+        <div
+          className="
+            h-1
+            w-20
+            rounded-full
+            bg-gradient-to-r
+            from-[#C8D52B]
+            to-[#16A6A1]
+          "
+        />
+
+
+        {/* LOADING */}
+
+        {loading && (
+          <div className="space-y-4">
+            <div
+              className="
+                grid
+                gap-4
+                md:grid-cols-3
+              "
+            >
+              {[1, 2, 3].map(
+                (item) => (
+                  <div
+                    key={
+                      item
+                    }
+                    className="
+                      h-32
+                      animate-pulse
+                      rounded-[28px]
+                      border
+                      border-[#E5E7EB]
+                      bg-white
+                    "
+                  />
+                )
+              )}
+            </div>
+
+
+            <div
+              className="
+                h-72
+                animate-pulse
+                rounded-[28px]
+                border
+                border-[#E5E7EB]
+                bg-white
+              "
+            />
+          </div>
+        )}
+
+
+        {/* ERROR */}
+
+        {!loading &&
+          error && (
+            <section
+              className="
+                rounded-[28px]
+                border
+                border-red-200
+                bg-red-50
+                p-6
+              "
+            >
+              <div
+                className="
+                  flex
+                  items-start
+                  gap-4
+                "
+              >
+                <div
+                  className="
+                    flex
+                    h-11
+                    w-11
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    bg-white
+                    font-black
+                    text-red-600
+                  "
+                >
+                  !
+                </div>
+
+
+                <div>
+                  <h2
+                    className="
+                      text-lg
+                      font-black
+                      text-red-800
+                    "
+                  >
+                    Mjerenja nisu
+                    dostupna
+                  </h2>
+
+
+                  <p
+                    className="
+                      mt-1
+                      text-sm
+                      leading-6
+                      text-red-700
+                    "
+                  >
+                    {error}
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
+
+        {/* CONTENT */}
+
+        {!loading &&
+          !error &&
+          client && (
+            <>
+
+              {/* INTRO CARD */}
+
+              <section
+                className="
+                  relative
+                  overflow-hidden
+                  rounded-[28px]
+                  bg-[#111317]
+                  p-6
+                  text-white
+                "
+              >
+                <div
+                  className="
+                    absolute
+                    -right-16
+                    -top-20
+                    h-52
+                    w-52
+                    rounded-full
+                    bg-[#C8D52B]/10
+                    blur-3xl
+                  "
+                />
+
+
+                <div
+                  className="
+                    relative
+                    z-10
+                    flex
+                    flex-col
+                    gap-5
+                    sm:flex-row
+                    sm:items-center
+                    sm:justify-between
+                  "
+                >
+                  <div>
+                    <p
+                      className="
+                        text-[10px]
+                        font-bold
+                        uppercase
+                        tracking-[0.16em]
+                        text-[#C8D52B]
+                      "
+                    >
+                      Tvoj napredak
+                    </p>
+
+
+                    <h2
+                      className="
+                        mt-1
+                        text-xl
+                        font-black
+                        text-white
+                      "
+                    >
+                      Promjene kroz
+                      vrijeme
+                    </h2>
+
+
+                    <p
+                      className="
+                        mt-2
+                        max-w-xl
+                        text-xs
+                        leading-5
+                        text-white/45
+                      "
+                    >
+                      Mjerenja služe za
+                      praćenje trenda,
+                      a ne samo jednog
+                      broja. Svaki novi
+                      unos daje jasniju
+                      sliku tvog
+                      napretka.
+                    </p>
+                  </div>
+
+
+                  <div
+                    className="
+                      flex
+                      h-14
+                      w-14
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-2xl
+                      bg-[#C8D52B]
+                      text-lg
+                      font-black
+                      text-[#111317]
+                    "
+                  >
+                    M
+                  </div>
+                </div>
+              </section>
+
+
+              <ClientMeasurementsView
+                clientId={
+                  client.id
+                }
+              />
+
+            </>
+          )}
 
       </div>
-
-
     </RoleGuard>
-
   );
+}
 
+
+function getInitials(
+  value: string
+) {
+  return (
+    value
+      .trim()
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(
+        (part) =>
+          part.charAt(0)
+      )
+      .join("")
+      .toUpperCase() ||
+    "K"
+  );
 }
