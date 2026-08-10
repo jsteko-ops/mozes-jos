@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   FormEvent,
@@ -11,6 +11,7 @@ import Link from "next/link";
 
 import {
   onAuthStateChanged,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 
 import {
@@ -37,6 +38,11 @@ import {
 type GymRole =
   | "trainer"
   | "client";
+
+
+type AddingRole =
+  | GymRole
+  | "gym_staff";
 
 
 type GymMember = {
@@ -82,6 +88,26 @@ export default function OwnerDashboard() {
 
 
   const [
+    staffName,
+    setStaffName,
+  ] =
+    useState("");
+
+
+  const [
+    staffEmail,
+    setStaffEmail,
+  ] =
+    useState("");
+
+
+  const [
+    staffPhone,
+    setStaffPhone,
+  ] =
+    useState("");
+
+  const [
     pageLoading,
     setPageLoading,
   ] =
@@ -93,7 +119,7 @@ export default function OwnerDashboard() {
     setAddingRole,
   ] =
     useState<
-      GymRole | null
+      AddingRole | null
     >(null);
 
 
@@ -411,6 +437,185 @@ export default function OwnerDashboard() {
       clientEmail,
       "client"
     );
+  }
+
+
+  async function submitStaff(
+    event: FormEvent
+  ) {
+    event.preventDefault();
+
+
+    if (!gymId) {
+      setError(
+        "Teretana nije pronađena."
+      );
+
+      return;
+    }
+
+
+    const cleanName =
+      staffName.trim();
+
+    const cleanEmail =
+      staffEmail
+        .trim()
+        .toLowerCase();
+
+    const cleanPhone =
+      staffPhone.trim();
+
+
+    if (!cleanName) {
+      setError(
+        "Upiši ime i prezime djelatnika."
+      );
+
+      return;
+    }
+
+
+    if (
+      !cleanEmail ||
+      !cleanEmail.includes("@")
+    ) {
+      setError(
+        "Upiši ispravnu email adresu djelatnika."
+      );
+
+      return;
+    }
+
+
+    const currentUser =
+      auth.currentUser;
+
+
+    if (!currentUser) {
+      setError(
+        "Moraš biti prijavljen."
+      );
+
+      return;
+    }
+
+
+    try {
+      setAddingRole(
+        "gym_staff"
+      );
+
+      setError("");
+      setSuccess("");
+
+
+      const token =
+        await currentUser
+          .getIdToken();
+
+
+      const response =
+        await fetch(
+          "/api/gym/staff",
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            body:
+              JSON.stringify({
+                name:
+                  cleanName,
+
+                email:
+                  cleanEmail,
+
+                phone:
+                  cleanPhone,
+              }),
+          }
+        );
+
+
+      const data =
+        await response
+          .json()
+          .catch(
+            () => null
+          );
+
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            "Djelatnika trenutno nije moguće dodati."
+        );
+      }
+
+
+      await loadMembers(
+        gymId
+      );
+
+
+      setStaffName("");
+      setStaffEmail("");
+      setStaffPhone("");
+
+
+      try {
+        await sendPasswordResetEmail(
+          auth,
+          cleanEmail
+        );
+
+
+        setSuccess(
+          "Djelatnik je uspješno dodan. Na njegov email poslana je poveznica za postavljanje lozinke."
+        );
+      } catch (
+        emailError
+      ) {
+        console.error(
+          "Djelatnik je kreiran, ali email za lozinku nije poslan:",
+          emailError
+        );
+
+
+        setSuccess(
+          "Djelatnik je uspješno dodan."
+        );
+
+        setError(
+          "Račun je kreiran, ali email za postavljanje lozinke nije poslan."
+        );
+      }
+    } catch (
+      staffError: any
+    ) {
+      console.error(
+        "Greška kod dodavanja djelatnika:",
+        staffError
+      );
+
+
+      setError(
+        staffError?.message ||
+          "Djelatnika trenutno nije moguće dodati."
+      );
+    } finally {
+      setAddingRole(
+        null
+      );
+    }
   }
 
 
@@ -840,6 +1045,7 @@ export default function OwnerDashboard() {
                     grid
                     gap-0
                     lg:grid-cols-2
+                    xl:grid-cols-3
                   "
                 >
 
@@ -1192,6 +1398,322 @@ export default function OwnerDashboard() {
                       )}
                     </button>
                   </form>
+                  {/* STAFF */}
+
+                  <form
+                    onSubmit={
+                      submitStaff
+                    }
+                    className="
+                      border-t
+                      border-[#EEF0EC]
+                      p-6
+                      lg:col-span-2
+                      xl:col-span-1
+                      xl:border-t-0
+                    "
+                  >
+                    <div
+                      className="
+                        flex
+                        items-start
+                        gap-4
+                      "
+                    >
+                      <div
+                        className="
+                          flex
+                          h-12
+                          w-12
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-2xl
+                          bg-[#111317]
+                          font-black
+                          text-[#C8D52B]
+                        "
+                      >
+                        R
+                      </div>
+
+
+                      <div>
+                        <h3
+                          className="
+                            text-lg
+                            font-black
+                            text-[#15171A]
+                          "
+                        >
+                          Dodaj djelatnika
+                        </h3>
+
+                        <p
+                          className="
+                            mt-1
+                            text-xs
+                            leading-5
+                            text-[#667085]
+                          "
+                        >
+                          Kreiraj račun za
+                          recepciju ili
+                          djelatnika teretane.
+                        </p>
+                      </div>
+                    </div>
+
+
+                    <div className="mt-5">
+                      <label
+                        htmlFor="staff-name"
+                        className="
+                          mb-2
+                          block
+                          text-xs
+                          font-bold
+                          text-[#344054]
+                        "
+                      >
+                        Ime i prezime
+                      </label>
+
+                      <input
+                        id="staff-name"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Ivan Horvat"
+                        value={
+                          staffName
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setStaffName(
+                            event.target.value
+                          )
+                        }
+                        disabled={
+                          addingRole !==
+                          null
+                        }
+                        className="
+                          min-h-12
+                          w-full
+                          rounded-xl
+                          border
+                          border-[#E5E7EB]
+                          bg-white
+                          px-4
+                          py-3
+                          text-sm
+                          font-semibold
+                          text-[#15171A]
+                          outline-none
+                          transition
+                          placeholder:text-[#B2B8C2]
+                          focus:border-[#C8D52B]
+                          focus:ring-4
+                          focus:ring-[#C8D52B]/10
+                          disabled:bg-[#F6F7F3]
+                        "
+                      />
+                    </div>
+
+
+                    <div className="mt-4">
+                      <label
+                        htmlFor="staff-email"
+                        className="
+                          mb-2
+                          block
+                          text-xs
+                          font-bold
+                          text-[#344054]
+                        "
+                      >
+                        Email djelatnika
+                      </label>
+
+                      <input
+                        id="staff-email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="recepcija@email.com"
+                        value={
+                          staffEmail
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setStaffEmail(
+                            event.target.value
+                          )
+                        }
+                        disabled={
+                          addingRole !==
+                          null
+                        }
+                        className="
+                          min-h-12
+                          w-full
+                          rounded-xl
+                          border
+                          border-[#E5E7EB]
+                          bg-white
+                          px-4
+                          py-3
+                          text-sm
+                          font-semibold
+                          text-[#15171A]
+                          outline-none
+                          transition
+                          placeholder:text-[#B2B8C2]
+                          focus:border-[#16A6A1]
+                          focus:ring-4
+                          focus:ring-[#16A6A1]/10
+                          disabled:bg-[#F6F7F3]
+                        "
+                      />
+                    </div>
+
+
+                    <div className="mt-4">
+                      <label
+                        htmlFor="staff-phone"
+                        className="
+                          mb-2
+                          block
+                          text-xs
+                          font-bold
+                          text-[#344054]
+                        "
+                      >
+                        Telefon
+                        <span className="ml-1 font-normal text-[#98A2B3]">
+                          (opcionalno)
+                        </span>
+                      </label>
+
+                      <input
+                        id="staff-phone"
+                        type="tel"
+                        autoComplete="tel"
+                        placeholder="+385..."
+                        value={
+                          staffPhone
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setStaffPhone(
+                            event.target.value
+                          )
+                        }
+                        disabled={
+                          addingRole !==
+                          null
+                        }
+                        className="
+                          min-h-12
+                          w-full
+                          rounded-xl
+                          border
+                          border-[#E5E7EB]
+                          bg-white
+                          px-4
+                          py-3
+                          text-sm
+                          font-semibold
+                          text-[#15171A]
+                          outline-none
+                          transition
+                          placeholder:text-[#B2B8C2]
+                          focus:border-[#16A6A1]
+                          focus:ring-4
+                          focus:ring-[#16A6A1]/10
+                          disabled:bg-[#F6F7F3]
+                        "
+                      />
+                    </div>
+
+
+                    <div
+                      className="
+                        mt-4
+                        rounded-xl
+                        border
+                        border-[#DDE4B2]
+                        bg-[#F8FBE9]
+                        p-3
+                      "
+                    >
+                      <p
+                        className="
+                          text-[11px]
+                          leading-5
+                          text-[#667085]
+                        "
+                      >
+                        Djelatnik će dobiti
+                        vlastiti račun s ulogom
+                        recepcije. Na email će
+                        dobiti poveznicu za
+                        postavljanje svoje lozinke.
+                      </p>
+                    </div>
+
+
+                    <button
+                      type="submit"
+                      disabled={
+                        addingRole !==
+                          null ||
+                        !staffName.trim() ||
+                        !staffEmail.trim()
+                      }
+                      className="
+                        mt-4
+                        inline-flex
+                        min-h-12
+                        w-full
+                        items-center
+                        justify-center
+                        gap-2
+                        rounded-xl
+                        bg-[#111317]
+                        px-5
+                        py-3
+                        text-sm
+                        font-black
+                        text-white
+                        transition-all
+                        hover:-translate-y-0.5
+                        hover:bg-[#202328]
+                        disabled:cursor-not-allowed
+                        disabled:opacity-40
+                        disabled:hover:translate-y-0
+                      "
+                    >
+                      {addingRole ===
+                      "gym_staff"
+                        ? "Kreiranje..."
+                        : "Dodaj djelatnika"}
+
+                      {addingRole !==
+                        "gym_staff" && (
+                        <span
+                          className="
+                            text-[#C8D52B]
+                          "
+                        >
+                          →
+                        </span>
+                      )}
+                    </button>
+                  </form>
+
 
                 </div>
 
@@ -1830,3 +2352,7 @@ function getInitials(
     .join("")
     .toUpperCase() || "K";
 }
+
+
+
+
