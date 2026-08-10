@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useEffect,
@@ -1161,39 +1161,45 @@ function getMembershipStatus(
     new Date();
 
 
-  const endOfToday =
+  const today =
     new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      23,
-      59,
-      59,
-      999
+      Date.UTC(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      )
+    );
+
+
+  const expiryDate =
+    new Date(
+      Date.UTC(
+        validUntil.getUTCFullYear(),
+        validUntil.getUTCMonth(),
+        validUntil.getUTCDate()
+      )
     );
 
 
   if (
-    validUntil <
-    endOfToday
+    expiryDate <
+    today
   ) {
     return "expired";
   }
 
 
   const warningDate =
-    new Date(
-      endOfToday
-    );
+    new Date(today);
 
-  warningDate.setDate(
-    warningDate.getDate() +
+  warningDate.setUTCDate(
+    warningDate.getUTCDate() +
       14
   );
 
 
   if (
-    validUntil <=
+    expiryDate <=
     warningDate
   ) {
     return "expiring";
@@ -1306,6 +1312,7 @@ function formatDate(
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      timeZone: "UTC",
     }
   ).format(date);
 }
@@ -1329,3 +1336,5 @@ function getInitials(
     "Č"
   );
 }
+
+

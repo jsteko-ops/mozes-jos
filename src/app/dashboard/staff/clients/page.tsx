@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useEffect,
@@ -33,10 +33,13 @@ type StaffClient = {
   gymRole?: string;
 
   trainerId?: string | null;
-
   membershipStatus?: string;
 
+  membershipState?: string;
+
   membershipValidUntil?: any;
+
+  membershipAmount?: number | null;
 };
 
 
@@ -782,39 +785,123 @@ function getInitials(
 function getMembershipLabel(
   client: StaffClient
 ) {
-  switch (
-    client.membershipStatus
+  if (
+    client.membershipState === "paused" ||
+    client.membershipStatus === "paused"
   ) {
-    case "active":
-      return {
-        label:
-          "Aktivna",
-        className:
-          "text-emerald-600",
-      };
-
-    case "expired":
-      return {
-        label:
-          "Istekla",
-        className:
-          "text-red-600",
-      };
-
-    case "paused":
-      return {
-        label:
-          "Zamrznuta",
-        className:
-          "text-amber-600",
-      };
-
-    default:
-      return {
-        label:
-          "Nije postavljena",
-        className:
-          "text-[#98A2B3]",
-      };
+    return {
+      label: "Zamrznuta",
+      className: "text-amber-600",
+    };
   }
+
+
+  const validUntil =
+    toMembershipDate(
+      client.membershipValidUntil
+    );
+
+
+  if (!validUntil) {
+    return {
+      label: "Nije postavljena",
+      className: "text-[#98A2B3]",
+    };
+  }
+
+
+  const now =
+    new Date();
+
+
+  const today =
+    new Date(
+      Date.UTC(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      )
+    );
+
+
+  const expiryDate =
+    new Date(
+      Date.UTC(
+        validUntil.getUTCFullYear(),
+        validUntil.getUTCMonth(),
+        validUntil.getUTCDate()
+      )
+    );
+
+
+  if (expiryDate < today) {
+    return {
+      label: "Istekla",
+      className: "text-red-600",
+    };
+  }
+
+
+  const warningDate =
+    new Date(today);
+
+  warningDate.setUTCDate(
+    warningDate.getUTCDate() + 14
+  );
+
+
+  if (expiryDate <= warningDate) {
+    return {
+      label: "Uskoro istječe",
+      className: "text-amber-600",
+    };
+  }
+
+
+  return {
+    label: "Aktivna",
+    className: "text-emerald-600",
+  };
+}
+
+
+function toMembershipDate(
+  value: any
+): Date | null {
+  if (!value) {
+    return null;
+  }
+
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+
+  if (
+    typeof value?.toDate === "function"
+  ) {
+    return value.toDate();
+  }
+
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number"
+  ) {
+    const date =
+      new Date(value);
+
+
+    if (
+      !Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return date;
+    }
+  }
+
+
+  return null;
 }
