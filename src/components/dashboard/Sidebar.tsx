@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import {
@@ -201,6 +201,9 @@ export default function Sidebar() {
 
       case "gym_owner":
         return "Vlasnik teretane";
+
+      case "gym_staff":
+        return "Recepcija / djelatnik";
 
       case "client":
         return "Klijent";
@@ -632,6 +635,68 @@ export default function Sidebar() {
         )}
 
 
+        {/* STAFF */}
+
+        {userProfile.role ===
+          "gym_staff" && (
+          <>
+            <Link
+              href="/dashboard/staff"
+              className={linkClass(
+                "/dashboard/staff"
+              )}
+            >
+              <span className="mr-3">
+                ◫
+              </span>
+
+              Dashboard
+            </Link>
+
+
+            <Link
+              href="/dashboard/staff/clients"
+              className={linkClass(
+                "/dashboard/staff/clients"
+              )}
+            >
+              <span className="mr-3">
+                👥
+              </span>
+
+              Članovi
+            </Link>
+
+
+            <Link
+              href="/dashboard/staff/memberships"
+              className={linkClass(
+                "/dashboard/staff/memberships"
+              )}
+            >
+              <span className="mr-3">
+                💳
+              </span>
+
+              Članarine
+            </Link>
+
+
+            <Link
+              href="/dashboard/settings"
+              className={linkClass(
+                "/dashboard/settings"
+              )}
+            >
+              <span className="mr-3">
+                ⚙️
+              </span>
+
+              Postavke
+            </Link>
+          </>
+        )}
+
         {/* CLIENT */}
 
         {userProfile.role ===
@@ -873,3 +938,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+

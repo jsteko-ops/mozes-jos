@@ -18,6 +18,10 @@ export function redirectByRole(
       router.replace("/dashboard/owner");
       break;
 
+    case "gym_staff":
+      router.replace("/dashboard/staff");
+      break;
+
     case "admin":
       router.replace("/dashboard");
       break;

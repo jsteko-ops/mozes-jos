@@ -1,55 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { getUserRole } from "@/lib/getUserRole";
+import {
+  useAuth,
+} from "@/components/auth/AuthProvider";
+
+type Role =
+  | "admin"
+  | "trainer"
+  | "gym_owner"
+  | "gym_staff"
+  | "client";
+
+type ProtectedRouteProps = {
+  children: React.ReactNode;
+  allowedRoles: Role[];
+};
 
 export default function ProtectedRoute({
-  allowedRoles,
   children,
-}: {
-  allowedRoles: string[];
-  children: React.ReactNode;
-}) {
-  const [loading, setLoading] = useState(true);
-  const [allowed, setAllowed] = useState(false);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      const role = await getUserRole(user.uid);
-
-      if (!role) {
-        window.location.href = "/login";
-        return;
-      }
-
-      if (allowedRoles.includes(role)) {
-        setAllowed(true);
-      } else {
-        setAllowed(false);
-      }
-
-      setLoading(false);
-    });
-
-    return () => unsub();
-  }, [allowedRoles]);
+  allowedRoles,
+}: ProtectedRouteProps) {
+  const {
+    userProfile,
+    loading,
+  } = useAuth();
 
   if (loading) {
-    return <p style={{ padding: 20 }}>Loading...</p>;
+    return null;
   }
 
-  if (!allowed) {
+  if (!userProfile) {
+    return null;
+  }
+
+  if (
+    !allowedRoles.includes(
+      userProfile.role
+    )
+  ) {
     return (
-      <div style={{ padding: 20 }}>
-        <h2>⛔ Access denied</h2>
-        <p>You don’t have permission for this page.</p>
+      <div
+        className="
+          rounded-2xl
+          border
+          border-red-200
+          bg-red-50
+          p-5
+          text-sm
+          font-semibold
+          text-red-700
+        "
+      >
+        Nemate dozvolu za pristup ovoj stranici.
       </div>
     );
   }

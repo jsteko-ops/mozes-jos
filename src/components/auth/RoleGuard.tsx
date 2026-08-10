@@ -6,6 +6,7 @@ type Role =
   | "admin"
   | "trainer"
   | "gym_owner"
+  | "gym_staff"
   | "client";
 
 type RoleGuardProps = {
@@ -17,7 +18,10 @@ export default function RoleGuard({
   children,
   allowedRoles,
 }: RoleGuardProps) {
-  const { userProfile, loading } = useAuth();
+  const {
+    userProfile,
+    loading,
+  } = useAuth();
 
   if (loading) {
     return null;
@@ -27,7 +31,11 @@ export default function RoleGuard({
     return null;
   }
 
-  if (!allowedRoles.includes(userProfile.role)) {
+  if (
+    !allowedRoles.includes(
+      userProfile.role
+    )
+  ) {
     return (
       <div>
         Nemate dozvolu za pristup ovoj stranici.
