@@ -1,33 +1,38 @@
 "use client";
 
 import {
-  FormEvent,
   useState,
+} from "react";
+
+import type {
+  FormEvent,
+  ReactNode,
 } from "react";
 
 import Link from "next/link";
 
+import {
+  useRouter,
+} from "next/navigation";
+
 import RoleGuard from "@/components/auth/RoleGuard";
 
+import {
+  createClient,
+} from "@/lib/createClientForTrainer";
 
-type Gender =
-  | "male"
-  | "female"
-  | "prefer_not_to_say";
-
-type PaymentMethod =
-  | "cash"
-  | "card"
-  | "bank_transfer";
-
-type MembershipDuration =
-  | "1"
-  | "3"
-  | "6"
-  | "12";
+import type {
+  ClientGender,
+  MembershipDuration,
+  PaymentMethod,
+} from "@/lib/createClientForTrainer";
 
 
 export default function NewStaffClientPage() {
+  const router =
+    useRouter();
+
+
   const [
     name,
     setName,
@@ -53,7 +58,7 @@ export default function NewStaffClientPage() {
     gender,
     setGender,
   ] =
-    useState<Gender>(
+    useState<ClientGender>(
       "prefer_not_to_say"
     );
 
@@ -86,7 +91,7 @@ export default function NewStaffClientPage() {
     setMembershipDuration,
   ] =
     useState<MembershipDuration>(
-      "1"
+      1
     );
 
 
@@ -127,10 +132,23 @@ export default function NewStaffClientPage() {
     useState("");
 
 
-  function handleSubmit(
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState(false);
+
+
+  async function handleSubmit(
     event: FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
+
+
+    if (saving) {
+      return;
+    }
+
 
     setError("");
     setInfo("");
@@ -157,32 +175,124 @@ export default function NewStaffClientPage() {
     }
 
 
+    const parsedAmount =
+      Number(amount);
+
+
     if (
       hasInitialPayment &&
       (
         !amount.trim() ||
-        Number(amount) <= 0
+        !Number.isFinite(
+          parsedAmount
+        ) ||
+        parsedAmount <= 0
       )
     ) {
       setError(
-        "Upiši iznos prve članarine."
+        "Upiši ispravan iznos prve članarine."
       );
 
       return;
     }
 
 
-    /*
-     * Spremanje ćemo spojiti na
-     * zaštićeni serverski API.
-     *
-     * Namjerno još ne zapisujemo
-     * direktno u Firestore iz
-     * preglednika.
-     */
-    setInfo(
-      "Forma je spremna. Sljedeći korak je sigurno serversko spremanje člana i članarine."
-    );
+    if (
+      hasInitialPayment &&
+      !membershipStart
+    ) {
+      setError(
+        "Odaberi početak članarine."
+      );
+
+      return;
+    }
+
+
+    try {
+      setSaving(true);
+
+
+      const result =
+        await createClient(
+          {
+            name,
+
+            email,
+
+            phone,
+
+            note,
+
+            gender,
+
+            trainerId:
+              trainerId ||
+              null,
+
+            hasInitialPayment,
+
+            membershipStart:
+              hasInitialPayment
+                ? membershipStart
+                : undefined,
+
+            membershipDuration:
+              hasInitialPayment
+                ? membershipDuration
+                : undefined,
+
+            amount:
+              hasInitialPayment
+                ? parsedAmount
+                : undefined,
+
+            paymentMethod:
+              hasInitialPayment
+                ? paymentMethod
+                : undefined,
+          }
+        );
+
+
+      if (
+        !result.client.uid
+      ) {
+        throw new Error(
+          "Član nije spremljen."
+        );
+      }
+
+
+      setInfo(
+        hasInitialPayment
+          ? "Član i početna uplata uspješno su evidentirani."
+          : "Član je uspješno evidentiran."
+      );
+
+
+      router.push(
+        "/dashboard/staff/clients"
+      );
+
+      router.refresh();
+    } catch (
+      saveError
+    ) {
+      console.error(
+        "Greška kod spremanja člana:",
+        saveError
+      );
+
+
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Člana trenutačno nije moguće spremiti."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
 
@@ -345,8 +455,8 @@ export default function NewStaffClientPage() {
                 sm:text-2xl
               "
             >
-              Račun u aplikaciji nije
-              uvjet za evidenciju člana.
+              Korisnički račun nije uvjet
+              za članstvo u teretani.
             </h2>
 
             <p
@@ -358,11 +468,10 @@ export default function NewStaffClientPage() {
                 text-white/55
               "
             >
-              Člana možemo evidentirati
-              i bez osobnog trenera.
-              Pristup aplikaciji i dodatne
-              funkcije možemo povezati
-              naknadno.
+              Recepcija može evidentirati
+              člana i članarinu bez
+              stvaranja računa za prijavu
+              u aplikaciju.
             </p>
           </div>
         </section>
@@ -387,30 +496,28 @@ export default function NewStaffClientPage() {
               shadow-sm
             "
           >
-            <div>
-              <p
-                className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[0.16em]
-                  text-[#16A6A1]
-                "
-              >
-                Osnovni podaci
-              </p>
+            <p
+              className="
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.16em]
+                text-[#16A6A1]
+              "
+            >
+              Osnovni podaci
+            </p>
 
-              <h2
-                className="
-                  mt-1
-                  text-xl
-                  font-black
-                  text-[#15171A]
-                "
-              >
-                Podaci člana
-              </h2>
-            </div>
+            <h2
+              className="
+                mt-1
+                text-xl
+                font-black
+                text-[#15171A]
+              "
+            >
+              Podaci člana
+            </h2>
 
 
             <div
@@ -439,6 +546,9 @@ export default function NewStaffClientPage() {
                   className={
                     inputClass
                   }
+                  disabled={
+                    saving
+                  }
                 />
               </Field>
 
@@ -460,13 +570,16 @@ export default function NewStaffClientPage() {
                   className={
                     inputClass
                   }
+                  disabled={
+                    saving
+                  }
                 />
               </Field>
 
 
               <Field
                 label="Email"
-                helper="Može ostati prazan ako član još nema korisnički račun."
+                helper="Nije obavezan za člana koji nema račun u aplikaciji."
               >
                 <input
                   type="email"
@@ -482,6 +595,9 @@ export default function NewStaffClientPage() {
                   className={
                     inputClass
                   }
+                  disabled={
+                    saving
+                  }
                 />
               </Field>
 
@@ -495,11 +611,15 @@ export default function NewStaffClientPage() {
                     event
                   ) =>
                     setGender(
-                      event.target.value as Gender
+                      event.target
+                        .value as ClientGender
                     )
                   }
                   className={
                     inputClass
+                  }
+                  disabled={
+                    saving
                   }
                 >
                   <option value="male">
@@ -511,7 +631,7 @@ export default function NewStaffClientPage() {
                   </option>
 
                   <option value="prefer_not_to_say">
-                    Ne želi se izjasniti
+                    Ne želim se izjasniti
                   </option>
                 </select>
               </Field>
@@ -531,44 +651,41 @@ export default function NewStaffClientPage() {
               shadow-sm
             "
           >
-            <div>
-              <p
-                className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[0.16em]
-                  text-[#C8D52B]
-                "
-              >
-                Trener
-              </p>
+            <p
+              className="
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.16em]
+                text-[#C8D52B]
+              "
+            >
+              Trener
+            </p>
 
-              <h2
-                className="
-                  mt-1
-                  text-xl
-                  font-black
-                  text-[#15171A]
-                "
-              >
-                Dodjela trenera
-              </h2>
+            <h2
+              className="
+                mt-1
+                text-xl
+                font-black
+                text-[#15171A]
+              "
+            >
+              Dodjela trenera
+            </h2>
 
-              <p
-                className="
-                  mt-2
-                  text-sm
-                  leading-6
-                  text-[#667085]
-                "
-              >
-                Trener nije obavezan.
-                Samostalni član može se
-                treneru dodijeliti bilo
-                kada kasnije.
-              </p>
-            </div>
+            <p
+              className="
+                mt-2
+                text-sm
+                leading-6
+                text-[#667085]
+              "
+            >
+              Trener nije obavezan.
+              Samostalnom članu trener
+              se može dodijeliti kasnije.
+            </p>
 
 
             <div
@@ -584,14 +701,12 @@ export default function NewStaffClientPage() {
               <label
                 className="
                   flex
-                  cursor-pointer
                   items-start
                   gap-3
                 "
               >
                 <input
                   type="radio"
-                  name="trainer"
                   checked={
                     trainerId === ""
                   }
@@ -602,6 +717,9 @@ export default function NewStaffClientPage() {
                     mt-1
                     accent-[#16A6A1]
                   "
+                  disabled={
+                    saving
+                  }
                 />
 
                 <span>
@@ -625,8 +743,7 @@ export default function NewStaffClientPage() {
                       text-[#667085]
                     "
                   >
-                    Član vježba
-                    samostalno.
+                    Član vježba samostalno.
                   </span>
                 </span>
               </label>
@@ -662,13 +779,14 @@ export default function NewStaffClientPage() {
                   text-[#667085]
                 "
               >
-                Popis trenera spojit
-                ćemo sa sigurnim API-jem
-                u sljedećem koraku.
+                Popis trenera teretane
+                spajamo u sljedećem
+                koraku.
               </p>
 
               <select
                 value={trainerId}
+                disabled
                 onChange={(
                   event
                 ) =>
@@ -676,7 +794,6 @@ export default function NewStaffClientPage() {
                     event.target.value
                   )
                 }
-                disabled
                 className={`
                   ${inputClass}
                   mt-4
@@ -704,30 +821,28 @@ export default function NewStaffClientPage() {
               shadow-sm
             "
           >
-            <div>
-              <p
-                className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[0.16em]
-                  text-[#16A6A1]
-                "
-              >
-                Članarina
-              </p>
+            <p
+              className="
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.16em]
+                text-[#16A6A1]
+              "
+            >
+              Članarina
+            </p>
 
-              <h2
-                className="
-                  mt-1
-                  text-xl
-                  font-black
-                  text-[#15171A]
-                "
-              >
-                Početno članstvo
-              </h2>
-            </div>
+            <h2
+              className="
+                mt-1
+                text-xl
+                font-black
+                text-[#15171A]
+              "
+            >
+              Početno članstvo
+            </h2>
 
 
             <div
@@ -742,6 +857,9 @@ export default function NewStaffClientPage() {
             >
               <button
                 type="button"
+                disabled={
+                  saving
+                }
                 onClick={() =>
                   setHasInitialPayment(
                     true
@@ -767,6 +885,9 @@ export default function NewStaffClientPage() {
 
               <button
                 type="button"
+                disabled={
+                  saving
+                }
                 onClick={() =>
                   setHasInitialPayment(
                     false
@@ -820,6 +941,9 @@ export default function NewStaffClientPage() {
                     className={
                       inputClass
                     }
+                    disabled={
+                      saving
+                    }
                   />
                 </Field>
 
@@ -836,26 +960,31 @@ export default function NewStaffClientPage() {
                       event
                     ) =>
                       setMembershipDuration(
-                        event.target.value as MembershipDuration
+                        Number(
+                          event.target.value
+                        ) as MembershipDuration
                       )
                     }
                     className={
                       inputClass
                     }
+                    disabled={
+                      saving
+                    }
                   >
-                    <option value="1">
+                    <option value={1}>
                       1 mjesec
                     </option>
 
-                    <option value="3">
+                    <option value={3}>
                       3 mjeseca
                     </option>
 
-                    <option value="6">
+                    <option value={6}>
                       6 mjeseci
                     </option>
 
-                    <option value="12">
+                    <option value={12}>
                       12 mjeseci
                     </option>
                   </select>
@@ -883,6 +1012,9 @@ export default function NewStaffClientPage() {
                     className={
                       inputClass
                     }
+                    disabled={
+                      saving
+                    }
                   />
                 </Field>
 
@@ -899,11 +1031,15 @@ export default function NewStaffClientPage() {
                       event
                     ) =>
                       setPaymentMethod(
-                        event.target.value as PaymentMethod
+                        event.target
+                          .value as PaymentMethod
                       )
                     }
                     className={
                       inputClass
+                    }
+                    disabled={
+                      saving
                     }
                   >
                     <option value="cash">
@@ -951,7 +1087,7 @@ export default function NewStaffClientPage() {
                   "
                 >
                   Uplata se može
-                  evidentirati kasnije
+                  evidentirati naknadno
                   na recepciji.
                 </p>
               </div>
@@ -990,6 +1126,9 @@ export default function NewStaffClientPage() {
                   ${inputClass}
                   resize-y
                 `}
+                disabled={
+                  saving
+                }
               />
             </Field>
           </section>
@@ -1070,8 +1209,12 @@ export default function NewStaffClientPage() {
               Odustani
             </Link>
 
+
             <button
               type="submit"
+              disabled={
+                saving
+              }
               className="
                 inline-flex
                 min-h-12
@@ -1088,13 +1231,19 @@ export default function NewStaffClientPage() {
                 transition-all
                 hover:-translate-y-0.5
                 hover:bg-[#128D89]
+                disabled:cursor-not-allowed
+                disabled:opacity-60
               "
             >
-              Spremi člana
+              {saving
+                ? "Spremanje..."
+                : "Spremi člana"}
 
-              <span>
-                →
-              </span>
+              {!saving && (
+                <span>
+                  →
+                </span>
+              )}
             </button>
           </div>
 
@@ -1114,14 +1263,10 @@ function Field({
   label: string;
   helper?: string;
   required?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <label
-      className="
-        block
-      "
-    >
+    <label className="block">
       <span
         className="
           block
@@ -1158,11 +1303,7 @@ function Field({
         </span>
       )}
 
-      <div
-        className="
-          mt-2
-        "
-      >
+      <div className="mt-2">
         {children}
       </div>
     </label>
@@ -1188,6 +1329,9 @@ const inputClass = `
   focus:border-[#16A6A1]
   focus:ring-4
   focus:ring-[#16A6A1]/10
+  disabled:cursor-not-allowed
+  disabled:bg-[#F7F8F5]
+  disabled:opacity-70
 `;
 
 
