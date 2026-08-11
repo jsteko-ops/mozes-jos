@@ -12,6 +12,15 @@ import RoleGuard from "@/components/auth/RoleGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getGymMembers } from "@/lib/getGymMembers";
 
+import {
+  recordMembershipPayment,
+} from "@/lib/recordMembershipPayment";
+
+import type {
+  MembershipDuration,
+  PaymentMethod,
+} from "@/lib/createClientForTrainer";
+
 
 type StaffMember = {
   uid: string;
@@ -86,6 +95,75 @@ export default function StaffMembershipsPage() {
     useState<
       "all" | MembershipStatus
     >("all");
+
+
+  const [
+    paymentMember,
+    setPaymentMember,
+  ] =
+    useState<StaffMember | null>(
+      null
+    );
+
+
+  const [
+    paymentStart,
+    setPaymentStart,
+  ] =
+    useState("");
+
+
+  const [
+    paymentDuration,
+    setPaymentDuration,
+  ] =
+    useState<MembershipDuration>(
+      1
+    );
+
+
+  const [
+    paymentAmount,
+    setPaymentAmount,
+  ] =
+    useState("");
+
+
+  const [
+    paymentMethod,
+    setPaymentMethod,
+  ] =
+    useState<PaymentMethod>(
+      "cash"
+    );
+
+
+  const [
+    paymentNote,
+    setPaymentNote,
+  ] =
+    useState("");
+
+
+  const [
+    savingPayment,
+    setSavingPayment,
+  ] =
+    useState(false);
+
+
+  const [
+    paymentError,
+    setPaymentError,
+  ] =
+    useState("");
+
+
+  const [
+    paymentSuccess,
+    setPaymentSuccess,
+  ] =
+    useState("");
 
 
   useEffect(() => {
@@ -269,6 +347,181 @@ export default function StaffMembershipsPage() {
       filter,
       search,
     ]);
+
+
+  function openPaymentForm(
+    member: StaffMember
+  ) {
+    const now =
+      new Date();
+
+    const today = [
+      now.getFullYear(),
+      String(
+        now.getMonth() + 1
+      ).padStart(2, "0"),
+      String(
+        now.getDate()
+      ).padStart(2, "0"),
+    ].join("-");
+
+
+    setPaymentMember(
+      member
+    );
+
+    setPaymentStart(
+      today
+    );
+
+    setPaymentDuration(
+      1
+    );
+
+    setPaymentAmount(
+      typeof member.membershipAmount ===
+        "number"
+        ? member.membershipAmount.toFixed(
+            2
+          )
+        : ""
+    );
+
+    setPaymentMethod(
+      "cash"
+    );
+
+    setPaymentNote(
+      ""
+    );
+
+    setPaymentError(
+      ""
+    );
+
+    setPaymentSuccess(
+      ""
+    );
+  }
+
+
+  async function submitPayment() {
+    if (!paymentMember) {
+      return;
+    }
+
+
+    const parsedAmount =
+      Number(paymentAmount);
+
+
+    if (!paymentStart) {
+      setPaymentError(
+        "Odaberi datum početka članarine."
+      );
+
+      return;
+    }
+
+
+    if (
+      !Number.isFinite(
+        parsedAmount
+      ) ||
+      parsedAmount <= 0
+    ) {
+      setPaymentError(
+        "Upiši ispravan iznos uplate."
+      );
+
+      return;
+    }
+
+
+    try {
+      setSavingPayment(
+        true
+      );
+
+      setPaymentError(
+        ""
+      );
+
+      setPaymentSuccess(
+        ""
+      );
+
+
+      const result =
+        await recordMembershipPayment(
+          {
+            memberId:
+              paymentMember.uid,
+
+            membershipStart:
+              paymentStart,
+
+            membershipDuration:
+              paymentDuration,
+
+            amount:
+              parsedAmount,
+
+            paymentMethod,
+
+            note:
+              paymentNote,
+          }
+        );
+
+
+      setMembers(
+        (currentMembers) =>
+          currentMembers.map(
+            (member) =>
+              member.uid ===
+              paymentMember.uid
+                ? {
+                    ...member,
+
+                    membershipState:
+                      "active",
+
+                    membershipStatus:
+                      "active",
+
+                    membershipAmount:
+                      result.membership
+                        .amount,
+
+                    membershipValidUntil:
+                      new Date(
+                        result.membership
+                          .validUntil
+                      ),
+                  }
+                : member
+          )
+      );
+
+
+      setPaymentSuccess(
+        "Uplata je uspješno evidentirana."
+      );
+    } catch (
+      submitError: unknown
+    ) {
+      setPaymentError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Uplatu nije moguće evidentirati."
+      );
+    } finally {
+      setSavingPayment(
+        false
+      );
+    }
+  }
 
 
   return (
@@ -794,18 +1047,539 @@ export default function StaffMembershipsPage() {
               {visibleMembers.map(
                 (member) => (
                   <MembershipRow
-                    key={
-                      member.uid
-                    }
-                    member={
-                      member
-                    }
-                  />
+  key={member.uid}
+  member={member}
+  onPayment={
+    openPaymentForm
+  }
+/>
                 )
               )}
             </section>
           )}
 
+
+
+        {/* PAYMENT MODAL */}
+
+        {paymentMember && (
+          <div
+            className="
+              fixed
+              inset-0
+              z-50
+              flex
+              items-center
+              justify-center
+              bg-black/55
+              p-4
+            "
+          >
+            <div
+              className="
+                max-h-[92vh]
+                w-full
+                max-w-2xl
+                overflow-y-auto
+                rounded-[28px]
+                bg-white
+                p-6
+                shadow-2xl
+                sm:p-8
+              "
+            >
+              <div
+                className="
+                  flex
+                  items-start
+                  justify-between
+                  gap-4
+                "
+              >
+                <div>
+                  <p
+                    className="
+                      text-xs
+                      font-black
+                      uppercase
+                      tracking-[0.14em]
+                      text-[#16A6A1]
+                    "
+                  >
+                    Članarina
+                  </p>
+
+                  <h2
+                    className="
+                      mt-1
+                      text-2xl
+                      font-black
+                      text-[#15171A]
+                    "
+                  >
+                    Evidentiraj uplatu
+                  </h2>
+
+                  <p
+                    className="
+                      mt-2
+                      text-sm
+                      text-[#667085]
+                    "
+                  >
+                    {getMemberName(
+                      paymentMember
+                    )}
+                  </p>
+                </div>
+
+
+                <button
+                  type="button"
+                  disabled={
+                    savingPayment
+                  }
+                  onClick={() =>
+                    setPaymentMember(
+                      null
+                    )
+                  }
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-[#F4F6F2]
+                    text-lg
+                    font-black
+                    text-[#344054]
+                    transition
+                    hover:bg-[#E9ECE5]
+                    disabled:opacity-50
+                  "
+                  aria-label="Zatvori"
+                >
+                  ×
+                </button>
+              </div>
+
+
+              <form
+                className="
+                  mt-7
+                  space-y-5
+                "
+                onSubmit={(
+                  event
+                ) => {
+                  event.preventDefault();
+
+                  void submitPayment();
+                }}
+              >
+                <div
+                  className="
+                    grid
+                    gap-4
+                    sm:grid-cols-2
+                  "
+                >
+                  <label
+                    className="
+                      space-y-2
+                    "
+                  >
+                    <span
+                      className="
+                        text-xs
+                        font-black
+                        uppercase
+                        tracking-[0.08em]
+                        text-[#667085]
+                      "
+                    >
+                      Datum početka
+                    </span>
+
+                    <input
+                      type="date"
+                      value={
+                        paymentStart
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setPaymentStart(
+                          event.target
+                            .value
+                        )
+                      }
+                      required
+                      className="
+                        min-h-12
+                        w-full
+                        rounded-xl
+                        border
+                        border-[#D8DDD0]
+                        bg-white
+                        px-4
+                        text-sm
+                        font-semibold
+                        text-[#15171A]
+                        outline-none
+                        transition
+                        focus:border-[#16A6A1]
+                        focus:ring-4
+                        focus:ring-[#16A6A1]/10
+                      "
+                    />
+                  </label>
+
+
+                  <label
+                    className="
+                      space-y-2
+                    "
+                  >
+                    <span
+                      className="
+                        text-xs
+                        font-black
+                        uppercase
+                        tracking-[0.08em]
+                        text-[#667085]
+                      "
+                    >
+                      Trajanje
+                    </span>
+
+                    <select
+                      value={
+                        paymentDuration
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setPaymentDuration(
+                          Number(
+                            event.target
+                              .value
+                          ) as MembershipDuration
+                        )
+                      }
+                      className="
+                        min-h-12
+                        w-full
+                        rounded-xl
+                        border
+                        border-[#D8DDD0]
+                        bg-white
+                        px-4
+                        text-sm
+                        font-semibold
+                        text-[#15171A]
+                        outline-none
+                        transition
+                        focus:border-[#16A6A1]
+                        focus:ring-4
+                        focus:ring-[#16A6A1]/10
+                      "
+                    >
+                      <option value={1}>
+                        1 mjesec
+                      </option>
+
+                      <option value={3}>
+                        3 mjeseca
+                      </option>
+
+                      <option value={6}>
+                        6 mjeseci
+                      </option>
+
+                      <option value={12}>
+                        12 mjeseci
+                      </option>
+                    </select>
+                  </label>
+
+
+                  <label
+                    className="
+                      space-y-2
+                    "
+                  >
+                    <span
+                      className="
+                        text-xs
+                        font-black
+                        uppercase
+                        tracking-[0.08em]
+                        text-[#667085]
+                      "
+                    >
+                      Iznos (€)
+                    </span>
+
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={
+                        paymentAmount
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setPaymentAmount(
+                          event.target
+                            .value
+                        )
+                      }
+                      required
+                      className="
+                        min-h-12
+                        w-full
+                        rounded-xl
+                        border
+                        border-[#D8DDD0]
+                        bg-white
+                        px-4
+                        text-sm
+                        font-semibold
+                        text-[#15171A]
+                        outline-none
+                        transition
+                        focus:border-[#16A6A1]
+                        focus:ring-4
+                        focus:ring-[#16A6A1]/10
+                      "
+                    />
+                  </label>
+
+
+                  <label
+                    className="
+                      space-y-2
+                    "
+                  >
+                    <span
+                      className="
+                        text-xs
+                        font-black
+                        uppercase
+                        tracking-[0.08em]
+                        text-[#667085]
+                      "
+                    >
+                      Način plaćanja
+                    </span>
+
+                    <select
+                      value={
+                        paymentMethod
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setPaymentMethod(
+                          event.target
+                            .value as PaymentMethod
+                        )
+                      }
+                      className="
+                        min-h-12
+                        w-full
+                        rounded-xl
+                        border
+                        border-[#D8DDD0]
+                        bg-white
+                        px-4
+                        text-sm
+                        font-semibold
+                        text-[#15171A]
+                        outline-none
+                        transition
+                        focus:border-[#16A6A1]
+                        focus:ring-4
+                        focus:ring-[#16A6A1]/10
+                      "
+                    >
+                      <option value="cash">
+                        Gotovina
+                      </option>
+
+                      <option value="card">
+                        Kartica
+                      </option>
+
+                      <option value="bank_transfer">
+                        Transakcija
+                      </option>
+                    </select>
+                  </label>
+                </div>
+
+
+                <label
+                  className="
+                    block
+                    space-y-2
+                  "
+                >
+                  <span
+                    className="
+                      text-xs
+                      font-black
+                      uppercase
+                      tracking-[0.08em]
+                      text-[#667085]
+                    "
+                  >
+                    Napomena
+                  </span>
+
+                  <textarea
+                    rows={3}
+                    maxLength={500}
+                    value={
+                      paymentNote
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setPaymentNote(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Opcionalna napomena uz uplatu..."
+                    className="
+                      w-full
+                      resize-none
+                      rounded-xl
+                      border
+                      border-[#D8DDD0]
+                      bg-white
+                      px-4
+                      py-3
+                      text-sm
+                      font-semibold
+                      text-[#15171A]
+                      outline-none
+                      transition
+                      focus:border-[#16A6A1]
+                      focus:ring-4
+                      focus:ring-[#16A6A1]/10
+                    "
+                  />
+                </label>
+
+
+                {paymentError && (
+                  <div
+                    className="
+                      rounded-xl
+                      border
+                      border-red-200
+                      bg-red-50
+                      px-4
+                      py-3
+                      text-sm
+                      font-bold
+                      text-red-700
+                    "
+                  >
+                    {paymentError}
+                  </div>
+                )}
+
+
+                {paymentSuccess && (
+                  <div
+                    className="
+                      rounded-xl
+                      border
+                      border-emerald-200
+                      bg-emerald-50
+                      px-4
+                      py-3
+                      text-sm
+                      font-bold
+                      text-emerald-700
+                    "
+                  >
+                    {paymentSuccess}
+                  </div>
+                )}
+
+
+                <div
+                  className="
+                    flex
+                    flex-col-reverse
+                    gap-3
+                    pt-2
+                    sm:flex-row
+                    sm:justify-end
+                  "
+                >
+                  <button
+                    type="button"
+                    disabled={
+                      savingPayment
+                    }
+                    onClick={() =>
+                      setPaymentMember(
+                        null
+                      )
+                    }
+                    className="
+                      min-h-12
+                      rounded-xl
+                      border
+                      border-[#D8DDD0]
+                      px-5
+                      text-sm
+                      font-black
+                      text-[#344054]
+                      transition
+                      hover:bg-[#F4F6F2]
+                      disabled:opacity-50
+                    "
+                  >
+                    Zatvori
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={
+                      savingPayment
+                    }
+                    className="
+                      min-h-12
+                      rounded-xl
+                      bg-[#C8D52B]
+                      px-6
+                      text-sm
+                      font-black
+                      text-[#111317]
+                      transition
+                      hover:bg-[#D5E22D]
+                      disabled:cursor-not-allowed
+                      disabled:opacity-60
+                    "
+                  >
+                    {savingPayment
+                      ? "Spremanje..."
+                      : "Spremi uplatu"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </RoleGuard>
   );
@@ -895,8 +1669,12 @@ function StatCard({
 
 function MembershipRow({
   member,
+  onPayment,
 }: {
   member: StaffMember;
+  onPayment: (
+    member: StaffMember
+  ) => void;
 }) {
   const status =
     getMembershipStatus(
@@ -1048,13 +1826,13 @@ function MembershipRow({
 
         <button
           type="button"
-          disabled
-          title="Spajamo sigurno serversko evidentiranje uplata u sljedećem koraku."
+          onClick={() =>
+            onPayment(member)
+          }
           className="
             inline-flex
             min-h-12
             shrink-0
-            cursor-not-allowed
             items-center
             justify-center
             rounded-xl
@@ -1064,7 +1842,9 @@ function MembershipRow({
             text-sm
             font-black
             text-[#111317]
-            opacity-60
+            transition
+            hover:-translate-y-0.5
+            hover:bg-[#D5E22D]
           "
         >
           + Evidentiraj uplatu
@@ -1336,5 +2116,10 @@ function getInitials(
     "Č"
   );
 }
+
+
+
+
+
 
 
