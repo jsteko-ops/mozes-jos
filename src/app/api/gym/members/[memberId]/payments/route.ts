@@ -356,6 +356,595 @@ function addMonths(
   );
 }
 
+export async function GET(
+  request: Request,
+  context: {
+    params: Promise<{
+      memberId: string;
+    }>;
+  }
+) {
+  try {
+    const {
+      memberId,
+    } = await context.params;
+
+
+    if (
+      !memberId ||
+      memberId.includes("/") ||
+      memberId.length > 200
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Član nije valjan.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+
+    const token =
+      getToken(
+        request
+      );
+
+
+    if (!token) {
+      return NextResponse.json(
+        {
+          error:
+            "Moraš biti prijavljen.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+
+    let decodedToken;
+
+
+    try {
+      decodedToken =
+        await adminAuth
+          .verifyIdToken(
+            token,
+            true
+          );
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Prijava korisnika nije valjana.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+
+    const recorderSnapshot =
+      await adminDb
+        .collection(
+          "users"
+        )
+        .doc(
+          decodedToken.uid
+        )
+        .get();
+
+
+    if (
+      !recorderSnapshot.exists
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Korisnički profil nije pronađen.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+
+    const recorderData =
+      recorderSnapshot.data();
+
+
+    const recorderRole =
+      recorderData?.role;
+
+
+    if (
+      !isRecorderRole(
+        recorderRole
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Nemaš dozvolu za pregled uplata.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+
+    const gymId =
+      typeof recorderData?.gymId ===
+        "string" &&
+      recorderData.gymId.trim()
+        ? recorderData.gymId.trim()
+        : null;
+
+
+    if (!gymId) {
+      return NextResponse.json(
+        {
+          error:
+            "Račun nije povezan s teretanom.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+
+    const gymSnapshot =
+      await adminDb
+        .collection(
+          "gyms"
+        )
+        .doc(
+          gymId
+        )
+        .get();
+
+
+    if (
+      !gymSnapshot.exists
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Teretana nije pronađena.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+
+    const gymData =
+      gymSnapshot.data();
+
+
+    if (
+      recorderRole ===
+        "gym_owner" &&
+      gymData?.ownerId !==
+        decodedToken.uid
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Nemaš dozvolu za ovu teretanu.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+
+    if (
+      recorderRole ===
+      "gym_staff"
+    ) {
+      const staffSnapshot =
+        await adminDb
+          .collection(
+            "gymMembers"
+          )
+          .doc(
+            gymId
+          )
+          .collection(
+            "members"
+          )
+          .doc(
+            decodedToken.uid
+          )
+          .get();
+
+
+      const staffData =
+        staffSnapshot.data();
+
+
+      const staffRole =
+        staffData?.gymRole ??
+        staffData?.role;
+
+
+      if (
+        !staffSnapshot.exists ||
+        staffRole !==
+          "gym_staff"
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Djelatnik nije povezan s ovom teretanom.",
+          },
+          {
+            status: 403,
+          }
+        );
+      }
+    }
+
+
+    const memberReference =
+      adminDb
+        .collection(
+          "gymMembers"
+        )
+        .doc(
+          gymId
+        )
+        .collection(
+          "members"
+        )
+        .doc(
+          memberId
+        );
+
+
+    const memberSnapshot =
+      await memberReference
+        .get();
+
+
+    if (
+      !memberSnapshot.exists
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Član nije pronađen.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+
+    const memberData =
+      memberSnapshot.data();
+
+
+    const memberRole =
+      memberData?.gymRole ??
+      memberData?.role;
+
+
+    if (
+      memberRole !==
+      "client"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Odabrani korisnik nije član teretane.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+
+    if (
+      typeof memberData?.gymId ===
+        "string" &&
+      memberData.gymId &&
+      memberData.gymId !==
+        gymId
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Član ne pripada ovoj teretani.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+
+    const paymentsSnapshot =
+      await memberReference
+        .collection(
+          "payments"
+        )
+        .orderBy(
+          "paidAt",
+          "desc"
+        )
+        .limit(100)
+        .get();
+
+
+    const recorderIds =
+      Array.from(
+        new Set(
+          paymentsSnapshot.docs
+            .map(
+              (document) =>
+                document.data()
+                  ?.recordedBy
+            )
+            .filter(
+              (
+                value
+              ): value is string =>
+                typeof value ===
+                  "string" &&
+                value.length > 0
+            )
+        )
+      );
+
+
+    const recorderNames =
+      new Map<
+        string,
+        string
+      >();
+
+
+    await Promise.all(
+      recorderIds.map(
+        async (
+          recorderId
+        ) => {
+          const snapshot =
+            await adminDb
+              .collection(
+                "users"
+              )
+              .doc(
+                recorderId
+              )
+              .get();
+
+
+          const data =
+            snapshot.data();
+
+
+          const name =
+            typeof data?.name ===
+              "string" &&
+            data.name.trim()
+              ? data.name.trim()
+              : typeof data?.displayName ===
+                    "string" &&
+                  data.displayName.trim()
+                ? data.displayName.trim()
+                : typeof data?.email ===
+                      "string" &&
+                    data.email.trim()
+                  ? data.email.trim()
+                  : recorderId;
+
+
+          recorderNames.set(
+            recorderId,
+            name
+          );
+        }
+      )
+    );
+
+
+    const payments =
+      paymentsSnapshot.docs.map(
+        (document) => {
+          const data =
+            document.data();
+
+
+          const recordedBy =
+            typeof data.recordedBy ===
+              "string"
+              ? data.recordedBy
+              : null;
+
+
+          return {
+            id:
+              document.id,
+
+            amount:
+              typeof data.amount ===
+                "number"
+                ? data.amount
+                : null,
+
+            method:
+              typeof data.method ===
+                "string"
+                ? data.method
+                : null,
+
+            status:
+              typeof data.status ===
+                "string"
+                ? data.status
+                : null,
+
+            durationMonths:
+              typeof data.durationMonths ===
+                "number"
+                ? data.durationMonths
+                : null,
+
+            periodFrom:
+              toDate(
+                data.periodFrom
+              )?.toISOString() ??
+              null,
+
+            periodUntil:
+              toDate(
+                data.periodUntil
+              )?.toISOString() ??
+              null,
+
+            paidAt:
+              toDate(
+                data.paidAt
+              )?.toISOString() ??
+              null,
+
+            note:
+              typeof data.note ===
+                "string"
+                ? data.note
+                : "",
+
+            recordedBy,
+
+            recordedByRole:
+              typeof data.recordedByRole ===
+                "string"
+                ? data.recordedByRole
+                : null,
+
+            recordedByName:
+              recordedBy
+                ? recorderNames.get(
+                    recordedBy
+                  ) ??
+                  recordedBy
+                : null,
+          };
+        }
+      );
+
+
+    return NextResponse.json(
+      {
+        member: {
+          uid:
+            memberSnapshot.id,
+
+          name:
+            typeof memberData?.name ===
+              "string"
+              ? memberData.name
+              : null,
+
+          displayName:
+            typeof memberData?.displayName ===
+              "string"
+              ? memberData.displayName
+              : null,
+
+          email:
+            typeof memberData?.email ===
+              "string"
+              ? memberData.email
+              : null,
+
+          phone:
+            typeof memberData?.phone ===
+              "string"
+              ? memberData.phone
+              : null,
+
+          trainerId:
+            typeof memberData?.trainerId ===
+              "string"
+              ? memberData.trainerId
+              : null,
+
+          membershipState:
+            typeof memberData?.membershipState ===
+              "string"
+              ? memberData.membershipState
+              : null,
+
+          membershipStatus:
+            typeof memberData?.membershipStatus ===
+              "string"
+              ? memberData.membershipStatus
+              : null,
+
+          membershipAmount:
+            typeof memberData?.membershipAmount ===
+              "number"
+              ? memberData.membershipAmount
+              : null,
+
+          membershipDurationMonths:
+            typeof memberData?.membershipDurationMonths ===
+              "number"
+              ? memberData.membershipDurationMonths
+              : null,
+
+          membershipValidFrom:
+            toDate(
+              memberData
+                ?.membershipValidFrom
+            )?.toISOString() ??
+            null,
+
+          membershipValidUntil:
+            toDate(
+              memberData
+                ?.membershipValidUntil
+            )?.toISOString() ??
+            null,
+        },
+
+        payments,
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Greška kod učitavanja povijesti uplata:",
+      error
+    );
+
+
+    return NextResponse.json(
+      {
+        error:
+          "Povijest uplata trenutno nije moguće učitati.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
 
 export async function POST(
   request: Request,
