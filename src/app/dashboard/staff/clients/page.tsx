@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   useEffect,
@@ -70,21 +70,173 @@ export default function StaffClientsPage() {
   ] =
     useState("");
 
+const [
+search,
+setSearch,
+] =
+useState("");
 
-  const sortedClients =
-    useMemo(
-      () =>
-        [...clients].sort(
-          (a, b) =>
-            getClientName(a)
-              .localeCompare(
-                getClientName(b),
+const [
+membershipFilter,
+setMembershipFilter,
+] =
+useState<
+  | "all"
+  | "active"
+  | "expiring"
+  | "expired"
+  | "none"
+  | "paused"
+>("all");
+
+const [
+trainerFilter,
+setTrainerFilter,
+] =
+useState<
+  | "all"
+  | "with"
+  | "without"
+>("all");
+
+
+const sortedClients =
+useMemo(
+() => {
+  const cleanSearch =
+    search
+      .trim()
+      .toLocaleLowerCase(
+        "hr"
+      );
+
+
+  return [...clients]
+    .filter(
+      (
+        client
+      ) => {
+        if (
+          cleanSearch
+        ) {
+          const searchableText =
+            [
+              getClientName(
+                client
+              ),
+
+              client.email ||
+                "",
+
+              client.phone ||
+                "",
+            ]
+              .join(" ")
+              .toLocaleLowerCase(
                 "hr"
-              )
-        ),
-      [clients]
-    );
+              );
 
+
+          if (
+            !searchableText.includes(
+              cleanSearch
+            )
+          ) {
+            return false;
+          }
+        }
+
+
+        if (
+          trainerFilter ===
+            "with" &&
+          !client.trainerId
+        ) {
+          return false;
+        }
+
+
+        if (
+          trainerFilter ===
+            "without" &&
+          client.trainerId
+        ) {
+          return false;
+        }
+
+
+        if (
+          membershipFilter !==
+          "all"
+        ) {
+          const membership =
+            getMembershipLabel(
+              client
+            );
+
+
+          const statusMatches =
+            membershipFilter ===
+              "active"
+              ? membership.label ===
+                "Aktivna"
+
+              : membershipFilter ===
+                  "expiring"
+                ? membership.label ===
+                  "Uskoro istječe"
+
+                : membershipFilter ===
+                    "expired"
+                  ? membership.label ===
+                    "Istekla"
+
+                  : membershipFilter ===
+                      "none"
+                    ? membership.label ===
+                      "Nije postavljena"
+
+                    : membershipFilter ===
+                        "paused"
+                      ? membership.label ===
+                        "Zamrznuta"
+
+                      : true;
+
+
+          if (
+            !statusMatches
+          ) {
+            return false;
+          }
+        }
+
+
+        return true;
+      }
+    )
+    .sort(
+      (
+        a,
+        b
+      ) =>
+        getClientName(
+          a
+        ).localeCompare(
+          getClientName(
+            b
+          ),
+          "hr"
+        )
+    );
+},
+[
+  clients,
+  search,
+  membershipFilter,
+  trainerFilter,
+]
+);
 
   useEffect(() => {
     let cancelled =
@@ -461,8 +613,273 @@ export default function StaffClientsPage() {
             </section>
           )}
 
+{/* FILTERS */}
 
-        {/* CLIENTS */}
+{!loading &&
+  !error &&
+  clients.length > 0 && (
+    <section
+      className="
+        rounded-[24px]
+        border
+        border-[#E5E7EB]
+        bg-white
+        p-4
+        shadow-sm
+      "
+    >
+      <div
+        className="
+          grid
+          gap-3
+          lg:grid-cols-[1fr_220px_200px]
+        "
+      >
+        <input
+          type="search"
+          value={
+            search
+          }
+          onChange={(
+            event
+          ) =>
+            setSearch(
+              event.target.value
+            )
+          }
+          placeholder="Pretraži po imenu, e-mailu ili telefonu..."
+          className="
+            min-h-12
+            w-full
+            rounded-xl
+            border
+            border-[#D0D5DD]
+            bg-white
+            px-4
+            text-sm
+            font-semibold
+            text-[#15171A]
+            outline-none
+            transition
+            placeholder:text-[#98A2B3]
+            focus:border-[#16A6A1]
+            focus:ring-2
+            focus:ring-[#16A6A1]/15
+          "
+        />
+
+        <select
+          value={
+            membershipFilter
+          }
+          onChange={(
+            event
+          ) =>
+            setMembershipFilter(
+              event.target.value as
+                | "all"
+                | "active"
+                | "expiring"
+                | "expired"
+                | "none"
+                | "paused"
+            )
+          }
+          className="
+            min-h-12
+            rounded-xl
+            border
+            border-[#D0D5DD]
+            bg-white
+            px-4
+            text-sm
+            font-bold
+            text-[#344054]
+            outline-none
+            focus:border-[#16A6A1]
+          "
+        >
+          <option value="all">
+            Sve članarine
+          </option>
+
+          <option value="active">
+            Aktivne
+          </option>
+
+          <option value="expiring">
+            Uskoro istječu
+          </option>
+
+          <option value="expired">
+            Istekle
+          </option>
+
+          <option value="none">
+            Bez članarine
+          </option>
+
+          <option value="paused">
+            Zamrznute
+          </option>
+        </select>
+
+        <select
+          value={
+            trainerFilter
+          }
+          onChange={(
+            event
+          ) =>
+            setTrainerFilter(
+              event.target.value as
+                | "all"
+                | "with"
+                | "without"
+            )
+          }
+          className="
+            min-h-12
+            rounded-xl
+            border
+            border-[#D0D5DD]
+            bg-white
+            px-4
+            text-sm
+            font-bold
+            text-[#344054]
+            outline-none
+            focus:border-[#16A6A1]
+          "
+        >
+          <option value="all">
+            Svi treneri
+          </option>
+
+          <option value="with">
+            S trenerom
+          </option>
+
+          <option value="without">
+            Bez trenera
+          </option>
+        </select>
+      </div>
+
+      <div
+        className="
+          mt-3
+          flex
+          flex-wrap
+          items-center
+          justify-between
+          gap-3
+        "
+      >
+        <p
+          className="
+            text-xs
+            font-bold
+            text-[#667085]
+          "
+        >
+          Prikazano{" "}
+      <span className="text-[#15171A]">
+        {sortedClients.length}
+      </span>{" "}
+      od{" "}
+      <span className="text-[#15171A]">
+        {clients.length}
+      </span>{" "}
+      članova
+    </p>
+
+    {(search ||
+      membershipFilter !== "all" ||
+      trainerFilter !== "all") && (
+      <button
+        type="button"
+        onClick={() => {
+          setSearch("");
+          setMembershipFilter("all");
+          setTrainerFilter("all");
+        }}
+        className="
+          text-xs
+          font-black
+          text-[#16A6A1]
+          transition
+          hover:text-[#0F7F7B]
+        "
+      >
+        Poništi filtere
+      </button>
+    )}
+  </div>
+</section>
+)}
+
+{/* CLIENTS */}
+
+{!loading &&
+  !error &&
+  clients.length > 0 &&
+  sortedClients.length === 0 && (
+    <section
+      className="
+        rounded-[24px]
+        border
+        border-dashed
+        border-[#D8DDD0]
+        bg-white
+        px-6
+        py-12
+        text-center
+      "
+    >
+      <p
+        className="
+          text-lg
+          font-black
+          text-[#15171A]
+        "
+      >
+        Nema rezultata
+      </p>
+
+      <p
+        className="
+          mt-2
+          text-sm
+          text-[#667085]
+        "
+      >
+        Nijedan član ne odgovara odabranoj pretrazi ili filterima.
+      </p>
+
+      <button
+        type="button"
+        onClick={() => {
+          setSearch("");
+          setMembershipFilter("all");
+          setTrainerFilter("all");
+        }}
+        className="
+          mt-5
+          rounded-xl
+          bg-[#111317]
+          px-5
+          py-3
+          text-sm
+          font-black
+          text-white
+        "
+      >
+        Poništi filtere
+      </button>
+    </section>
+  )}
+
 
         {!loading &&
           !error &&
