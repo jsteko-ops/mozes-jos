@@ -3,6 +3,7 @@ import {
 } from "@/lib/firebase";
 
 import type {
+  ClientGender,
   MembershipDuration,
   PaymentMethod,
 } from "@/lib/createClientForTrainer";
@@ -59,6 +60,12 @@ export type MembershipMember = {
 
   phone:
     string | null;
+
+  gender:
+    ClientGender | null;
+
+  note:
+    string;
 
   trainerId:
     string | null;

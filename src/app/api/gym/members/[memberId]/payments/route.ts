@@ -878,6 +878,21 @@ export async function GET(
               "string"
               ? memberData.phone
               : null,
+      gender:
+        memberData?.gender ===
+          "male" ||
+        memberData?.gender ===
+          "female" ||
+        memberData?.gender ===
+          "prefer_not_to_say"
+          ? memberData.gender
+          : null,
+
+      note:
+        typeof memberData?.note ===
+          "string"
+          ? memberData.note
+          : "",
 
           trainerId:
             typeof memberData?.trainerId ===

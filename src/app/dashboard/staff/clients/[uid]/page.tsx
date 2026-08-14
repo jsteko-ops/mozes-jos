@@ -12,6 +12,7 @@ import {
 } from "next/navigation";
 
 import RoleGuard from "@/components/auth/RoleGuard";
+import EditGymMemberModal from "@/components/staff/EditGymMemberModal";
 
 import {
   useAuth,
@@ -93,6 +94,12 @@ export default function StaffClientDetailPage() {
     setSuccess,
   ] =
     useState("");
+
+const [
+editOpen,
+setEditOpen,
+] =
+useState(false);
 
 
   const [
@@ -616,30 +623,68 @@ export default function StaffClientDetailPage() {
                   </div>
 
 
-                  <button
-                    type="button"
-                    onClick={
-                      openPaymentModal
-                    }
-                    className="
-                      inline-flex
-                      min-h-12
-                      items-center
-                      justify-center
-                      rounded-xl
-                      bg-[#C8D52B]
-                      px-6
-                      py-3
-                      text-sm
-                      font-black
-                      text-[#111317]
-                      transition
-                      hover:-translate-y-0.5
-                      hover:bg-[#D6E23B]
-                    "
-                  >
-                    + Nova uplata
-                  </button>
+                 <div
+  className="
+    flex
+    flex-col
+    gap-3
+    sm:flex-row
+  "
+>
+  <button
+    type="button"
+    onClick={() =>
+      setEditOpen(
+        true
+      )
+    }
+    className="
+      inline-flex
+      min-h-12
+      items-center
+      justify-center
+      rounded-xl
+      border
+      border-white/20
+      bg-white/10
+      px-6
+      py-3
+      text-sm
+      font-black
+      text-white
+      transition
+      hover:-translate-y-0.5
+      hover:bg-white/15
+    "
+  >
+    Uredi podatke
+  </button>
+
+  <button
+    type="button"
+    onClick={
+      openPaymentModal
+    }
+    className="
+      inline-flex
+      min-h-12
+      items-center
+      justify-center
+      rounded-xl
+      bg-[#C8D52B]
+      px-6
+      py-3
+      text-sm
+      font-black
+      text-[#111317]
+      transition
+      hover:-translate-y-0.5
+      hover:bg-[#D6E23B]
+    "
+  >
+    + Nova uplata
+  </button>
+</div>
                 </div>
               </section>
 
@@ -1472,9 +1517,49 @@ export default function StaffClientDetailPage() {
                 </form>
               </div>
             </div>
-          )}
-      </div>
-    </RoleGuard>
+           )}
+
+      {member &&
+        userProfile?.gymId && (
+          <EditGymMemberModal
+            open={
+              editOpen
+            }
+            member={
+              member
+            }
+            gymId={
+              userProfile.gymId
+            }
+            onClose={() =>
+              setEditOpen(
+                false
+              )
+            }
+            onSaved={
+              async () => {
+                const refreshed =
+                  await getMembershipPayments(
+                    member.uid
+                  );
+
+                setMember(
+                  refreshed.member
+                );
+
+                setPayments(
+                  refreshed.payments
+                );
+
+                setSuccess(
+                  "Podaci člana su uspješno spremljeni."
+                );
+              }
+            }
+          />
+        )}
+    </div>
+  </RoleGuard>
   );
 }
 
