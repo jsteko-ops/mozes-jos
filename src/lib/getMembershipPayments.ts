@@ -70,6 +70,8 @@ export type MembershipMember = {
   trainerId:
     string | null;
 
+trainerName: string | null;
+
   membershipState:
     string | null;
 

@@ -830,14 +830,14 @@ useState(false);
                       }
                     />
 
-                    <DetailRow
-                      label="Trener"
-                      value={
-                        member.trainerId
-                          ? "Dodijeljen"
-                          : "Bez trenera"
-                      }
-                    />
+<DetailRow
+  label="Trener"
+  value={
+    member.trainerId
+      ? member.trainerName || "Dodijeljen"
+      : "Bez trenera"
+  }
+/>
                   </div>
                 </div>
 

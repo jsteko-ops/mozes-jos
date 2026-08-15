@@ -33,6 +33,8 @@ type StaffClient = {
   gymRole?: string;
 
   trainerId?: string | null;
+trainerName?: string | null;
+
   membershipStatus?: string;
 
   membershipState?: string;
@@ -285,17 +287,71 @@ useMemo(
         }
 
 
-        const onlyClients =
-          members.filter(
-            (member: any) =>
-              member.gymRole ===
-              "client"
-          );
+      const trainerNames =
+  new Map<string, string>(
+    members
+      .filter(
+        (member: any) =>
+          member.gymRole ===
+          "trainer"
+      )
+ .map(
+  (trainer: any) => {
+    const firstName =
+      typeof trainer.firstName ===
+        "string"
+        ? trainer.firstName.trim()
+        : "";
+
+    const lastName =
+      typeof trainer.lastName ===
+        "string"
+        ? trainer.lastName.trim()
+        : "";
+
+    const fullName =
+      [firstName, lastName]
+        .filter(Boolean)
+        .join(" ");
+
+    return [
+      String(trainer.uid),
+      trainer.name ||
+        trainer.displayName ||
+        fullName ||
+        trainer.email ||
+        "Trener",
+    ];
+  }
+)
+  );
 
 
-        setClients(
-          onlyClients as StaffClient[]
-        );
+const onlyClients =
+  members
+    .filter(
+      (member: any) =>
+        member.gymRole ===
+        "client"
+    )
+    .map(
+      (member: any) => ({
+        ...member,
+        trainerName:
+          member.trainerId
+            ? trainerNames.get(
+                String(
+                  member.trainerId
+                )
+              ) ?? null
+            : null,
+      })
+    );
+
+
+setClients(
+  onlyClients as StaffClient[]
+);
       } catch (loadError) {
         console.error(
           "Greška kod učitavanja članova:",
@@ -1077,14 +1133,14 @@ function ClientCard({
           pt-4
         "
       >
-        <Row
-          label="Trener"
-          value={
-            client.trainerId
-              ? "Dodijeljen"
-              : "Bez trenera"
-          }
-        />
+   <Row
+  label="Trener"
+  value={
+    client.trainerId
+      ? client.trainerName || "Dodijeljen"
+      : "Bez trenera"
+  }
+/>
 
         <Row
           label="Članarina"

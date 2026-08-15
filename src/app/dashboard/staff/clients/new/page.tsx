@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -16,7 +17,13 @@ import {
 } from "next/navigation";
 
 import RoleGuard from "@/components/auth/RoleGuard";
+import {
+  useAuth,
+} from "@/components/auth/AuthProvider";
 
+import {
+  getGymMembers,
+} from "@/lib/getGymMembers";
 import {
   createClient,
 } from "@/lib/createClientForTrainer";
@@ -27,11 +34,27 @@ import type {
   PaymentMethod,
 } from "@/lib/createClientForTrainer";
 
+type TrainerOption = {
+  uid: string;
+  name?: string;
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  gymRole?: string;
+};
 
 export default function NewStaffClientPage() {
   const router =
     useRouter();
 
+
+const {
+  userProfile,
+  loading:
+    authLoading,
+} =
+  useAuth();
 
   const [
     name,
@@ -69,6 +92,25 @@ export default function NewStaffClientPage() {
   ] =
     useState("");
 
+const [
+trainers,
+setTrainers,
+] =
+useState<TrainerOption[]>(
+[]
+);
+
+const [
+trainersLoading,
+setTrainersLoading,
+] =
+useState(false);
+
+const [
+trainersError,
+setTrainersError,
+] =
+useState("");
 
   const [
     hasInitialPayment,
@@ -138,6 +180,149 @@ export default function NewStaffClientPage() {
   ] =
     useState(false);
 
+useEffect(() => {
+  if (
+    authLoading ||
+    !userProfile?.gymId
+  ) {
+    return;
+  }
+
+
+  let cancelled =
+    false;
+
+
+  async function loadTrainers() {
+    try {
+      setTrainersLoading(
+        true
+      );
+
+      setTrainersError(
+        ""
+      );
+
+
+      const members =
+        await getGymMembers(
+          userProfile!.gymId!
+        );
+
+
+      if (cancelled) {
+        return;
+      }
+
+
+      const onlyTrainers =
+        members
+          .filter(
+            (member: any) =>
+              member.gymRole ===
+              "trainer"
+          )
+          .map(
+            (member: any) => ({
+              uid:
+                String(
+                  member.uid
+                ),
+
+              name:
+                typeof member.name ===
+                  "string"
+                  ? member.name
+                  : undefined,
+
+              displayName:
+                typeof member.displayName ===
+                  "string"
+                  ? member.displayName
+                  : undefined,
+
+firstName:
+  typeof member.firstName ===
+    "string"
+    ? member.firstName
+    : undefined,
+
+lastName:
+  typeof member.lastName ===
+    "string"
+    ? member.lastName
+    : undefined,
+
+              email:
+                typeof member.email ===
+                  "string"
+                  ? member.email
+                  : undefined,
+
+              gymRole:
+                "trainer",
+            })
+          )
+          .sort(
+            (
+              first:
+                TrainerOption,
+              second:
+                TrainerOption
+            ) =>
+              getTrainerName(
+                first
+              ).localeCompare(
+                getTrainerName(
+                  second
+                ),
+                "hr"
+              )
+          );
+
+
+      setTrainers(
+        onlyTrainers
+      );
+    } catch (
+      loadError
+    ) {
+      console.error(
+        "Greška kod učitavanja trenera:",
+        loadError
+      );
+
+
+      if (!cancelled) {
+        setTrainers(
+          []
+        );
+
+        setTrainersError(
+          "Trenere trenutno nije moguće učitati."
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setTrainersLoading(
+          false
+        );
+      }
+    }
+  }
+
+
+  void loadTrainers();
+
+
+  return () => {
+    cancelled =
+      true;
+  };
+}, [
+  authLoading,
+  userProfile?.gymId,
+]);
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -779,32 +964,81 @@ export default function NewStaffClientPage() {
                   text-[#667085]
                 "
               >
-                Popis trenera teretane
-                spajamo u sljedećem
-                koraku.
+               Odaberi trenera kojem
+želiš dodijeliti člana.
               </p>
 
-              <select
-                value={trainerId}
-                disabled
-                onChange={(
-                  event
-                ) =>
-                  setTrainerId(
-                    event.target.value
-                  )
-                }
-                className={`
-                  ${inputClass}
-                  mt-4
-                  cursor-not-allowed
-                  opacity-60
-                `}
-              >
-                <option value="">
-                  Bez trenera
-                </option>
-              </select>
+       <select
+  value={
+    trainerId
+  }
+  disabled={
+    saving ||
+    trainersLoading
+  }
+  onChange={(
+    event
+  ) =>
+    setTrainerId(
+      event.target.value
+    )
+  }
+  className={`
+    ${inputClass}
+    mt-4
+  `}
+>
+  <option value="">
+    Bez trenera
+  </option>
+
+  {trainers.map(
+    (
+      trainer
+    ) => (
+      <option
+        key={
+          trainer.uid
+        }
+        value={
+          trainer.uid
+        }
+      >
+        {getTrainerName(
+          trainer
+        )}
+        {trainer.email
+          ? ` — ${trainer.email}`
+          : ""}
+      </option>
+    )
+  )}
+</select>
+
+{trainersLoading && (
+  <p
+    className="
+      mt-2
+      text-xs
+      text-[#667085]
+    "
+  >
+    Učitavanje trenera...
+  </p>
+)}
+
+{trainersError && (
+  <p
+    className="
+      mt-2
+      text-xs
+      font-semibold
+      text-red-600
+    "
+  >
+    {trainersError}
+  </p>
+)}
             </div>
           </section>
 
@@ -1334,7 +1568,30 @@ const inputClass = `
   disabled:opacity-70
 `;
 
+function getTrainerName(
+  trainer: TrainerOption
+) {
+  const firstName =
+    trainer.firstName?.trim() ||
+    "";
 
+  const lastName =
+    trainer.lastName?.trim() ||
+    "";
+
+  const fullName =
+    [firstName, lastName]
+      .filter(Boolean)
+      .join(" ");
+
+  return (
+    trainer.name ||
+    trainer.displayName ||
+    fullName ||
+    trainer.email ||
+    "Trener"
+  );
+}
 function getToday() {
   const date =
     new Date();
