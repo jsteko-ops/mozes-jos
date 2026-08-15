@@ -21,7 +21,7 @@ import {
 } from "@/lib/firebase";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
-
+import EditTrainerModal from "@/components/owner/EditTrainerModal";
 import {
   getGymMembers,
 } from "@/lib/getGymMembers";
@@ -67,6 +67,11 @@ export default function TrainerDetailsPage() {
     useState<Trainer | null>(
       null
     );
+const [
+  editOpen,
+  setEditOpen,
+] =
+  useState(false);
 
 
   const [
@@ -632,47 +637,78 @@ export default function TrainerDetailsPage() {
                     </div>
                   </div>
 
+<div
+  className="
+    flex
+    flex-col
+    gap-3
+  "
+>
+  <button
+    type="button"
+    onClick={() =>
+      setEditOpen(true)
+    }
+    className="
+      rounded-xl
+      border
+      border-white/15
+      bg-white/10
+      px-5
+      py-3
+      text-sm
+      font-black
+      text-white
+      transition
+      hover:bg-white/15
+    "
+  >
+    Uredi podatke
+  </button>
 
-                  <div
-                    className="
-                      rounded-[22px]
-                      border
-                      border-white/10
-                      bg-white/[0.05]
-                      px-6
-                      py-5
-                      text-center
-                    "
-                  >
-                    <p
-                      className="
-                        text-4xl
-                        font-black
-                        text-[#C8D52B]
-                      "
-                    >
-                      {
-                        clients.length
-                      }
-                    </p>
+  <div
+    className="
+      rounded-[22px]
+      border
+      border-white/10
+      bg-white/[0.05]
+      px-6
+      py-5
+      text-center
+    "
+  >
+    <p
+      className="
+        text-4xl
+        font-black
+        text-[#C8D52B]
+      "
+    >
+      {
+        clients.length
+      }
+    </p>
+
+    <p
+      className="
+        mt-1
+        text-[10px]
+        font-bold
+        uppercase
+        tracking-wider
+        text-white/40
+      "
+    >
+      {clients.length ===
+      1
+        ? "Klijent"
+        : "Klijenata"}
+    </p>
+  </div>
+</div>
 
 
-                    <p
-                      className="
-                        mt-1
-                        text-[10px]
-                        font-bold
-                        uppercase
-                        tracking-wider
-                        text-white/40
-                      "
-                    >
-                      {clients.length ===
-                      1
-                        ? "Klijent"
-                        : "Klijenata"}
-                    </p>
-                  </div>
+               
                 </div>
               </section>
 
@@ -1016,11 +1052,35 @@ export default function TrainerDetailsPage() {
             </>
           )}
 
+        {trainer && (
+          <EditTrainerModal
+            open={editOpen}
+            trainer={trainer}
+            onClose={() =>
+              setEditOpen(false)
+            }
+            onSaved={(updatedTrainer) => {
+              setTrainer((currentTrainer) =>
+                currentTrainer
+                  ? {
+                      ...currentTrainer,
+                      name: updatedTrainer.name,
+                      displayName: updatedTrainer.name,
+                      email: updatedTrainer.email,
+                      phone:
+                        updatedTrainer.phone ||
+                        undefined,
+                    }
+                  : currentTrainer
+              );
+            }}
+          />
+        )}
+
       </div>
     </ProtectedRoute>
   );
 }
-
 
 function ClientCard({
   client,
