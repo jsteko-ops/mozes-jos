@@ -907,9 +907,10 @@ export default function OwnerDashboard() {
 
                 <StatCard
                   label="Ukupno članova"
-                  value={
-                    members.length
-                  }
+              value={
+  trainers.length +
+  clients.length
+}
                   accent="dark"
                   description="Treneri i klijenti zajedno"
                 />

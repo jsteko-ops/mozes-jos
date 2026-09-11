@@ -77,9 +77,9 @@ export async function getGymMembers(
 
         members.push({
 
-          uid: clientSnap.id,
-
           ...clientSnap.data(),
+
+      uid: clientSnap.id,
 
           gymRole: "client",
 

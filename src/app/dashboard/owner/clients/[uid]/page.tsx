@@ -275,10 +275,11 @@ export default function OwnerClientProfile() {
 
 
         const clientData: Client = {
-          id:
-            clientMember.uid,
-          ...clientMember,
-        };
+      ...clientMember,
+      id:
+        clientMember.id ||
+        clientMember.uid,
+    };
 
 
         setClient(

@@ -469,7 +469,57 @@ export async function POST(
     );
 
 
-    await batch.commit();
+    
+if (role === "client") {
+  const clientReference =
+    adminDb
+      .collection("clients")
+      .doc(authUser.uid);
+
+  batch.set(
+    clientReference,
+    {
+      uid:
+        authUser.uid,
+
+      authUid:
+        authUser.uid,
+
+      name:
+        memberName,
+
+      email:
+        authUser.email || email,
+
+      phone:
+        typeof memberUserData.phone === "string"
+          ? memberUserData.phone
+          : null,
+
+      ...(typeof memberUserData.trainerId === "string" &&
+      memberUserData.trainerId.trim()
+        ? {
+            trainerId:
+              memberUserData.trainerId.trim(),
+          }
+        : {}),
+
+      role:
+        "client",
+
+      gymId,
+
+      updatedAt:
+        FieldValue.serverTimestamp(),
+    },
+    {
+      merge: true,
+    }
+  );
+}
+
+
+await batch.commit();
 
 
     return NextResponse.json(
