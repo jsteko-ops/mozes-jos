@@ -30,6 +30,7 @@ import ClientMeasurements from "@/components/owner/ClientMeasurements";
 import ClientPlans from "@/components/owner/ClientPlans";
 import ClientEditForm from "@/components/clients/ClientEditForm";
 import ClientTabs from "@/components/owner/ClientTabs";
+import ClientNutrition from "@/components/client/ClientNutrition";
 
 import CheckinForm from "@/components/checkins/CheckinForm";
 import CheckinHistory from "@/components/checkins/CheckinHistory";
@@ -1232,22 +1233,11 @@ export default function OwnerClientProfile() {
                       </div>
                     </div>
                   }
-
                   nutrition={
-                    <ComingSoonCard
-                      eyebrow="Prehrana"
-                      title="Plan prehrane"
-                      description="Owner pregled prehrane klijenta bit će povezan s aktivnim modulom prehrane."
-                      accent="lime"
-                    />
-                  }
-
-                  chat={
-                    <ComingSoonCard
-                      eyebrow="Komunikacija"
-                      title="Chat klijenta"
-                      description="Ovdje će vlasnik imati pregled komunikacijskog statusa klijenta bez narušavanja privatnosti razgovora."
-                      accent="teal"
+                    <ClientNutrition
+                      clientId={
+                        client.id
+                      }
                     />
                   }
                 />
@@ -1446,130 +1436,6 @@ function InfoBlock({
     </div>
   );
 }
-
-
-function ComingSoonCard({
-  eyebrow,
-  title,
-  description,
-  accent,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  accent:
-    | "lime"
-    | "teal";
-}) {
-  const isLime =
-    accent === "lime";
-
-
-  return (
-    <div
-      className="
-        relative
-        overflow-hidden
-        rounded-[28px]
-        border
-        border-[#E5E7EB]
-        bg-white
-        p-6
-        shadow-sm
-      "
-    >
-      <div
-        className={`
-          absolute
-          -right-16
-          -top-16
-          h-40
-          w-40
-          rounded-full
-          blur-3xl
-          ${
-            isLime
-              ? "bg-[#C8D52B]/15"
-              : "bg-[#16A6A1]/15"
-          }
-        `}
-      />
-
-
-      <div
-        className="
-          relative
-          z-10
-        "
-      >
-        <div
-          className={`
-            inline-flex
-            rounded-full
-            px-3
-            py-1.5
-            text-[9px]
-            font-bold
-            uppercase
-            tracking-[0.14em]
-            ${
-              isLime
-                ? "bg-[#C8D52B]/15 text-[#68720F]"
-                : "bg-[#16A6A1]/10 text-[#128D89]"
-            }
-          `}
-        >
-          {eyebrow}
-        </div>
-
-
-        <h3
-          className="
-            mt-4
-            text-xl
-            font-black
-            text-[#15171A]
-          "
-        >
-          {title}
-        </h3>
-
-
-        <p
-          className="
-            mt-2
-            max-w-xl
-            text-sm
-            leading-6
-            text-[#667085]
-          "
-        >
-          {description}
-        </p>
-
-
-        <div
-          className="
-            mt-6
-            inline-flex
-            items-center
-            gap-2
-            rounded-xl
-            bg-[#F4F6F2]
-            px-4
-            py-3
-            text-xs
-            font-bold
-            text-[#667085]
-          "
-        >
-          Modul u pripremi
-        </div>
-      </div>
-    </div>
-  );
-}
-
 
 function getClientName(
   client: Client
