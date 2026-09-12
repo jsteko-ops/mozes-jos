@@ -29,6 +29,84 @@ type ReportPeriod =
   | "365";
 
 
+function getDate(
+  value: any
+): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const date =
+    value?.toDate
+      ? value.toDate()
+      : new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+
+function isWithinPeriod(
+  value: any,
+  days: number | null,
+  now: Date
+) {
+  if (days === null) {
+    return true;
+  }
+
+  const date =
+    getDate(value);
+
+  if (!date) {
+    return false;
+  }
+
+  const difference =
+    (
+      now.getTime() -
+      date.getTime()
+    ) /
+    (
+      1000 *
+      60 *
+      60 *
+      24
+    );
+
+  return (
+    difference >= 0 &&
+    difference <= days
+  );
+}
+
+
+function getPeriodLabel(
+  period: ReportPeriod
+) {
+  switch (period) {
+    case "30":
+      return "Zadnjih 30 dana";
+
+    case "90":
+      return "Zadnjih 90 dana";
+
+    case "365":
+      return "Zadnjih godinu dana";
+
+    default:
+      return "Sve";
+  }
+}
+
+
 export default function ClientReport({
   clientId,
 }: Props) {
@@ -53,7 +131,6 @@ export default function ClientReport({
       return;
     }
 
-
     try {
       setGenerating(true);
 
@@ -75,9 +152,9 @@ export default function ClientReport({
 
       const [
         loadedMeasurements,
-        checkins,
-        workouts,
-        nutrition,
+        loadedCheckins,
+        loadedWorkouts,
+        loadedNutrition,
       ] =
         await Promise.all([
           getMeasurements(
@@ -113,110 +190,74 @@ export default function ClientReport({
 
 
       const filteredMeasurements =
-        days === null
-          ? loadedMeasurements
-          : loadedMeasurements.filter(
-              (measurement: any) => {
-                const date =
-                  measurement
-                    .createdAt
-                    ?.toDate
-                    ? measurement
-                        .createdAt
-                        .toDate()
-                    : new Date(
-                        measurement
-                          .createdAt
-                      );
-
-
-                if (
-                  Number.isNaN(
-                    date.getTime()
-                  )
-                ) {
-                  return false;
-                }
-
-
-                return (
-                  (
-                    now.getTime() -
-                    date.getTime()
-                  ) /
-                    (
-                      1000 *
-                      60 *
-                      60 *
-                      24
-                    ) <=
-                  days
-                );
-              }
-            );
+        loadedMeasurements.filter(
+          (measurement: any) =>
+            isWithinPeriod(
+              measurement.createdAt,
+              days,
+              now
+            )
+        );
 
 
       const filteredCheckins =
-        days === null
-          ? checkins
-          : checkins.filter(
-              (
-                checkin: any
-              ) => {
-                const date =
-                  checkin
-                    .createdAt
-                    ?.toDate
-                    ? checkin
-                        .createdAt
-                        .toDate()
-                    : new Date(
-                        checkin
-                          .createdAt
-                      );
+        loadedCheckins.filter(
+          (checkin: any) =>
+            isWithinPeriod(
+              checkin.createdAt,
+              days,
+              now
+            )
+        );
 
 
-                if (
-                  Number.isNaN(
-                    date.getTime()
-                  )
-                ) {
-                  return false;
-                }
+      const filteredWorkouts =
+        loadedWorkouts.filter(
+          (workout: any) =>
+            isWithinPeriod(
+              workout.createdAt,
+              days,
+              now
+            )
+        );
 
 
-                return (
-                  (
-                    now.getTime() -
-                    date.getTime()
-                  ) /
-                    (
-                      1000 *
-                      60 *
-                      60 *
-                      24
-                    ) <=
-                  days
-                );
-              }
-            );
+      const filteredNutrition =
+        loadedNutrition.filter(
+          (plan: any) =>
+            isWithinPeriod(
+              plan.createdAt,
+              days,
+              now
+            )
+        );
 
 
       await generateClientPdf({
         client,
+
         measurements:
           filteredMeasurements,
+
         checkins:
           filteredCheckins,
-        workouts,
-        nutrition,
+
+        workouts:
+          filteredWorkouts,
+
+        nutrition:
+          filteredNutrition,
+
+        periodLabel:
+          getPeriodLabel(
+            period
+          ),
       });
     } catch (error) {
       console.error(
         "Greška kod generiranja PDF izvještaja:",
         error
       );
-
 
       alert(
         "PDF izvještaj nije moguće generirati."
@@ -237,9 +278,6 @@ export default function ClientReport({
         sm:items-center
       "
     >
-
-      {/* PERIOD */}
-
       <div>
         <label
           className="
@@ -309,8 +347,6 @@ export default function ClientReport({
       </div>
 
 
-      {/* GENERATE */}
-
       <button
         type="button"
         onClick={() =>
@@ -375,7 +411,6 @@ export default function ClientReport({
           </>
         )}
       </button>
-
     </div>
   );
 }
