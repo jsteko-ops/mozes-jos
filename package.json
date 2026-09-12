@@ -6,7 +6,7 @@
     "dev": "node scripts/dev-oneclick.js",
     "stripe": "stripe listen --forward-to localhost:3000/api/stripe/webhook",
     "dev:single": "concurrently -n NEXT,STRIPE -c green,magenta \"npm run dev\" \"npm run stripe\"",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint"
   },
