@@ -127,11 +127,47 @@ export default function LoginPage() {
       );
 
 
-      await signInWithEmailAndPassword(
-        auth,
-        normalizedEmail,
-        password
-      );
+      const credential =
+        await signInWithEmailAndPassword(
+          auth,
+          normalizedEmail,
+          password
+        );
+
+      const idToken =
+        await credential.user.getIdToken();
+
+      const sessionResponse =
+        await fetch(
+          "/api/auth/login",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              idToken,
+            }),
+          }
+        );
+
+      if (!sessionResponse.ok) {
+        throw Object.assign(
+          new Error(
+            "Sesija nije mogla biti pokrenuta."
+          ),
+          {
+            code:
+              "session/create-failed",
+          }
+        );
+      }
+
+      window.location.href =
+        "/dashboard";
     } catch (
       loginError: any
     ) {

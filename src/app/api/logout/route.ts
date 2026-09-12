@@ -1,7 +1,20 @@
-import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export async function POST() {
-  (await cookies()).delete("user");
+  const response =
+    NextResponse.json({
+      ok: true,
+    });
 
-  return Response.json({ ok: true });
+  response.cookies.delete(
+    "userId"
+  );
+
+  // Stari cookie ostavljamo očišćen
+  // zbog postojećih lokalnih sesija.
+  response.cookies.delete(
+    "user"
+  );
+
+  return response;
 }
