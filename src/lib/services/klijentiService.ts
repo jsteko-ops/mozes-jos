@@ -12,9 +12,8 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { createNotification } from "@/lib/notifications";
-import { findUserByEmail } from "@/lib/findUserByEmail";
 
 // =======================
 // TIPOVI
@@ -1021,67 +1020,71 @@ async function sendNutritionNotification(
     link: string;
   }
 ) {
-
   try {
+    const currentUser =
+      auth.currentUser;
 
-    const client =
-      await getClient(
-        clientId
+    if (!currentUser) {
+      console.warn(
+        "Nema prijavljenog korisnika za slanje obavijesti prehrane."
       );
 
-
-    if (!client?.email) {
-
       return;
-
     }
 
 
-    const clientUser =
-      await findUserByEmail(
-        client.email
+    const token =
+      await currentUser.getIdToken();
+
+
+    const response =
+      await fetch(
+        "/api/notifications/nutrition",
+        {
+          method:
+            "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${token}`,
+          },
+
+          body:
+            JSON.stringify({
+              clientId,
+              title:
+                data.title,
+              message:
+                data.message,
+              link:
+                data.link,
+            }),
+        }
       );
 
 
-    if (!clientUser?.uid) {
+    if (!response.ok) {
+      const responseData =
+        await response
+          .json()
+          .catch(() => null);
 
-      return;
-
+      throw new Error(
+        responseData?.error ||
+          "Obavijest nije moguće poslati."
+      );
     }
-
-
-    await createNotification(
-
-      clientUser.uid,
-
-      {
-        title:
-          data.title,
-
-        message:
-          data.message,
-
-        type:
-          "nutrition",
-
-        link:
-          data.link,
-      }
-
-    );
-
   } catch (error) {
-
     console.error(
       "Greška kod slanja obavijesti o prehrani:",
       error
     );
 
   }
-
 }
-
-
 
 export async function addNutritionPlan(
   clientId: string,
