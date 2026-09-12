@@ -116,6 +116,8 @@ const userId =
 
 
     const origin =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
       req.headers.get("origin") ||
       "http://localhost:3000";
 
