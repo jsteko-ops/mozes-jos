@@ -1218,7 +1218,8 @@ export default function SettingsPage() {
 
       {/* SUBSCRIPTION */}
 
-      <section
+            {userProfile?.role === "gym_owner" && (
+<section
         className="
           relative
           overflow-hidden
@@ -1326,7 +1327,7 @@ export default function SettingsPage() {
                   text-white
                 "
               >
-                Pretplata
+                Pretplata i naplata
               </h2>
 
 
@@ -1383,6 +1384,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+      )}
 
     </div>
   );

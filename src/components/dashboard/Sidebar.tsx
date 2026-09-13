@@ -506,7 +506,7 @@ export default function Sidebar() {
                 💳
               </span>
 
-              Naplata
+              Pretplata
             </Link>
           </>
         )}
@@ -629,7 +629,28 @@ export default function Sidebar() {
                 ⚙️
               </span>
 
-              Postavke
+              <span className="flex-1">
+                Postavke
+              </span>
+
+              <span
+                className="
+                  ml-auto
+                  rounded-full
+                  border
+                  border-[#C8D52B]/30
+                  bg-[#C8D52B]/10
+                  px-2
+                  py-1
+                  text-[9px]
+                  font-black
+                  uppercase
+                  tracking-wider
+                  text-[#DDE84B]
+                "
+              >
+                Pretplata
+              </span>
             </Link>
           </>
         )}
