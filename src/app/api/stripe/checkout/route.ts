@@ -148,12 +148,12 @@ const email =
 
 
         success_url:
-        `${origin}/dashboard/trainer/naplata?success=1`,
+        `${origin}/dashboard?success=1`,
 
 
 
         cancel_url:
-        `${origin}/dashboard/trainer/naplata?canceled=1`,
+        `${origin}/dashboard?canceled=1`,
 
 
       });
