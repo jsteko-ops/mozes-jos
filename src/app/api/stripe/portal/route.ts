@@ -1,3 +1,4 @@
+import { trustedStripeOrigin } from "@/lib/server/trustedStripeOrigin";
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import {
@@ -115,11 +116,7 @@ const userId =
 
 
 
-    const origin =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      req.headers.get("origin") ||
-      "http://localhost:3000";
+    const origin = trustedStripeOrigin();
 
 
 
@@ -162,7 +159,6 @@ const userId =
 
       {
         error:
-        error.message ||
         "Portal failed"
       },
 

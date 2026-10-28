@@ -1,3 +1,4 @@
+import { trustedStripeOrigin } from "@/lib/server/trustedStripeOrigin";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import {
@@ -31,11 +32,7 @@ export async function POST(req: Request) {
 
   try {
 
-    const origin =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      req.headers.get("origin") ||
-      "http://localhost:3000";
+    const origin = trustedStripeOrigin();
 
 
     const token =
@@ -181,7 +178,6 @@ const email =
 
       {
         error:
-        error.message ||
         "Checkout failed",
       },
 

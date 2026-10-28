@@ -4,21 +4,7 @@ import {
   useState,
 } from "react";
 
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-
-import {
-  db,
-} from "@/lib/firebase";
-
-import {
-  createNotification,
-} from "@/lib/notifications";
+import { createCheckinViaApi } from "@/lib/createCheckinViaApi";
 
 
 type Props = {
@@ -112,153 +98,49 @@ export default function CheckinForm({
       return;
     }
 
-
     if (!clientId) {
-      alert(
-        "Nema klijenta."
-      );
-
+      alert("Odaberi klijenta.");
       return;
     }
 
-
-    const weightValue =
-      toNumber(
-        weight
-      );
-
+    const weightValue = toNumber(weight);
 
     if (
-      !Number.isFinite(
-        weightValue
-      ) ||
+      !Number.isFinite(weightValue) ||
       weightValue < 20 ||
       weightValue > 400
     ) {
-      alert(
-        "Težina mora biti između 20 i 400 kg."
-      );
-
+      alert("Težina mora biti između 20 i 400 kg.");
       return;
     }
 
+    const validScores = ["1", "2", "3", "4", "5"];
 
     if (
-      !energy ||
-      !sleep ||
-      !hunger
+      !validScores.includes(energy) ||
+      !validScores.includes(sleep) ||
+      !validScores.includes(hunger)
     ) {
-      alert(
-        "Odaberi energiju, kvalitetu sna i razinu gladi."
-      );
-
+      alert("Energija, san i glad moraju biti od 1 do 5.");
       return;
     }
 
+    if (water.length > 60 || comment.length > 2000) {
+      alert("Unos vode ili komentar je predug.");
+      return;
+    }
 
     try {
       setSaving(true);
 
-
-      const clientSnap =
-        await getDoc(
-          doc(
-            db,
-            "clients",
-            clientId
-          )
-        );
-
-
-      if (
-        !clientSnap.exists()
-      ) {
-        alert(
-          "Klijent ne postoji."
-        );
-
-        return;
-      }
-
-
-      const client =
-        clientSnap.data();
-
-
-      const checkinRef =
-        await addDoc(
-          collection(
-            db,
-            "clients",
-            clientId,
-            "checkins"
-          ),
-          {
-            weight:
-              weightValue,
-
-            energy,
-
-            sleep,
-
-            hunger,
-
-            water:
-              water.trim(),
-
-            comment:
-              comment.trim(),
-
-            reviewed:
-              false,
-
-            createdAt:
-              serverTimestamp(),
-          }
-        );
-
-
-      /*
-       * Obavijest treneru.
-       *
-       * Ako obavijest ne uspije,
-       * Check-in je i dalje
-       * ispravno spremljen.
-       */
-
-      if (
-        client.trainerId
-      ) {
-        try {
-          await createNotification(
-            client.trainerId,
-            {
-              title:
-                "Novi check-in",
-
-              message:
-                `${
-                  client.name ||
-                  "Klijent"
-                } je poslao novi check-in.`,
-
-              type:
-                "checkin",
-
-              link:
-                `/dashboard/trainer/klijenti/${clientId}?tab=checkin&checkinId=${checkinRef.id}`,
-            }
-          );
-        } catch (
-          notificationError
-        ) {
-          console.error(
-            "Greška kod slanja Check-in obavijesti:",
-            notificationError
-          );
-        }
-      }
-
+      await createCheckinViaApi(clientId, {
+        weight: weightValue,
+        energy,
+        sleep,
+        hunger,
+        water: water.trim(),
+        comment: comment.trim(),
+      });
 
       setWeight("");
       setEnergy("");
@@ -267,15 +149,21 @@ export default function CheckinForm({
       setWater("");
       setComment("");
 
+      if (onSaveAction) {
+        try {
+          await onSaveAction();
+        } catch (refreshError) {
+          console.error(
+            "Check-in je spremljen, ali osvježavanje nije uspjelo:",
+            refreshError
+          );
 
-      if (
-        onSaveAction
-      ) {
-        await onSaveAction();
+          alert(
+            "Check-in je spremljen, ali povijest se nije osvježila."
+          );
+        }
       } else {
-        alert(
-          "Check-in uspješno poslan treneru."
-        );
+        alert("Check-in uspješno spremljen.");
       }
     } catch (error) {
       console.error(
@@ -283,15 +171,15 @@ export default function CheckinForm({
         error
       );
 
-
       alert(
-        "Check-in nije moguće spremiti."
+        error instanceof Error
+          ? error.message
+          : "Check-in nije moguće spremiti."
       );
     } finally {
       setSaving(false);
     }
   }
-
 
   return (
     <section

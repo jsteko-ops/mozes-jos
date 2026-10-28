@@ -30,7 +30,7 @@ export default function AuthGuard({
 
 
   const isPublicRoute =
-    publicRoutes.includes(pathname);
+    publicRoutes.includes(pathname) || pathname === "/pomoc";
 
 
 
@@ -54,6 +54,12 @@ export default function AuthGuard({
 
 
 
+
+  // MOZES_JOS_PUBLIC_HELP_V1
+  // Emergency help must not wait for Firebase authentication.
+  if (pathname === "/pomoc") {
+    return <>{children}</>;
+  }
 
   if (loading) {
 

@@ -11,14 +11,7 @@ import {
   useParams,
 } from "next/navigation";
 
-import {
-  doc,
-  getDoc,
-} from "firebase/firestore";
-
-import {
-  db,
-} from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 
 import {
   useAuth,
@@ -37,11 +30,9 @@ import CheckinHistory from "@/components/checkins/CheckinHistory";
 
 import {
   getGymMembers,
-} from "@/lib/getGymMembers";
+} from "@/lib/getGymMembersViaApi";
 
-import {
-  getCheckins,
-} from "@/lib/services/klijentiService";
+import { getCheckins } from "@/lib/getOwnerCheckinsViaApi";
 
 
 type Client = {
@@ -53,6 +44,7 @@ type Client = {
   phone?: string;
   note?: string;
   goal?: string;
+  gender?: "male" | "female" | "prefer_not_to_say";
   trainerId?: string;
   gymId?: string;
 };
@@ -278,7 +270,6 @@ export default function OwnerClientProfile() {
         const clientData: Client = {
       ...clientMember,
       id:
-        clientMember.id ||
         clientMember.uid,
     };
 
@@ -294,73 +285,28 @@ export default function OwnerClientProfile() {
          * mogu se dohvatiti
          * paralelno.
          */
-        const [
-          checkinResult,
-          trainerResult,
-          gymResult,
-        ] =
-          await Promise.all([
-            getCheckins(
-              clientData.id
-            ),
-
-            clientData.trainerId
-              ? getDoc(
-                  doc(
-                    db,
-                    "users",
-                    clientData.trainerId
-                  )
-                )
-              : Promise.resolve(
-                  null
-                ),
-
-            getDoc(
-              doc(
-                db,
-                "gyms",
-                userProfile.gymId
-              )
-            ),
-          ]);
-
-
-        if (
-          cancelled
-        ) {
-          return;
+        const currentUser = auth.currentUser;
+        if (!currentUser) throw new Error("Prijava je potrebna.");
+        const token = await currentUser.getIdToken();
+        const [checkinResult, profileResponse] = await Promise.all([
+          getCheckins(clientData.id),
+          fetch(`/api/clients/${encodeURIComponent(clientData.id)}/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+        ]);
+        const profileResult = await profileResponse.json().catch(() => null);
+        if (!profileResponse.ok) {
+          throw new Error(profileResult?.error || "Profil klijenta nije dostupan.");
         }
-
-
-        setCheckins(
-          checkinResult
-        );
-
-
-        if (
-          trainerResult &&
-          trainerResult.exists()
-        ) {
-          setTrainer({
-            uid:
-              trainerResult.id,
-
-            ...trainerResult.data(),
-          });
+        if (cancelled) return;
+        if (profileResult?.client?.id !== clientData.id) {
+          throw new Error("Neispravan odgovor servera za klijenta.");
         }
-
-
-        if (
-          gymResult.exists()
-        ) {
-          setGym({
-            id:
-              gymResult.id,
-
-            ...gymResult.data(),
-          });
-        }
+        setClient({ ...clientData, ...profileResult.client });
+        setCheckins(checkinResult);
+        setTrainer(profileResult?.trainer || null);
+        setGym(profileResult?.gym || null);
       } catch (
         loadError
       ) {

@@ -8,7 +8,7 @@ import {
 import {
   markCheckinReviewed,
   saveTrainerComment,
-} from "@/lib/services/klijentiService";
+} from "@/lib/trainerCheckinActionsViaApi";
 
 
 interface Checkin {
@@ -40,6 +40,7 @@ interface CheckinHistoryProps {
   onReviewed: () => void;
 
   targetCheckinId?: string | null;
+  canManage?: boolean;
 }
 
 
@@ -75,6 +76,7 @@ export default function CheckinHistory({
   clientId,
   onReviewed,
   targetCheckinId,
+  canManage = true,
 }: CheckinHistoryProps) {
   const [
     highlightedCheckin,
@@ -112,12 +114,23 @@ export default function CheckinHistory({
   async function handleReviewed(
     checkinId: string
   ) {
-    await markCheckinReviewed(
-      clientId,
-      checkinId
-    );
+    try {
+      await markCheckinReviewed(
+        clientId,
+        checkinId
+      );
 
-    onReviewed();
+      onReviewed();
+    } catch (error) {
+      console.error(
+        "Greška kod označavanja check-ina:",
+        error
+      );
+
+      alert(
+        "Check-in se nije mogao označiti pregledanim."
+      );
+    }
   }
 
 
@@ -666,7 +679,8 @@ export default function CheckinHistory({
 
                   {/* TRAINER COMMENT */}
 
-                  <div
+                  {canManage ? (
+<div
                     className="
                       rounded-xl
                       border
@@ -860,8 +874,17 @@ export default function CheckinHistory({
                       </div>
                     )}
                   </div>
-
-
+                  ) : (
+                    <div className="rounded-xl border border-[#16A6A1]/20 bg-[#16A6A1]/5 p-4">
+                      <p className="text-xs font-black text-[#128D89]">
+                        Komentar trenera
+                      </p>
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#15171A]">
+                        {checkin.trainerComment ||
+                          "Trener još nije napisao komentar."}
+                      </p>
+                    </div>
+                  )}
                   {/* CLIENT REPLY */}
 
                   {checkin.clientReply && (
@@ -905,7 +928,7 @@ export default function CheckinHistory({
 
                   {/* REVIEW BUTTON */}
 
-                  {!checkin.reviewed && (
+                  {canManage && !checkin.reviewed && (
                     <div
                       className="
                         flex

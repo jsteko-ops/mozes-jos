@@ -6,18 +6,6 @@ import {
 } from "react";
 
 import {
-  collection,
-  onSnapshot,
-  query,
-  where,
-  orderBy,
-  doc,
-  writeBatch,
-  deleteDoc,
-  updateDoc,
-} from "firebase/firestore";
-
-import {
   onAuthStateChanged,
 } from "firebase/auth";
 
@@ -25,10 +13,9 @@ import {
   useRouter,
 } from "next/navigation";
 
-import {
-  auth,
-  db,
-} from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
+import { notificationAction } from "@/lib/services/notificationActions";
+import { listenMyNotifications } from "@/lib/services/notificationReads";
 
 
 type Notification = {
@@ -285,170 +272,34 @@ export default function NotificationsPage() {
     setLoading(true);
 
 
-    const notificationsQuery =
-      query(
-        collection(
-          db,
-          "notifications"
-        ),
+    const unsubscribe = listenMyNotifications(userId, (data) => {
+      setNotifications(data as Notification[]);
+      setLoading(false);
+    }, (error) => {
+      console.error("Greška kod učitavanja obavijesti:", error);
+      setLoading(false);
+    });
 
-        where(
-          "userId",
-          "==",
-          userId
-        ),
-
-        orderBy(
-          "createdAt",
-          "desc"
-        )
-      );
-
-
-    const unsubscribe =
-      onSnapshot(
-        notificationsQuery,
-
-        (snapshot) => {
-          const data =
-            snapshot.docs.map(
-              (item) => ({
-                id:
-                  item.id,
-
-                ...item.data(),
-              } as Notification)
-            );
-
-
-          setNotifications(
-            data
-          );
-
-          setLoading(
-            false
-          );
-        },
-
-        (error) => {
-          console.error(
-            "Greška kod učitavanja obavijesti:",
-            error
-          );
-
-          setLoading(
-            false
-          );
-        }
-      );
-
-
-    return () =>
-      unsubscribe();
+    return () => unsubscribe();
   }, [userId]);
 
 
   async function markAllRead() {
-    if (!userId) {
-      return;
-    }
-
-
-    const unread =
-      notifications.filter(
-        (notification) =>
-          !notification.read
-      );
-
-
-    if (
-      unread.length === 0
-    ) {
-      return;
-    }
-
-
-    const batch =
-      writeBatch(db);
-
-
-    unread.forEach(
-      (notification) => {
-        batch.update(
-          doc(
-            db,
-            "notifications",
-            notification.id
-          ),
-          {
-            read: true,
-          }
-        );
-      }
-    );
-
-
-    await batch.commit();
+    if (!userId || !notifications.some((n) => !n.read)) return;
+    try { await notificationAction("read-all"); }
+    catch (error) { console.error("Greška pri označavanju obavijesti:", error); alert("Obavijesti nije moguće označiti pročitanima."); }
   }
 
-
-  async function deleteNotification(
-    id: string
-  ) {
-    try {
-      await deleteDoc(
-        doc(
-          db,
-          "notifications",
-          id
-        )
-      );
-    } catch (error) {
-      console.error(
-        "Greška kod brisanja obavijesti:",
-        error
-      );
-
-      alert(
-        "Obavijest se nije mogla obrisati."
-      );
-    }
+  async function deleteNotification(id: string) {
+    try { await notificationAction("delete", id); }
+    catch (error) { console.error("Greška kod brisanja obavijesti:", error); alert("Obavijest se nije mogla obrisati."); }
   }
-
 
   async function deleteReadNotifications() {
-    const readNotifications =
-      notifications.filter(
-        (notification) =>
-          notification.read
-      );
-
-
-    try {
-      for (
-        const notification
-        of readNotifications
-      ) {
-        await deleteDoc(
-          doc(
-            db,
-            "notifications",
-            notification.id
-          )
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Greška kod brisanja pročitanih obavijesti:",
-        error
-      );
-
-      alert(
-        "Pročitane obavijesti nisu se mogle obrisati."
-      );
-    }
+    if (!notifications.some((n) => n.read)) return;
+    try { await notificationAction("delete-read"); }
+    catch (error) { console.error("Greška kod brisanja pročitanih obavijesti:", error); alert("Pročitane obavijesti nisu se mogle obrisati."); }
   }
-
 
   async function openNotification(
     notification: Notification
@@ -457,16 +308,7 @@ export default function NotificationsPage() {
       if (
         !notification.read
       ) {
-        await updateDoc(
-          doc(
-            db,
-            "notifications",
-            notification.id
-          ),
-          {
-            read: true,
-          }
-        );
+        await notificationAction("read", notification.id);
       }
 
 

@@ -124,7 +124,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Korisnički profil nije pronađen.",
+            "KorisniĂ„Ĺ¤ki profil nije pronaĂ„â€en.",
         },
         {
           status: 404,
@@ -145,7 +145,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Samo vlasnik teretane može dodavati članove.",
+            "Samo vlasnik teretane moÄąÄľe dodavati Ă„Ĺ¤lanove.",
         },
         {
           status: 403,
@@ -197,7 +197,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Nemaš pravo upravljati ovom teretanom.",
+            "NemaÄąË‡ pravo upravljati ovom teretanom.",
         },
         {
           status: 403,
@@ -256,7 +256,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Upiši e-mail korisnika.",
+            "UpiÄąË‡i e-mail korisnika.",
         },
         {
           status: 400,
@@ -271,7 +271,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Uloga člana nije ispravna.",
+            "Uloga Ă„Ĺ¤lana nije ispravna.",
         },
         {
           status: 400,
@@ -296,7 +296,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Korisnik s tim e-mailom nije pronađen.",
+            "Korisnik s tim e-mailom nije pronaĂ„â€en.",
         },
         {
           status: 404,
@@ -321,7 +321,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Korisnički profil nije pronađen.",
+            "KorisniĂ„Ĺ¤ki profil nije pronaĂ„â€en.",
         },
         {
           status: 404,
@@ -373,7 +373,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Korisnik je već povezan s drugom teretanom.",
+            "Korisnik je veĂ„â€ˇ povezan s drugom teretanom.",
         },
         {
           status: 409,
@@ -557,7 +557,7 @@ await batch.commit();
   } catch (error) {
 
     console.error(
-      "Greška kod dodavanja člana teretane:",
+      "GreÄąË‡ka kod dodavanja Ă„Ĺ¤lana teretane:",
       error
     );
 
@@ -565,7 +565,7 @@ await batch.commit();
     return NextResponse.json(
       {
         error:
-          "Člana trenutačno nije moguće dodati.",
+          "Ă„Ĺšlana trenutaĂ„Ĺ¤no nije moguĂ„â€ˇe dodati.",
       },
       {
         status: 500,
@@ -574,4 +574,265 @@ await batch.commit();
 
   }
 
+}
+
+// Sigurno dohvacanje clanova vlastite teretane
+export async function GET(request: Request) {
+  const deny = (status: number, message: string) =>
+    NextResponse.json(
+      { error: message },
+      {
+        status,
+        headers: {
+          "Cache-Control": "private, no-store",
+        },
+      }
+    );
+
+  try {
+    const token = getToken(request);
+
+    if (!token) {
+      return deny(401, "Prijava je potrebna.");
+    }
+
+    let uid: string;
+
+    try {
+      const decoded = await adminAuth.verifyIdToken(
+        token,
+        true
+      );
+      uid = decoded.uid;
+    } catch {
+      return deny(401, "Nevaljana prijava.");
+    }
+
+    const profileSnap = await adminDb
+      .collection("users")
+      .doc(uid)
+      .get();
+
+    const profile = profileSnap.data();
+
+    if (!profile) {
+      return deny(403, "Korisnicki profil nije valjan.");
+    }
+
+    const role = profile.role;
+
+    const gymId =
+      typeof profile.gymId === "string"
+        ? profile.gymId.trim()
+        : "";
+
+    if (
+      !gymId ||
+      (role !== "gym_owner" && role !== "gym_staff")
+    ) {
+      return deny(403, "Nemate dozvolu.");
+    }
+
+    const gymSnap = await adminDb
+      .collection("gyms")
+      .doc(gymId)
+      .get();
+
+    if (!gymSnap.exists) {
+      return deny(403, "Teretana nije pronadena.");
+    }
+
+    if (role === "gym_owner") {
+      if (gymSnap.data()?.ownerId !== uid) {
+        return deny(403, "Niste vlasnik teretane.");
+      }
+    } else {
+      const staffSnap = await adminDb
+        .collection("gymMembers")
+        .doc(gymId)
+        .collection("members")
+        .doc(uid)
+        .get();
+
+      const staff = staffSnap.data();
+
+      if (
+        !staffSnap.exists ||
+        staff?.role !== "gym_staff" ||
+        staff?.gymId !== gymId
+      ) {
+        return deny(403, "Nemate dozvolu recepcije.");
+      }
+    }
+
+    const memberDocs = await adminDb
+      .collection("gymMembers")
+      .doc(gymId)
+      .collection("members")
+      .get();
+
+    function dateForMembersApi(value: unknown): string | null {
+      if (value == null) return null;
+
+      let date: Date;
+
+      if (value instanceof Date) {
+        date = value;
+      } else if (
+        typeof value === "string" ||
+        typeof value === "number"
+      ) {
+        date = new Date(value);
+      } else if (
+        typeof value === "object" &&
+        "toDate" in value &&
+        typeof value.toDate === "function"
+      ) {
+        date = value.toDate();
+      } else {
+        return null;
+      }
+
+      return Number.isNaN(date.getTime())
+        ? null
+        : date.toISOString();
+    }
+
+    const resolved = await Promise.all(
+      memberDocs.docs.map(async (memberDoc) => {
+        const membership = memberDoc.data();
+        const memberRole = membership.role;
+
+        if (
+          membership.gymId !== gymId ||
+          ![
+            "gym_owner",
+            "gym_staff",
+            "trainer",
+            "client",
+          ].includes(memberRole)
+        ) {
+          return null;
+        }
+
+        const isClient = memberRole === "client";
+
+        const profileRef = adminDb
+          .collection(isClient ? "clients" : "users")
+          .doc(memberDoc.id);
+
+        const memberProfileSnap = await profileRef.get();
+        const memberProfile = memberProfileSnap.data();
+
+        if (
+          !memberProfile ||
+          memberProfile.gymId !== gymId
+        ) {
+          return null;
+        }
+
+        if (
+          !isClient &&
+          memberProfile.role !== memberRole
+        ) {
+          return null;
+        }
+
+        if (
+          memberRole === "gym_owner" &&
+          gymSnap.data()?.ownerId !== memberDoc.id
+        ) {
+          return null;
+        }
+
+        const name =
+          typeof memberProfile.name === "string"
+            ? memberProfile.name
+            : "";
+
+        const email =
+          typeof memberProfile.email === "string"
+            ? memberProfile.email
+            : "";
+
+        return {
+          uid: memberDoc.id,
+          name,
+          displayName:
+            typeof memberProfile.displayName === "string" &&
+            memberProfile.displayName.trim()
+              ? memberProfile.displayName.trim()
+              : name,
+          email,
+          ...(isClient
+            ? {
+                phone:
+                  typeof memberProfile.phone === "string"
+                    ? memberProfile.phone
+                    : "",
+                trainerId:
+                  typeof memberProfile.trainerId === "string"
+                    ? memberProfile.trainerId
+                    : null,
+              }
+            : {}),
+          ...(isClient
+            ? {
+                membershipStatus:
+                  typeof memberProfile.membershipStatus === "string"
+                    ? memberProfile.membershipStatus
+                    : null,
+                membershipState:
+                  typeof memberProfile.membershipState === "string"
+                    ? memberProfile.membershipState
+                    : null,
+                membershipValidFrom:
+                  dateForMembersApi(
+                    memberProfile.membershipValidFrom
+                  ),
+                membershipValidUntil:
+                  dateForMembersApi(
+                    memberProfile.membershipValidUntil
+                  ),
+                membershipAmount:
+                  typeof memberProfile.membershipAmount === "number" &&
+                  Number.isFinite(memberProfile.membershipAmount)
+                    ? memberProfile.membershipAmount
+                    : null,
+                membershipPlan:
+                  typeof memberProfile.membershipPlan === "string"
+                    ? memberProfile.membershipPlan
+                    : null,
+              }
+            : {}),
+          gymRole: memberRole,
+          gymId,
+        };
+      })
+    );
+
+    const members = resolved.filter(
+      (member) => member !== null
+    );
+
+    return NextResponse.json(
+      {
+        ok: true,
+        gymId,
+        members,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-store",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Greska pri dohvacanju clanova:", error);
+
+    return deny(
+      500,
+      "Clanove trenutaĂ„Ĺ¤no nije moguce dohvatiti."
+    );
+  }
 }

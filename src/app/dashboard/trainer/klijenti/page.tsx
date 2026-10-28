@@ -13,9 +13,7 @@ import {
   useAuth,
 } from "@/components/auth/AuthProvider";
 
-import {
-  getClients,
-} from "@/lib/services/klijentiService";
+import { auth } from "@/lib/firebase";
 
 
 export default function TrainerClientsPage() {
@@ -36,23 +34,90 @@ export default function TrainerClientsPage() {
   ] = useState(true);
 
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
+    let active = true;
+
     async function loadClients() {
       if (!user) {
+        if (active) {
+          setClients([]);
+          setLoading(false);
+        }
         return;
       }
 
-      const data =
-        await getClients(
-          user.uid
+      setLoading(true);
+      setLoadError(null);
+
+      try {
+        const currentUser = auth.currentUser;
+
+        if (!currentUser || currentUser.uid !== user.uid) {
+          throw new Error("Prijava nije dostupna.");
+        }
+
+        const token = await currentUser.getIdToken();
+
+        const response = await fetch(
+          `/api/clients/list?trainerId=${encodeURIComponent(user.uid)}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            cache: "no-store",
+          }
         );
 
-      setClients(data);
+        const data = (await response.json()) as {
+          error?: string;
+          gymId?: string;
+          trainerId?: string;
+          clients?: Array<{
+            id: string;
+            name: string;
+            email: string;
+          }>;
+        };
 
-      setLoading(false);
+        if (!response.ok) {
+          throw new Error(data.error || "Dohvat klijenata nije uspio.");
+        }
+
+        if (
+          data.trainerId !== user.uid ||
+          !data.gymId ||
+          !Array.isArray(data.clients)
+        ) {
+          throw new Error("Neispravan odgovor API-ja.");
+        }
+
+        if (active) {
+          setClients(data.clients);
+        }
+      } catch (error) {
+        if (active) {
+          setClients([]);
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : "Klijente trenutačno nije moguće učitati."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
     }
 
-    loadClients();
+    void loadClients();
+
+    return () => {
+      active = false;
+    };
   }, [user]);
 
 
@@ -246,10 +311,18 @@ export default function TrainerClientsPage() {
         )}
 
 
+        {!loading && loadError && (
+          <div
+            role="alert"
+            className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"
+          >
+            {loadError}
+          </div>
+        )}
+
         {/* EMPTY STATE */}
 
-        {!loading &&
-          clients.length === 0 && (
+        {!loading && !loadError && clients.length === 0 && (
             <div
               className="
                 rounded-[24px]

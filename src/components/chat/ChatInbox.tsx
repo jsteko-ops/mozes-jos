@@ -10,16 +10,12 @@ import {
   markChatRead,
 } from "@/lib/services/chat/chatService";
 
-import {
-  getClient,
-} from "@/lib/services/klijentiService";
-
-
 type Chat = {
   id: string;
   clientId: string;
   trainerId: string;
   lastMessage?: string;
+  clientName?: string;
   updatedAt?: any;
   unreadForTrainer?: boolean;
 };
@@ -146,38 +142,11 @@ export default function ChatInbox({
           setChats(
             chatData
           );
-
-
-          const names:
-            Record<
-              string,
-              string
-            > = {};
-
-
-          await Promise.all(
-            chatData.map(
-              async (chat) => {
-                const client =
-                  await getClient(
-                    chat.clientId
-                  );
-
-                if (client) {
-                  names[
-                    chat.clientId
-                  ] =
-                    client.name ||
-                    "Klijent";
-                }
-              }
-            )
-          );
-
-
-          setClientNames(
-            names
-          );
+          const names: Record<string, string> = {};
+          for (const chat of chatData) {
+            names[chat.clientId] = chat.clientName || "Klijent";
+          }
+          setClientNames(names);
 
           setLoading(false);
         }

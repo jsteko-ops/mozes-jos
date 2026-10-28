@@ -23,7 +23,7 @@ import {
 
 import {
   getGymMembers,
-} from "@/lib/getGymMembers";
+} from "@/lib/getGymMembersViaApi";
 import {
   createClient,
 } from "@/lib/createClientForTrainer";

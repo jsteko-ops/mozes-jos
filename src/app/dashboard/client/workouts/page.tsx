@@ -9,11 +9,6 @@ import {
 import Link from "next/link";
 
 import {
-  collection,
-  onSnapshot,
-} from "firebase/firestore";
-
-import {
   onAuthStateChanged,
 } from "firebase/auth";
 
@@ -21,11 +16,11 @@ import RoleGuard from "@/components/auth/RoleGuard";
 
 import {
   auth,
-  db,
 } from "@/lib/firebase";
 
 import {
   getClientByEmail,
+  getWorkouts,
 } from "@/lib/services/klijentiService";
 
 
@@ -94,190 +89,81 @@ export default function ClientWorkoutsPage() {
 
 
   useEffect(() => {
-    let cancelled =
-      false;
+    let cancelled = false;
+    let stopPolling: (() => void) | null = null;
+    let generation = 0;
 
-    let unsubscribeWorkouts:
-      | (() => void)
-      | null =
-      null;
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      generation++;
+      const current = generation;
+      stopPolling?.();
+      stopPolling = null;
 
-
-    const unsubscribeAuth =
-      onAuthStateChanged(
-        auth,
-        async (user) => {
-          if (!user) {
-            if (!cancelled) {
-              setLoading(
-                false
-              );
-            }
-
-            return;
-          }
-
-
-          try {
-            if (!cancelled) {
-              setLoading(
-                true
-              );
-
-              setError(
-                ""
-              );
-            }
-
-
-            if (!user.email) {
-              throw new Error(
-                "Tvoj korisnički račun nema email adresu."
-              );
-            }
-
-
-            /*
-             * Klijent se pronalazi
-             * preko emaila, a zatim
-             * koristimo stvarni
-             * client.id iz kolekcije
-             * clients.
-             */
-            const foundClient =
-              await getClientByEmail(
-                user.email
-              );
-
-
-            if (cancelled) {
-              return;
-            }
-
-
-            if (!foundClient) {
-              setClient(
-                null
-              );
-
-              setWorkouts(
-                []
-              );
-
-              setError(
-                "Klijentski profil nije pronađen. Obrati se svom treneru."
-              );
-
-              setLoading(
-                false
-              );
-
-              return;
-            }
-
-
-            const clientData =
-              foundClient as ClientProfile;
-
-
-            setClient(
-              clientData
-            );
-
-
-            /*
-             * Realtime praćenje
-             * trening planova.
-             */
-            unsubscribeWorkouts?.();
-
-
-            unsubscribeWorkouts =
-              onSnapshot(
-                collection(
-                  db,
-                  "clients",
-                  clientData.id,
-                  "workouts"
-                ),
-
-                (snapshot) => {
-                  if (cancelled) {
-                    return;
-                  }
-
-
-                  const data =
-                    snapshot.docs.map(
-                      (item) => ({
-                        id:
-                          item.id,
-
-                        ...item.data(),
-                      })
-                    ) as Workout[];
-
-
-                  setWorkouts(
-                    data
-                  );
-
-                  setLoading(
-                    false
-                  );
-                },
-
-                (
-                  snapshotError
-                ) => {
-                  console.error(
-                    "Greška kod učitavanja trening planova:",
-                    snapshotError
-                  );
-
-
-                  if (!cancelled) {
-                    setError(
-                      "Trening planove trenutno nije moguće učitati."
-                    );
-
-                    setLoading(
-                      false
-                    );
-                  }
-                }
-              );
-          } catch (
-            loadError
-          ) {
-            console.error(
-              "Greška kod učitavanja Client treninga:",
-              loadError
-            );
-
-
-            if (!cancelled) {
-              setError(
-                loadError instanceof Error
-                  ? loadError.message
-                  : "Trening planove trenutno nije moguće učitati."
-              );
-
-              setLoading(
-                false
-              );
-            }
-          }
+      if (!user) {
+        if (!cancelled) {
+          setClient(null);
+          setWorkouts([]);
+          setError("");
+          setLoading(false);
         }
-      );
+        return;
+      }
 
+      try {
+        setLoading(true);
+        setError("");
+        if (!user.email) throw new Error("Tvoj korisnički račun nema email adresu.");
+        const foundClient = await getClientByEmail(user.email);
+        if (cancelled || current !== generation) return;
+        if (!foundClient) {
+          setClient(null);
+          setWorkouts([]);
+          setError("Klijentski profil nije pronađen. Obrati se svom treneru.");
+          setLoading(false);
+          return;
+        }
+        const clientData = foundClient as ClientProfile;
+        setClient(clientData);
+        let busy = false;
+        let stopped = false;
+        const refresh = async () => {
+          if (cancelled || stopped || busy || current !== generation) return;
+          busy = true;
+          try {
+            const data = await getWorkouts(clientData.id);
+            if (!cancelled && !stopped && current === generation) {
+              setWorkouts(data);
+              setError("");
+              setLoading(false);
+            }
+          } catch (loadError) {
+            if (!cancelled && !stopped && current === generation) {
+              setError(loadError instanceof Error ? loadError.message :
+                "Trening planove trenutno nije moguće učitati.");
+              setLoading(false);
+            }
+          } finally {
+            busy = false;
+          }
+        };
+        await refresh();
+        if (cancelled || current !== generation) return;
+        const interval = setInterval(() => void refresh(), 8000);
+        stopPolling = () => { stopped = true; clearInterval(interval); };
+      } catch (loadError) {
+        if (!cancelled && current === generation) {
+          setError(loadError instanceof Error ? loadError.message :
+            "Trening planove trenutno nije moguće učitati.");
+          setLoading(false);
+        }
+      }
+    });
 
     return () => {
       cancelled = true;
-
+      generation++;
       unsubscribeAuth();
-
-      unsubscribeWorkouts?.();
+      stopPolling?.();
     };
   }, []);
 
@@ -892,231 +778,71 @@ function WorkoutCard({
   workout: Workout;
   index: number;
 }) {
-  const title =
-    workout.title?.trim() ||
-    "Trening plan";
+  const title = workout.title?.trim() || "Trening plan";
+  const [expanded, setExpanded] = useState(false);
 
+  // Kad klijent otvori obavijest, automatski otvori tocno taj plan.
+  useEffect(() => {
+    const showLinkedPlan = () => {
+      if (window.location.hash !== `#plan-${encodeURIComponent(workout.id)}`) return;
+      setExpanded(true);
+      window.requestAnimationFrame(() => {
+        document.getElementById(`plan-${workout.id}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    };
+    showLinkedPlan();
+    window.addEventListener("hashchange", showLinkedPlan);
+    return () => window.removeEventListener("hashchange", showLinkedPlan);
+  }, [workout.id]);
 
   return (
     <article
-      className="
-        group
-        overflow-hidden
-        rounded-[28px]
-        border
-        border-[#E5E7EB]
-        bg-white
-        shadow-sm
-        transition-all
-        hover:-translate-y-1
-        hover:shadow-xl
-        hover:shadow-black/5
-      "
+      id={`plan-${workout.id}`}
+      className="scroll-mt-24 overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white shadow-sm transition-shadow hover:shadow-lg"
     >
-
-      {/* HEADER */}
-
-      <div
-        className="
-          flex
-          items-start
-          justify-between
-          gap-4
-          border-b
-          border-[#EEF0EC]
-          p-6
-        "
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={`program-${workout.id}`}
+        onClick={() => setExpanded((old) => !old)}
+        className="flex w-full items-center justify-between gap-4 p-6 text-left transition-colors hover:bg-[#FBFCF7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#16A6A1]"
       >
-        <div
-          className="
-            flex
-            items-start
-            gap-4
-          "
-        >
-          <div
-            className="
-              flex
-              h-12
-              w-12
-              shrink-0
-              items-center
-              justify-center
-              rounded-2xl
-              bg-[#111317]
-              text-sm
-              font-black
-              text-[#C8D52B]
-            "
-          >
-            {String(
-              index + 1
-            ).padStart(
-              2,
-              "0"
-            )}
-          </div>
-
-
-          <div>
-            <p
-              className="
-                text-[9px]
-                font-bold
-                uppercase
-                tracking-[0.14em]
-                text-[#98A2B3]
-              "
-            >
-              Trening plan
-            </p>
-
-
-            <h3
-              className="
-                mt-1
-                text-xl
-                font-black
-                tracking-tight
-                text-[#15171A]
-              "
-            >
-              {title}
-            </h3>
-          </div>
-        </div>
-
-
+        <span className="flex min-w-0 items-center gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#111317] text-sm font-black text-[#C8D52B]">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">Trening plan</span>
+            <span className="mt-1 block break-words text-xl font-black tracking-tight text-[#15171A]">{title}</span>
+            <span className="mt-2 block text-xs font-bold text-[#16847F]">
+              {expanded ? "Zatvori plan ↑" : "Otvori plan ↓"}
+            </span>
+          </span>
+        </span>
         {index === 0 && (
-          <span
-            className="
-              rounded-full
-              bg-[#C8D52B]/15
-              px-3
-              py-2
-              text-[9px]
-              font-bold
-              uppercase
-              tracking-wider
-              text-[#68720F]
-            "
-          >
+          <span className="shrink-0 rounded-full bg-[#C8D52B]/15 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-[#68720F]">
             Najnovije
           </span>
         )}
-      </div>
+      </button>
 
-
-      {/* EXERCISES */}
-
-      <div
-        className="
-          p-6
-        "
-      >
-        <p
-          className="
-            text-[9px]
-            font-bold
-            uppercase
-            tracking-[0.14em]
-            text-[#16A6A1]
-          "
-        >
-          Program
-        </p>
-
-
-        <div
-          className="
-            mt-4
-            rounded-2xl
-            bg-[#F6F7F3]
-            p-5
-          "
-        >
-          <p
-            className="
-              whitespace-pre-wrap
-              text-sm
-              font-semibold
-              leading-7
-              text-[#344054]
-            "
-          >
-            {workout.exercises?.trim() ||
-              "Vježbe nisu unesene."}
+      {expanded && (
+        <div id={`program-${workout.id}`} className="border-t border-[#EEF0EC] p-6">
+          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#16A6A1]">Program treninga</p>
+          <div className="mt-4 rounded-2xl bg-[#F6F7F3] p-5">
+            <p className="whitespace-pre-wrap break-words text-sm font-semibold leading-7 text-[#344054]">
+              {workout.exercises?.trim() || "Vježbe nisu unesene."}
+            </p>
+          </div>
+          <p className="mt-5 text-xs font-bold text-[#667085]">
+            Zadnja izmjena: {formatDate(workout.updatedAt || workout.createdAt)}
           </p>
         </div>
-      </div>
-
-
-      {/* FOOTER */}
-
-      <div
-        className="
-          flex
-          items-center
-          justify-between
-          gap-4
-          border-t
-          border-[#EEF0EC]
-          bg-[#FBFCFA]
-          px-6
-          py-4
-        "
-      >
-        <div>
-          <p
-            className="
-              text-[9px]
-              font-bold
-              uppercase
-              tracking-wider
-              text-[#98A2B3]
-            "
-          >
-            Zadnja izmjena
-          </p>
-
-
-          <p
-            className="
-              mt-0.5
-              text-xs
-              font-bold
-              text-[#667085]
-            "
-          >
-            {formatDate(
-              workout.updatedAt ||
-                workout.createdAt
-            )}
-          </p>
-        </div>
-
-
-        <div
-          className="
-            h-2
-            w-2
-            rounded-full
-            bg-[#16A6A1]
-          "
-        />
-      </div>
-
-
-      <div
-        className="
-          h-1
-          bg-gradient-to-r
-          from-[#C8D52B]
-          via-[#16A6A1]
-          to-transparent
-        "
-      />
-
+      )}
+      <div className="h-1 bg-gradient-to-r from-[#C8D52B] via-[#16A6A1] to-transparent" />
     </article>
   );
 }

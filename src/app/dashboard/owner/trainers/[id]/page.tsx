@@ -24,7 +24,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import EditTrainerModal from "@/components/owner/EditTrainerModal";
 import {
   getGymMembers,
-} from "@/lib/getGymMembers";
+} from "@/lib/getGymMembersViaApi";
 
 import {
   getClients,

@@ -26,7 +26,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 import {
   getGymMembers,
-} from "@/lib/getGymMembers";
+} from "@/lib/getGymMembersViaApi";
 
 
 type Trainer = {

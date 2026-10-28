@@ -1,4 +1,4 @@
-﻿import {
+import {
   FieldValue,
 } from "firebase-admin/firestore";
 
@@ -719,33 +719,27 @@ export async function POST(
             .get();
 
 
+        const memberData =
+          trainerMemberSnapshot.data();
+
+        const memberRole =
+          memberData?.gymRole ??
+          memberData?.role;
+
         if (
-          trainerMemberSnapshot.exists
+          !trainerMemberSnapshot.exists ||
+          memberRole !== "trainer" ||
+          memberData?.gymId !== creatorGymId
         ) {
-          const memberData =
-            trainerMemberSnapshot
-              .data();
-
-
-          const memberRole =
-            memberData?.gymRole ??
-            memberData?.role;
-
-
-          if (
-            memberRole !==
-            "trainer"
-          ) {
-            return NextResponse.json(
-              {
-                error:
-                  "Trener nije pravilno povezan s teretanom.",
-              },
-              {
-                status: 403,
-              }
-            );
-          }
+          return NextResponse.json(
+            {
+              error:
+                "Trener nije pravilno povezan s teretanom.",
+            },
+            {
+              status: 403,
+            }
+          );
         }
       }
     }

@@ -1,14 +1,8 @@
-import { auth, db } from "@/lib/firebase";
-
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 import {
-  doc,
-  setDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-
-import { createGym } from "@/lib/createGym";
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
 
 type Role =
   | "client"
@@ -20,6 +14,7 @@ interface RegisterUserData {
   email: string;
   password: string;
   role: Role;
+  gymName?: string;
 }
 
 export async function registerUser({
@@ -27,45 +22,68 @@ export async function registerUser({
   email,
   password,
   role,
+  gymName,
 }: RegisterUserData) {
-  const result =
-    await createUserWithEmailAndPassword(
-      auth,
-      email.trim(),
-      password
-    );
+  const normalizedName = name.trim();
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedGymName = gymName?.trim() ?? "";
 
-  const uid = result.user.uid;
-
-  let gymId: string | null = null;
-
-  if (role === "gym_owner") {
-    gymId = `gym_${uid}`;
-
-    await createGym({
-      gymId,
-      name: `${name}'s Gym`,
-      ownerId: uid,
-    });
+  if (!normalizedName) {
+    throw new Error("Unesi ime i prezime.");
   }
 
-  await setDoc(doc(db, "users", uid), {
-    uid,
+  if (!normalizedEmail) {
+    throw new Error("Unesi e-mail adresu.");
+  }
 
-    name: name.trim(),
+  if (password.length < 6) {
+    throw new Error("Lozinka mora imati najmanje 6 znakova.");
+  }
 
-    email: result.user.email,
+  if (role === "gym_owner" && !normalizedGymName) {
+    throw new Error("Unesi naziv teretane.");
+  }
 
-    role,
+  // Stvaranje Firebase Auth racuna.
+  const credential = await createUserWithEmailAndPassword(
+    auth,
+    normalizedEmail,
+    password
+  );
 
-    gymId,
+  // Token novog korisnika.
+  const token = await credential.user.getIdToken();
 
-    isPremium: false,
+  // Profil i teretanu stvara server.
+  const response = await fetch("/api/register", {
+    method: "POST",
 
-    subscriptionStatus: "inactive",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
 
-    createdAt: serverTimestamp(),
+    cache: "no-store",
+
+    body: JSON.stringify({
+      name: normalizedName,
+      role,
+      gymName:
+        role === "gym_owner"
+          ? normalizedGymName
+          : "",
+    }),
   });
 
-  return result.user;
+  const result: { error?: string } | null =
+    await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      result?.error ||
+        "Racun za prijavu je stvoren, ali profil nije dovrsen. Obrati se podrsci."
+    );
+  }
+
+  return credential.user;
 }

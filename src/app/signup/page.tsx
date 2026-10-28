@@ -57,6 +57,12 @@ export default function SignupPage() {
 
 
   const [
+    gymName,
+    setGymName,
+  ] =
+    useState("");
+
+  const [
     loading,
     setLoading,
   ] =
@@ -115,6 +121,11 @@ export default function SignupPage() {
     }
 
 
+    if (role === "gym_owner" && !gymName.trim()) {
+      setError("Unesi naziv teretane.");
+      return;
+    }
+
     try {
       setLoading(
         true
@@ -135,6 +146,7 @@ export default function SignupPage() {
         password,
 
         role,
+        gymName: gymName.trim(),
       });
 
 
@@ -830,6 +842,32 @@ export default function SignupPage() {
                 </div>
               </fieldset>
 
+
+              {role === "gym_owner" && (
+                <div>
+                  <label
+                    htmlFor="gymName"
+                    className="text-sm font-black text-[#344054]"
+                  >
+                    Naziv teretane
+                  </label>
+
+                  <input
+                    id="gymName"
+                    type="text"
+                    value={gymName}
+                    onChange={(event) => {
+                      setGymName(event.target.value);
+                      if (error) setError("");
+                    }}
+                    placeholder="npr. Fitness Centar Imotski"
+                    maxLength={100}
+                    required
+                    disabled={loading}
+                    className="mt-2 w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3.5 text-sm font-semibold text-[#15171A] outline-none focus:border-[#16A6A1]"
+                  />
+                </div>
+              )}
 
               {/* ERROR */}
 

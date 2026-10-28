@@ -2,26 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import {
-  collection,
-  onSnapshot,
-  query,
-  where,
-  orderBy,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
-
-import {
-  auth,
-  db,
-} from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 
 import {
   onAuthStateChanged,
 } from "firebase/auth";
 
 import { useRouter } from "next/navigation";
+import { notificationAction } from "@/lib/services/notificationActions";
+import { listenMyNotifications } from "@/lib/services/notificationReads";
 
 
 type Notification = {
@@ -113,65 +102,11 @@ export default function NotificationBell(){
 
 
 
-  function loadNotifications(uid:string){
-
-
-    const q = query(
-
-      collection(
-        db,
-        "notifications"
-      ),
-
-      where(
-        "userId",
-        "==",
-        uid
-      ),
-
-      orderBy(
-        "createdAt",
-        "desc"
-      )
-
-    );
-
-
-
-    return onSnapshot(
-
-      q,
-
-      (snap)=>{
-
-
-        const data =
-          snap.docs
-
-          .map((d)=>({
-
-            id:d.id,
-
-            ...d.data(),
-
-          }) as Notification)
-
-          .filter(
-            (n)=>!n.read
-          );
-
-
-
-        setNotifications(data);
-
-
-      }
-
-    );
-
-
+  function loadNotifications(uid: string) {
+    return listenMyNotifications(uid, (items) => {
+      setNotifications(items.filter((item) => !item.read) as Notification[]);
+    }, (error) => console.error("Greška kod učitavanja obavijesti:", error));
   }
-
 
 function notificationIcon(type?:string){
 
@@ -345,20 +280,7 @@ async function openNotification(
   setOpen(false);
 
 
-  await updateDoc(
-
-    doc(
-      db,
-      "notifications",
-      notification.id
-    ),
-
-    {
-      read:true
-    }
-
-  );
-
+  await notificationAction("read", notification.id);
 
   if(notification.link){
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   useEffect,
@@ -10,7 +10,7 @@ import Link from "next/link";
 
 import RoleGuard from "@/components/auth/RoleGuard";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getGymMembers } from "@/lib/getGymMembers";
+import { getGymMembers } from "@/lib/getGymMembersViaApi";
 
 import {
   recordMembershipPayment,

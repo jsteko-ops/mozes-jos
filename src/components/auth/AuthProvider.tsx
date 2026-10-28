@@ -9,16 +9,16 @@ import {
 
 import {
   onAuthStateChanged,
-  User,
+  type User,
 } from "firebase/auth";
 
 import {
   doc,
-  getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 
 import { auth, db } from "@/lib/firebase";
-import { AppUser } from "@/types/appUser";
+import type { AppUser } from "@/types/appUser";
 
 type AuthContextType = {
   user: User | null;
@@ -42,73 +42,75 @@ export function AuthProvider({
   const [userProfile, setUserProfile] =
     useState<AppUser | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(
+    let stopProfile: (() => void) | undefined;
+    let generation = 0;
+
+    const stopAuth = onAuthStateChanged(
       auth,
-      async (firebaseUser) => {
+      (firebaseUser) => {
+        generation++;
+        const currentGeneration = generation;
+
+        stopProfile?.();
+        stopProfile = undefined;
+
         setUser(firebaseUser);
+        setUserProfile(null);
 
-        if (firebaseUser) {
-          try {
-            const ref = doc(
-              db,
-              "users",
-              firebaseUser.uid
-            );
-
-            const snapshot = await getDoc(ref);
-
-            if (snapshot.exists()) {
-              const data =
-                snapshot.data() as AppUser;
-
-              setUserProfile(data);
-
-              console.log(
-                "USER PROFILE:",
-                JSON.stringify(data, null, 2)
-              );
-            } else {
-              console.warn(
-                "User document ne postoji"
-              );
-
-              setUserProfile(null);
-            }
-          } catch (error) {
-            console.error(
-              "Greška kod učitavanja user profila:",
-              error
-            );
-
-            setUserProfile(null);
-          }
-        } else {
-          setUserProfile(null);
+        if (!firebaseUser) {
+          setLoading(false);
+          return;
         }
 
+        setLoading(true);
+
+        stopProfile = onSnapshot(
+          doc(db, "users", firebaseUser.uid),
+          (snapshot) => {
+            if (currentGeneration !== generation) return;
+
+            setUserProfile(
+              snapshot.exists()
+                ? (snapshot.data() as AppUser)
+                : null
+            );
+
+            setLoading(false);
+          },
+          (error) => {
+            if (currentGeneration !== generation) return;
+
+            console.error("Profile error:", error);
+            setUserProfile(null);
+            setLoading(false);
+          }
+        );
+      },
+      (error) => {
+        console.error("Auth error:", error);
+        setUser(null);
+        setUserProfile(null);
         setLoading(false);
       }
     );
 
-    return () => unsub();
+    return () => {
+      generation++;
+      stopProfile?.();
+      stopAuth();
+    };
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        userProfile,
-        loading,
-      }}
+      value={{ user, userProfile, loading }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () =>
-  useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext);

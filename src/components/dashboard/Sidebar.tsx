@@ -72,12 +72,18 @@ export default function Sidebar() {
 
 
     const unsubscribeMessages =
-      listenUnreadTrainerMessages(
-        userProfile.uid,
-        (count) => {
-          setMessageCount(count);
-        }
-      );
+      userProfile.role === "trainer"
+        ? listenUnreadTrainerMessages(
+            userProfile.uid,
+            (count) => {
+              setMessageCount(count);
+            }
+          )
+        : () => {};
+
+    if (userProfile.role !== "trainer") {
+      setMessageCount(0);
+    }
 
 
     const unsubscribeCheckins =
@@ -103,7 +109,7 @@ export default function Sidebar() {
       unsubscribeCheckins();
       unsubscribeNotifications();
     };
-  }, [userProfile?.uid]);
+  }, [userProfile?.uid, userProfile?.role]);
 
 
   const logout = async () => {
@@ -366,6 +372,16 @@ export default function Sidebar() {
           gap-1
         "
       >
+        {/* Universal support link - available to every sidebar role. */}
+        <Link
+          href="/pomoc"
+          aria-label="Pomoć i sigurnost"
+          className="mb-3 flex min-h-11 items-center gap-3 rounded-xl border border-[#16A6A1]/40 bg-[#16A6A1]/10 px-3 py-3 text-sm font-bold text-white transition hover:bg-[#16A6A1]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8D52B]"
+        >
+          <span aria-hidden="true">♥</span>
+          <span>Pomoć i sigurnost</span>
+        </Link>
+
 
         {/* TRAINER */}
 
@@ -956,7 +972,9 @@ export default function Sidebar() {
         </p>
       </div>
 
-    </aside>
+
+
+</aside>
   );
 }
 

@@ -4,16 +4,7 @@ import {
   useState,
 } from "react";
 
-import {
-  addDoc,
-  collection,
-  getDocs,
-  serverTimestamp,
-} from "firebase/firestore";
-
-import {
-  db,
-} from "@/lib/firebase";
+import { addMeasurement as createMeasurementViaApi } from "@/lib/services/klijentiService";
 
 import {
   useAuth,
@@ -28,10 +19,7 @@ export default function MeasurementForm({
   onCreated: () => void;
 }) {
 
- const {
-  user,
-  userProfile,
-} = useAuth();
+ const { user } = useAuth();
 
 
   const [
@@ -141,34 +129,6 @@ export default function MeasurementForm({
 
     }
 
-const existingMeasurements =
-  await getDocs(
-    collection(
-      db,
-      "clients",
-      cleanClientId,
-      "measurements"
-    )
-  );
-
-const hasExistingMeasurement =
-  !existingMeasurements.empty;
-
-const hasPro =
-  userProfile?.isPremium === true &&
-  userProfile?.subscriptionStatus === "active";
-
-if (
-  hasExistingMeasurement &&
-  !hasPro
-) {
-  alert(
-    "Prvo mjerenje je besplatno. Za dodatna mjerenja i praćenje napretka potreban je Možeš Još Pro."
-  );
-
-  return;
-}
-
     try {
 
       setSaving(
@@ -176,41 +136,11 @@ if (
       );
 
 
-      const measurementsReference =
-        collection(
-          db,
-          "clients",
-          cleanClientId,
-          "measurements"
-        );
-
-
-      await addDoc(
-        measurementsReference,
-        {
-          weight:
-            parsedWeight,
-
-          bodyFat:
-            parsedBodyFat,
-
-          notes:
-            notes.trim(),
-
-          trainerId:
-            user.uid,
-
-          createdBy:
-            user.uid,
-
-          createdAt:
-            serverTimestamp(),
-
-          updatedAt:
-            serverTimestamp(),
-        }
-      );
-
+      await createMeasurementViaApi(cleanClientId, {
+        weight: parsedWeight,
+        bodyFat: parsedBodyFat,
+        notes: notes.trim(),
+      });
 
       setWeight(
         ""
@@ -244,9 +174,7 @@ if (
       );
 
 
-      alert(
-        "Mjerenje nije moguće spremiti."
-      );
+      alert(error instanceof Error ? error.message : "Mjerenje nije moguće spremiti.");
 
     } finally {
 

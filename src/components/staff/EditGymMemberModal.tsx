@@ -7,7 +7,7 @@ import {
 
 import {
   getGymMembers,
-} from "@/lib/getGymMembers";
+} from "@/lib/getGymMembersViaApi";
 
 import {
   updateGymMember,

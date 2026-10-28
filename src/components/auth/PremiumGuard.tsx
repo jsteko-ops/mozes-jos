@@ -111,8 +111,7 @@ export default function PremiumGuard({
 
 
         const active =
-          data.subscriptionStatus ===
-          "active";
+          (data.subscriptionStatus === "active" || data.subscriptionStatus === "trialing");
 
 
         setPremium(

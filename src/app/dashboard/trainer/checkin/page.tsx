@@ -21,10 +21,8 @@ import ClientSelect from "@/components/checkins/ClientSelect";
 import CheckinForm from "@/components/checkins/CheckinForm";
 import CheckinHistory from "@/components/checkins/CheckinHistory";
 
-import {
-  getClients,
-  getCheckins,
-} from "@/lib/services/klijentiService";
+import { getClients } from "@/lib/getTrainerClientsViaApi";
+import { getCheckins } from "@/lib/getTrainerCheckinsViaApi";
 
 
 type Client = {

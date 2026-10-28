@@ -15,10 +15,8 @@ import {
   useAuth,
 } from "@/components/auth/AuthProvider";
 
-import {
-  getClients,
-  getMeasurements,
-} from "@/lib/services/klijentiService";
+import { getMeasurements } from "@/lib/services/klijentiService";
+import { auth } from "@/lib/firebase";
 
 
 type MeasurementItem = {
@@ -88,10 +86,32 @@ export default function MjerenjaPage() {
         setError("");
 
 
-        const clients =
-          await getClients(
-            user.uid
-          );
+        // Popis mora proci serverovu provjeru teretane i dodjele trenera.
+        const currentUser = auth.currentUser;
+        if (!currentUser || currentUser.uid !== user.uid) {
+          throw new Error("Prijava trenera nije valjana.");
+        }
+
+        const token = await currentUser.getIdToken();
+        const response = await fetch(
+          "/api/clients/list?trainerId=" + encodeURIComponent(user.uid),
+          {
+            headers: { Authorization: "Bearer " + token },
+            cache: "no-store",
+          }
+        );
+
+        const result = (await response.json().catch(() => null)) as
+          | { error?: string; trainerId?: string; clients?: Array<{ id: string; name: string }> }
+          | null;
+
+        if (!response.ok) {
+          throw new Error(result?.error || "Popis klijenata nije dostupan.");
+        }
+        if (result?.trainerId !== user.uid || !Array.isArray(result.clients)) {
+          throw new Error("Neispravan odgovor servera za popis klijenata.");
+        }
+        const clients = result.clients;
 
 
         const measurementsByClient =

@@ -16,6 +16,10 @@ export default function DashboardPage() {
         router.replace("/dashboard/trainer");
         break;
 
+      case "gym_staff":
+        router.replace("/dashboard/staff");
+        break;
+
       case "gym_owner":
         router.replace("/dashboard/owner");
         break;

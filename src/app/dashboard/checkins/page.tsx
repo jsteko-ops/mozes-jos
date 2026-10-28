@@ -5,10 +5,7 @@ import {
   useState,
 } from "react";
 
-import {
-  doc,
-  getDoc,
-} from "firebase/firestore";
+
 
 import {
   onAuthStateChanged,
@@ -19,14 +16,9 @@ import RoleGuard from "@/components/auth/RoleGuard";
 import CheckinForm from "@/components/checkins/CheckinForm";
 import CheckinHistory from "@/components/checkins/CheckinHistory";
 
-import {
-  auth,
-  db,
-} from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 
-import {
-  listenCheckins,
-} from "@/lib/services/klijentiService";
+import { getOwnCheckinsViaApi } from "@/lib/getOwnCheckinsViaApi";
 
 
 export default function ClientCheckinPage() {
@@ -68,169 +60,86 @@ export default function ClientCheckinPage() {
 
 
   useEffect(() => {
-    let cancelled =
-      false;
+    let cancelled = false;
+    let requestNumber = 0;
 
+    const unsubscribeAuth = onAuthStateChanged(
+      auth,
+      async (user) => {
+        const currentRequest = ++requestNumber;
 
-    let unsubscribeCheckins:
-      | (() => void)
-      | undefined;
+        const isCurrent = () =>
+          !cancelled &&
+          requestNumber === currentRequest;
 
+        setClientId(null);
+        setCheckins([]);
+        setError("");
+        setLoading(Boolean(user));
 
-    const unsubscribeAuth =
-      onAuthStateChanged(
-        auth,
-        async (user) => {
-          /*
-           * Ako se auth korisnik
-           * promijeni, prvo ugasi
-           * prethodni Check-in
-           * listener.
-           */
+        if (!user) {
+          return;
+        }
+
+        try {
+          const result = await getOwnCheckinsViaApi();
 
           if (
-            unsubscribeCheckins
+            !isCurrent() ||
+            auth.currentUser?.uid !== user.uid
           ) {
-            unsubscribeCheckins();
-
-            unsubscribeCheckins =
-              undefined;
-          }
-
-
-          if (!user) {
-            if (!cancelled) {
-              setClientId(
-                null
-              );
-
-              setCheckins(
-                []
-              );
-
-              setLoading(
-                false
-              );
-            }
-
             return;
           }
 
+          setClientId(result.clientId);
+          setCheckins(result.checkins);
+        } catch (loadError) {
+          if (!isCurrent()) {
+            return;
+          }
 
-          try {
-            if (!cancelled) {
-              setLoading(
-                true
-              );
-
-              setError(
-                ""
-              );
-            }
-
-
-            const snap =
-              await getDoc(
-                doc(
-                  db,
-                  "clients",
-                  user.uid
-                )
-              );
-
-
-            if (cancelled) {
-              return;
-            }
-
-
-            if (
-              !snap.exists()
-            ) {
-              setClientId(
-                null
-              );
-
-              setCheckins(
-                []
-              );
-
-              setError(
-                "Klijentski profil nije pronađen."
-              );
-
-              return;
-            }
-
-
-            setClientId(
-              user.uid
-            );
-
-
-            unsubscribeCheckins =
-              listenCheckins(
-                user.uid,
-                (
-                  items: any[]
-                ) => {
-                  if (
-                    !cancelled
-                  ) {
-                    setCheckins(
-                      items
-                    );
-                  }
-                }
-              );
-          } catch (
+          console.error(
+            "Greška kod učitavanja Check-inova:",
             loadError
-          ) {
-            console.error(
-              "Greška kod učitavanja Check-inova:",
-              loadError
-            );
+          );
 
+          setClientId(null);
+          setCheckins([]);
 
-            if (!cancelled) {
-              setClientId(
-                null
-              );
-
-              setCheckins(
-                []
-              );
-
-              setError(
-                "Check-in trenutno nije moguće učitati."
-              );
-            }
-          } finally {
-            if (!cancelled) {
-              setLoading(
-                false
-              );
-            }
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Check-in trenutno nije moguće učitati."
+          );
+        } finally {
+          if (isCurrent()) {
+            setLoading(false);
           }
         }
-      );
-
+      }
+    );
 
     return () => {
       cancelled = true;
-
+      requestNumber += 1;
       unsubscribeAuth();
-
-      if (
-        unsubscribeCheckins
-      ) {
-        unsubscribeCheckins();
-      }
     };
   }, []);
 
 
-  function handleSaved() {
+  async function handleSaved() {
+    const result = await getOwnCheckinsViaApi();
+
+    if (
+      auth.currentUser?.uid !== result.clientId ||
+      result.clientId !== clientId
+    ) {
+      throw new Error(
+        "Korisnički profil se promijenio. Osvježi stranicu."
+      );
+    }
+
+    setCheckins(result.checkins);
     setSentMessage(
       "Check-in je uspješno poslan treneru."
     );
@@ -662,6 +571,7 @@ export default function ClientCheckinPage() {
                     clientId
                   }
                   onReviewed={() => {}}
+                  canManage={false}
                 />
               </section>
 

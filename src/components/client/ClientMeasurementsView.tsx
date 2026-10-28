@@ -6,15 +6,7 @@ import {
   useState,
 } from "react";
 
-import {
-  collection,
-  onSnapshot,
-} from "firebase/firestore";
-
-import {
-  db,
-} from "@/lib/firebase";
-
+import { getMeasurements } from "@/lib/services/klijentiService";
 
 type Measurement = {
   id: string;
@@ -66,69 +58,32 @@ export default function ClientMeasurementsView({
 
 
   useEffect(() => {
-    setLoading(
-      true
-    );
-
-    setError(
-      ""
-    );
-
-
-    const unsubscribe =
-      onSnapshot(
-        collection(
-          db,
-          "clients",
-          clientId,
-          "measurements"
-        ),
-
-        (snapshot) => {
-          const data =
-            snapshot.docs.map(
-              (item) => ({
-                id:
-                  item.id,
-
-                ...item.data(),
-              })
-            ) as Measurement[];
-
-
-          setMeasurements(
-            data
-          );
-
-          setLoading(
-            false
-          );
-        },
-
-        (snapshotError) => {
-          console.error(
-            "Greška kod učitavanja mjerenja:",
-            snapshotError
-          );
-
-
-          setError(
-            "Mjerenja trenutno nije moguće učitati."
-          );
-
-          setLoading(
-            false
-          );
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const data = await getMeasurements(clientId);
+        if (!cancelled) {
+          setMeasurements(data as Measurement[]);
+          setError("");
         }
-      );
-
-
-    return () =>
-      unsubscribe();
-  }, [
-    clientId,
-  ]);
-
+      } catch (loadError) {
+        console.error("Greška kod učitavanja mjerenja:", loadError);
+        if (!cancelled) setError("Mjerenja trenutno nije moguće učitati.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    setLoading(true);
+    setError("");
+    void refresh();
+    // Ponovno dohvati pri povratku na karticu nakon dodavanja mjerenja.
+    const focus = () => { void refresh(); };
+    window.addEventListener("focus", focus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", focus);
+    };
+  }, [clientId]);
 
   const sortedMeasurements =
     useMemo(

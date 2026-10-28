@@ -16,7 +16,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 import {
   getGymMembers,
-} from "@/lib/getGymMembers";
+} from "@/lib/getGymMembersViaApi";
 
 
 type OwnerClient = {
@@ -104,7 +104,7 @@ export default function OwnerClientsPage() {
           );
 
           setError(
-            "Tvoj vlasnički račun još nije povezan s teretanom."
+            "Tvoj vlasniÄŤki raÄŤun joĹˇ nije povezan s teretanom."
           );
 
           setLoading(
@@ -156,14 +156,14 @@ export default function OwnerClientsPage() {
         loadError
       ) {
         console.error(
-          "Greška kod učitavanja klijenata:",
+          "GreĹˇka kod uÄŤitavanja klijenata:",
           loadError
         );
 
 
         if (!cancelled) {
           setError(
-            "Klijente trenutno nije moguće učitati."
+            "Klijente trenutno nije moguÄ‡e uÄŤitati."
           );
         }
       } finally {
@@ -218,7 +218,7 @@ export default function OwnerClientsPage() {
                 text-[#16A6A1]
               "
             >
-              Članovi teretane
+              ÄŚlanovi teretane
             </p>
 
 
@@ -404,7 +404,7 @@ export default function OwnerClientsPage() {
                     text-red-800
                   "
                 >
-                  Došlo je do problema
+                  DoĹˇlo je do problema
                 </p>
 
 
@@ -467,7 +467,7 @@ export default function OwnerClientsPage() {
                   text-[#15171A]
                 "
               >
-                Još nema klijenata
+                JoĹˇ nema klijenata
               </h2>
 
 
@@ -481,9 +481,9 @@ export default function OwnerClientsPage() {
                   text-[#667085]
                 "
               >
-                Klijenta možeš dodati
+                Klijenta moĹľeĹˇ dodati
                 putem glavnog Owner
-                dashboarda koristeći
+                dashboarda koristeÄ‡i
                 njegovu email adresu.
               </p>
 
@@ -516,7 +516,7 @@ export default function OwnerClientsPage() {
                     text-[#C8D52B]
                   "
                 >
-                  →
+                  â†’
                 </span>
               </Link>
             </section>
@@ -576,7 +576,7 @@ export default function OwnerClientsPage() {
                         text-[#C8D52B]
                       "
                     >
-                      Aktivno članstvo
+                      Aktivno ÄŤlanstvo
                     </p>
 
 
@@ -780,7 +780,7 @@ function ClientCard({
             text-[#98A2B3]
           "
         >
-          Član{" "}
+          ÄŚlan{" "}
           {String(
             index + 1
           ).padStart(
@@ -888,7 +888,7 @@ function ClientCard({
               group-hover:text-white
             "
           >
-            →
+            â†’
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ import {
 
 import {
   getGymMembers,
-} from "@/lib/getGymMembers";
+} from "@/lib/getGymMembersViaApi";
 
 
 type StaffClient = {
@@ -617,7 +617,7 @@ setClients(
                   text-2xl
                 "
               >
-                👥
+                đź‘Ą
               </div>
 
               <h2

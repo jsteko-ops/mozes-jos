@@ -3,21 +3,18 @@
 import {
   useEffect,
   useState,
+  useRef,
 } from "react";
 
-import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 import {
-  db,
-} from "@/lib/firebase";
+  addWorkout,
+  getWorkouts,
+  updateWorkout,
+  deleteWorkout,
+} from "@/lib/services/klijentiService";
 
 
 type Plan = {
@@ -34,6 +31,8 @@ export default function ClientPlans({
 }: {
   clientId: string;
 }) {
+  const editFormRef = useRef<HTMLDivElement>(null);
+  const titleFieldRef = useRef<HTMLInputElement>(null);
   const [
     plans,
     setPlans,
@@ -59,6 +58,8 @@ export default function ClientPlans({
     setLoadingPlans,
   ] = useState(true);
 
+  const [loadError, setLoadError] = useState("");
+
   const [
     editingPlanId,
     setEditingPlanId,
@@ -69,7 +70,18 @@ export default function ClientPlans({
 
 
   useEffect(() => {
-    void loadPlans();
+    // Pri osvjezavanju stranice Firebase Auth mozda jos nije spreman.
+    // Ucitavanje zapocni tek nakon provjere prijavljenog korisnika.
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) {
+        setPlans([]);
+        setLoadingPlans(false);
+        setLoadError("Prijava nije aktivna. Ponovno se prijavi.");
+        return;
+      }
+      void loadPlans();
+    });
+    return unsubscribe;
   }, [clientId]);
 
 
@@ -149,25 +161,10 @@ export default function ClientPlans({
     }
 
     setLoadingPlans(true);
+    setLoadError("");
 
     try {
-      const snap =
-        await getDocs(
-          collection(
-            db,
-            "clients",
-            clientId,
-            "workouts"
-          )
-        );
-
-      const data =
-        snap.docs.map(
-          (item) => ({
-            id: item.id,
-            ...item.data(),
-          })
-        ) as Plan[];
+      const data = (await getWorkouts(clientId)) as Plan[];
 
       data.sort(
         (a, b) =>
@@ -177,10 +174,10 @@ export default function ClientPlans({
 
       setPlans(data);
     } catch (error) {
-      console.error(
-        "Greška kod učitavanja planova:",
-        error
-      );
+      console.error("Greška kod učitavanja planova:", error);
+      setPlans([]);
+      setLoadError(error instanceof Error ? error.message :
+        "Trening planove nije moguće učitati.");
     } finally {
       setLoadingPlans(false);
     }
@@ -209,49 +206,16 @@ export default function ClientPlans({
       setLoading(true);
 
       if (editingPlanId) {
-        await updateDoc(
-          doc(
-            db,
-            "clients",
-            clientId,
-            "workouts",
-            editingPlanId
-          ),
-          {
-            title:
-              title.trim(),
-
-            exercises:
-              exercises.trim(),
-
-            updatedAt:
-              serverTimestamp(),
-          }
-        );
+        await updateWorkout(clientId, editingPlanId, {
+          title: title.trim(),
+          exercises: exercises.trim(),
+        });
       } else {
-        await addDoc(
-          collection(
-            db,
-            "clients",
-            clientId,
-            "workouts"
-          ),
-          {
-            title:
-              title.trim(),
-
-            exercises:
-              exercises.trim(),
-
-            createdAt:
-              serverTimestamp(),
-
-            updatedAt:
-              serverTimestamp(),
-          }
-        );
+        await addWorkout(clientId, {
+          title: title.trim(),
+          exercises: exercises.trim(),
+        });
       }
-
 
       const wasEditing =
         Boolean(
@@ -275,9 +239,10 @@ export default function ClientPlans({
         error
       );
 
-      alert(
-        "Plan se nije mogao spremiti."
-      );
+      const message = error instanceof Error ? error.message :
+        "Spremanje plana nije uspjelo.";
+      setLoadError(message);
+      alert("Plan se nije mogao spremiti: " + message);
     } finally {
       setLoading(false);
     }
@@ -298,6 +263,13 @@ export default function ClientPlans({
     setExercises(
       plan.exercises || ""
     );
+    // Obrazac je iznad popisa: prikazi ga odmah nakon klika na Uredi.
+    editFormRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+    titleFieldRef.current?.focus({ preventScroll: true });
+
   }
 
 
@@ -324,15 +296,7 @@ export default function ClientPlans({
 
 
     try {
-      await deleteDoc(
-        doc(
-          db,
-          "clients",
-          clientId,
-          "workouts",
-          id
-        )
-      );
+      await deleteWorkout(clientId, id);
 
       if (
         editingPlanId === id
@@ -347,9 +311,10 @@ export default function ClientPlans({
         error
       );
 
-      alert(
-        "Plan se nije mogao obrisati."
-      );
+      const message = error instanceof Error ? error.message :
+        "Brisanje plana nije uspjelo.";
+      setLoadError(message);
+      alert("Plan se nije mogao obrisati: " + message);
     }
   }
 
@@ -376,11 +341,23 @@ export default function ClientPlans({
 
   return (
     <div className="space-y-5">
+      {loadError && (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p className="font-bold">Greška trening plana</p>
+          <p className="mt-1">{loadError}</p>
+          <button type="button" onClick={() => void loadPlans()}
+            className="mt-3 rounded-lg border border-red-300 bg-white px-3 py-2 font-bold">
+            Pokušaj ponovno
+          </button>
+        </div>
+      )}
 
       {/* FORM */}
 
       <div
+        ref={editFormRef}
         className="
+          scroll-mt-24
           overflow-hidden
           rounded-2xl
           border
@@ -565,6 +542,7 @@ export default function ClientPlans({
             </label>
 
             <input
+              ref={titleFieldRef}
               className={
                 inputClass
               }
@@ -1000,7 +978,7 @@ export default function ClientPlans({
                           hover:text-white
                         "
                       >
-                        Uredi
+                        {editingPlanId === plan.id ? "Uređuje se" : "Uredi"}
                       </button>
 
 

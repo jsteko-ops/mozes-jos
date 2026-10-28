@@ -26,10 +26,8 @@ import ClientNutrition from "@/components/nutrition/ClientNutrition";
 import ClientMeasurements from "@/components/owner/ClientMeasurements";
 import CheckinHistory from "@/components/checkins/CheckinHistory";
 
-import {
-  getCheckins,
-  getClient,
-} from "@/lib/services/klijentiService";
+import { getCheckins } from "@/lib/getTrainerCheckinsViaApi";
+import { getClient } from "@/lib/getClientViaApi";
 
 
 type Client = {
@@ -91,43 +89,48 @@ export default function KlijentProfilPage() {
     useState(false);
 
 
+  const [loadError, setLoadError] =
+    useState<string | null>(null);
+
   async function loadData() {
-    if (!id) {
+    if (!id || !user) {
+      setClient(null);
+      setCheckins([]);
+      setLoading(false);
       return;
     }
 
     setLoading(true);
+    setLoadError(null);
+    setClient(null);
+    setCheckins([]);
 
     try {
-      const [
-        clientData,
-        checkinData,
-      ] =
-        await Promise.all([
-          getClient(id),
-          getCheckins(id),
-        ]);
+      // Prvo provjeri pravo pristupa klijentu.
+      const clientData = await getClient(id);
 
-      setClient(
-        clientData as Client
-      );
+      // Tek zatim ucitaj njegove check-inove.
+      const checkinData = await getCheckins(id);
 
-      setCheckins(
-        checkinData as any[]
+      setClient(clientData as Client);
+      setCheckins(checkinData as any[]);
+    } catch (error) {
+      setClient(null);
+      setCheckins([]);
+
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : "Profil klijenta nije moguce ucitati."
       );
     } finally {
       setLoading(false);
     }
   }
 
-
   useEffect(() => {
-    loadData();
-  }, [
-    id,
-    refreshCheckins,
-  ]);
-
+    void loadData();
+  }, [id, refreshCheckins, user?.uid]);
 
   const getInitials = (
     name?: string
@@ -428,6 +431,13 @@ export default function KlijentProfilPage() {
                 bg-[#F4F6F2]
               "
             />
+          </div>
+        ) : !client ? (
+          <div
+            role="alert"
+            className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-800"
+          >
+            {loadError ?? "Profil klijenta nije dostupan."}
           </div>
         ) : (
           <ClientTabs

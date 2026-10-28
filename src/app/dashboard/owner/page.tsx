@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   FormEvent,
@@ -32,7 +32,7 @@ import {
 
 import {
   getGymMembers,
-} from "@/lib/getGymMembers";
+} from "@/lib/getGymMembersViaApi";
 
 
 type GymRole =

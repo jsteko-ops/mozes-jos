@@ -5,14 +5,7 @@ import {
   useState,
 } from "react";
 
-import {
-  doc,
-  updateDoc,
-} from "firebase/firestore";
-
-import {
-  db,
-} from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 
 import type {
   ClientGender,
@@ -146,31 +139,29 @@ export default function ClientEditForm({
       setLoading(true);
 
 
-      await updateDoc(
-        doc(
-          db,
-          "clients",
-          client.id
-        ),
+      const current = auth.currentUser;
+      if (!current) throw new Error("Prijava je potrebna.");
+      const token = await current.getIdToken();
+      const response = await fetch(
+        `/api/clients/${encodeURIComponent(client.id)}/profile`,
         {
-          name:
-            name.trim(),
-
-          email:
-            email.trim(),
-
-          phone:
-            phone.trim(),
-
-          note:
-            note.trim(),
-
-          goal:
-            goal.trim(),
-
-          gender,
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: name.trim(), email: email.trim(),
+            phone: phone.trim(), note: note.trim(),
+            goal: goal.trim(), gender,
+          }),
+          cache: "no-store",
         }
       );
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(result?.error || "Klijenta nije moguće spremiti.");
+      }
 
 
       alert(
@@ -188,9 +179,7 @@ export default function ClientEditForm({
       );
 
 
-      alert(
-        "Greška kod spremanja klijenta."
-      );
+      alert(error instanceof Error ? error.message : "Greška kod spremanja klijenta.");
     } finally {
       setLoading(false);
     }
