@@ -5,12 +5,7 @@ import {
   adminAuth,
   adminDb,
 } from "@/lib/firebase-admin";
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY!,
-  {
-    apiVersion: "2023-10-16",
-  }
-);
+
 
 function getToken(request: Request) {
   const authorization =
@@ -29,6 +24,17 @@ function getToken(request: Request) {
 }
 
 export async function POST(req: Request) {
+  if (
+    (process.env.NODE_ENV === "production" &&
+      process.env.VERCEL_ENV !== "production") ||
+    !process.env.STRIPE_SECRET_KEY
+  ) {
+    return NextResponse.json(
+      { error: "Stripe naplata nije dostupna u beta verziji." },
+      { status: 503 }
+    );
+  }
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2023-10-16" });
 
   try {
 

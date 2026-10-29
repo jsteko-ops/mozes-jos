@@ -1,6 +1,6 @@
 import { trustedStripeOrigin } from "@/lib/server/trustedStripeOrigin";
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+
 import {
   adminAuth,
   adminDb,
@@ -23,6 +23,16 @@ function getToken(request: Request) {
 }
 
 export async function POST(req: Request) {
+  if (
+    (process.env.NODE_ENV === "production" &&
+      process.env.VERCEL_ENV !== "production") ||
+    !process.env.STRIPE_SECRET_KEY
+  ) {
+    return NextResponse.json(
+      { error: "Stripe naplata nije dostupna u beta verziji." },
+      { status: 503 }
+    );
+  }
 
   try {
 
@@ -121,6 +131,8 @@ const userId =
 
 
 
+
+    const { stripe } = await import("@/lib/stripe");
 
     const session =
       await stripe.billingPortal.sessions.create({

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { adminDb } from "@/lib/firebase-admin";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
 
 function stripeId(value: unknown): string | null {
   if (typeof value === "string" && value.length > 0) return value;
@@ -20,6 +20,17 @@ function hasAccess(status: Stripe.Subscription.Status): boolean {
 const received = () => NextResponse.json({ received: true });
 
 export async function POST(request: Request) {
+  if (
+    (process.env.NODE_ENV === "production" &&
+      process.env.VERCEL_ENV !== "production") ||
+    !process.env.STRIPE_SECRET_KEY
+  ) {
+    return NextResponse.json(
+      { error: "Stripe naplata nije dostupna u beta verziji." },
+      { status: 503 }
+    );
+  }
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
   const signature = request.headers.get("stripe-signature");
   if (!signature) {
     return NextResponse.json({ error: "Missing Stripe signature" }, { status: 400 });
