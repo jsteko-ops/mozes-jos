@@ -593,6 +593,9 @@ export async function GET(request: Request) {
     const token = getToken(request);
 
     if (!token) {
+      if (process.env.VERCEL_ENV === "preview") {
+        console.warn("[BETA268] gymMembers bearer=missing");
+      }
       return deny(401, "Prijava je potrebna.");
     }
 
@@ -604,7 +607,15 @@ export async function GET(request: Request) {
         true
       );
       uid = decoded.uid;
-    } catch {
+    } catch (error) {
+      if (process.env.VERCEL_ENV === "preview") {
+        const candidate = error as { code?: unknown };
+        const code =
+          typeof candidate?.code === "string"
+            ? candidate.code.replace(/[^a-zA-Z0-9/_-]/g, "").slice(0, 64)
+            : "unknown";
+        console.warn("[BETA268] gymMembers verify_failed code=" + code);
+      }
       return deny(401, "Nevaljana prijava.");
     }
 
