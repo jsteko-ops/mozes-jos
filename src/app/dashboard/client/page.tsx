@@ -27,9 +27,12 @@ import {
 } from "@/lib/firebase";
 
 import {
-  getCheckins,
   getClientByEmail,
 } from "@/lib/services/klijentiService";
+
+import {
+  getOwnCheckinsViaApi,
+} from "@/lib/getOwnCheckinsViaApi";
 
 
 type ClientProfile = {
@@ -229,10 +232,20 @@ export default function ClientDashboard() {
              * clientData.id,
              * a ne Firebase user.uid.
              */
-            const data =
-              await getCheckins(
-                clientData.id
+            const ownCheckins =
+              await getOwnCheckinsViaApi();
+
+            if (
+              ownCheckins.clientId !==
+              clientData.id
+            ) {
+              throw new Error(
+                "Neispravan ID klijenta."
               );
+            }
+
+            const data =
+              ownCheckins.checkins;
 
 
             if (cancelled) {
