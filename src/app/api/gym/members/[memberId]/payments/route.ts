@@ -379,7 +379,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "ÄŚlan nije valjan.",
+            "Član nije valjan.",
         },
         {
           status: 400,
@@ -447,7 +447,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "KorisniÄŤki profil nije pronaÄ‘en.",
+            "Korisnički profil nije pronađen.",
         },
         {
           status: 404,
@@ -493,7 +493,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "RaÄŤun nije povezan s teretanom.",
+            "Račun nije povezan s teretanom.",
         },
         {
           status: 400,
@@ -519,7 +519,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "Teretana nije pronaÄ‘ena.",
+            "Teretana nije pronađena.",
         },
         {
           status: 404,
@@ -625,7 +625,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "ÄŚlan nije pronaÄ‘en.",
+            "Član nije pronađen.",
         },
         {
           status: 404,
@@ -650,7 +650,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "Odabrani korisnik nije ÄŤlan teretane.",
+            "Odabrani korisnik nije član teretane.",
         },
         {
           status: 400,
@@ -669,7 +669,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "ÄŚlan ne pripada ovoj teretani.",
+            "Član ne pripada ovoj teretani.",
         },
         {
           status: 403,
@@ -1016,7 +1016,7 @@ trainerName =
     );
   } catch (error) {
     console.error(
-      "GreĹˇka kod uÄŤitavanja povijesti uplata:",
+      "Greška kod učitavanja povijesti uplata:",
       error
     );
 
@@ -1024,7 +1024,7 @@ trainerName =
     return NextResponse.json(
       {
         error:
-          "Povijest uplata trenutno nije moguÄ‡e uÄŤitati.",
+          "Povijest uplata trenutno nije moguće učitati.",
       },
       {
         status: 500,
@@ -1055,7 +1055,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "ÄŚlan nije valjan.",
+            "Član nije valjan.",
         },
         {
           status: 400,
@@ -1132,7 +1132,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "KorisniÄŤki profil nije pronaÄ‘en.",
+            "Korisnički profil nije pronađen.",
         },
         {
           status: 404,
@@ -1178,7 +1178,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "RaÄŤun nije povezan s teretanom.",
+            "Račun nije povezan s teretanom.",
         },
         {
           status: 400,
@@ -1207,7 +1207,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Teretana nije pronaÄ‘ena.",
+            "Teretana nije pronađena.",
         },
         {
           status: 404,
@@ -1346,7 +1346,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Odaberi datum poÄŤetka ÄŤlanarine.",
+            "Odaberi datum početka članarine.",
         },
         {
           status: 400,
@@ -1359,7 +1359,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Odaberi trajanje ÄŤlanarine.",
+            "Odaberi trajanje članarine.",
         },
         {
           status: 400,
@@ -1385,7 +1385,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Odaberi naÄŤin plaÄ‡anja.",
+            "Odaberi način plaćanja.",
         },
         {
           status: 400,
@@ -1450,12 +1450,12 @@ export async function POST(
     /*
      * 6. Transakcija.
      *
-     * Ako ÄŤlan veÄ‡ ima aktivnu
-     * ÄŤlanarinu, produĹľujemo je
-     * od postojeÄ‡eg datuma isteka.
+     * Ako član već ima aktivnu
+     * članarinu, produžujemo je
+     * od postojećeg datuma isteka.
      *
-     * Ako je ÄŤlanarina istekla
-     * ili je nema, kreÄ‡e od datuma
+     * Ako je članarina istekla
+     * ili je nema, kreće od datuma
      * koji recepcija odabere.
      */
 
@@ -1738,7 +1738,7 @@ export async function POST(
         return NextResponse.json(
           {
             error:
-              "ÄŚlan nije pronaÄ‘en.",
+              "Član nije pronađen.",
           },
           {
             status: 404,
@@ -1754,7 +1754,7 @@ export async function POST(
         return NextResponse.json(
           {
             error:
-              "Uplatu je moguÄ‡e evidentirati samo ÄŤlanu teretane.",
+              "Uplatu je moguće evidentirati samo članu teretane.",
           },
           {
             status: 400,
@@ -1770,7 +1770,7 @@ export async function POST(
         return NextResponse.json(
           {
             error:
-              "ÄŚlan ne pripada ovoj teretani.",
+              "Član ne pripada ovoj teretani.",
           },
           {
             status: 403,
@@ -1781,7 +1781,7 @@ export async function POST(
 
 
     console.error(
-      "GreĹˇka kod evidentiranja uplate:",
+      "Greška kod evidentiranja uplate:",
       error
     );
 
@@ -1789,7 +1789,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Uplatu trenutno nije moguÄ‡e evidentirati.",
+          "Uplatu trenutno nije moguće evidentirati.",
       },
       {
         status: 500,
