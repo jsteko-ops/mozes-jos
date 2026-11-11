@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { auth } from "@/lib/firebase";
 
 type TrainerOption = {
@@ -31,7 +31,7 @@ export default function TrainerAssignmentForm({
     setTrainerId(currentTrainerId ?? "");
   }, [currentTrainerId]);
 
-  async function saveAssignment(event: React.FormEvent<HTMLFormElement>) {
+  async function saveAssignment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setMessage("");
