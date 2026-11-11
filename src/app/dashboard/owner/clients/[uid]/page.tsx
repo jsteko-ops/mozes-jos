@@ -23,6 +23,7 @@ import ClientMeasurements from "@/components/owner/ClientMeasurements";
 import ClientPlans from "@/components/owner/ClientPlans";
 import ClientEditForm from "@/components/clients/ClientEditForm";
 import ClientTabs from "@/components/owner/ClientTabs";
+import TrainerAssignmentForm from "@/components/owner/TrainerAssignmentForm";
 import ClientNutrition from "@/components/client/ClientNutrition";
 
 import CheckinForm from "@/components/checkins/CheckinForm";
@@ -95,6 +96,12 @@ export default function OwnerClientProfile() {
     useState<Trainer | null>(
       null
     );
+
+
+  const [
+    trainers,
+    setTrainers,
+  ] = useState<Array<Trainer & { uid: string }>>([]);
 
 
   const [
@@ -212,6 +219,8 @@ export default function OwnerClientProfile() {
             null
           );
 
+          setTrainers([]);
+
           setGym(
             null
           );
@@ -266,6 +275,17 @@ export default function OwnerClientProfile() {
           return;
         }
 
+
+        setTrainers(
+          members
+            .filter((member) => member.gymRole === "trainer")
+            .map((member) => ({
+              uid: member.uid,
+              name: member.name,
+              displayName: member.displayName,
+              email: member.email,
+            }))
+        );
 
         const clientData: Client = {
       ...clientMember,
@@ -1015,20 +1035,22 @@ export default function OwnerClientProfile() {
 
                 <ClientTabs
                   profile={
-                    <ClientEditForm
-                      client={
-                        client
-                      }
-                      onSaved={() =>
-                        setRefresh(
-                          (
-                            current
-                          ) =>
-                            current +
-                            1
-                        )
-                      }
-                    />
+                    <div className="space-y-5">
+                      <TrainerAssignmentForm
+                        clientId={client.id}
+                        currentTrainerId={client.trainerId}
+                        trainers={trainers}
+                        onSaved={() =>
+                          setRefresh((current) => current + 1)
+                        }
+                      />
+                      <ClientEditForm
+                        client={client}
+                        onSaved={() =>
+                          setRefresh((current) => current + 1)
+                        }
+                      />
+                    </div>
                   }
 
                   measurements={

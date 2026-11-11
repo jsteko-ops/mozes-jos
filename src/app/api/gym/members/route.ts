@@ -124,7 +124,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "KorisniĂ„Ĺ¤ki profil nije pronaĂ„â€en.",
+            "Korisnički profil nije pronađen.",
         },
         {
           status: 404,
@@ -145,7 +145,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Samo vlasnik teretane moÄąÄľe dodavati Ă„Ĺ¤lanove.",
+            "Samo vlasnik teretane može dodavati članove.",
         },
         {
           status: 403,
@@ -197,7 +197,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "NemaÄąË‡ pravo upravljati ovom teretanom.",
+            "Nemaš pravo upravljati ovom teretanom.",
         },
         {
           status: 403,
@@ -256,7 +256,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "UpiÄąË‡i e-mail korisnika.",
+            "Upiši e-mail korisnika.",
         },
         {
           status: 400,
@@ -271,7 +271,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Uloga Ă„Ĺ¤lana nije ispravna.",
+            "Uloga člana nije ispravna.",
         },
         {
           status: 400,
@@ -296,7 +296,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Korisnik s tim e-mailom nije pronaĂ„â€en.",
+            "Korisnik s tom e-mail adresom nije pronađen.",
         },
         {
           status: 404,
@@ -321,7 +321,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "KorisniĂ„Ĺ¤ki profil nije pronaĂ„â€en.",
+            "Korisnički profil nije pronađen.",
         },
         {
           status: 404,
@@ -373,7 +373,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Korisnik je veĂ„â€ˇ povezan s drugom teretanom.",
+            "Korisnik je već povezan s drugom teretanom.",
         },
         {
           status: 409,
@@ -557,7 +557,7 @@ await batch.commit();
   } catch (error) {
 
     console.error(
-      "GreÄąË‡ka kod dodavanja Ă„Ĺ¤lana teretane:",
+      "Greška kod dodavanja člana teretane:",
       error
     );
 
@@ -565,7 +565,7 @@ await batch.commit();
     return NextResponse.json(
       {
         error:
-          "Ă„Ĺšlana trenutaĂ„Ĺ¤no nije moguĂ„â€ˇe dodati.",
+          "Člana trenutačno nije moguće dodati.",
       },
       {
         status: 500,
@@ -627,7 +627,7 @@ export async function GET(request: Request) {
     const profile = profileSnap.data();
 
     if (!profile) {
-      return deny(403, "Korisnicki profil nije valjan.");
+      return deny(403, "Korisnički profil nije valjan.");
     }
 
     const role = profile.role;
@@ -650,7 +650,7 @@ export async function GET(request: Request) {
       .get();
 
     if (!gymSnap.exists) {
-      return deny(403, "Teretana nije pronadena.");
+      return deny(403, "Teretana nije pronađena.");
     }
 
     if (role === "gym_owner") {
@@ -839,11 +839,11 @@ export async function GET(request: Request) {
       }
     );
   } catch (error) {
-    console.error("Greska pri dohvacanju clanova:", error);
+    console.error("Greška pri dohvaćanju članova:", error);
 
     return deny(
       500,
-      "Clanove trenutaĂ„Ĺ¤no nije moguce dohvatiti."
+      "Članove trenutačno nije moguće dohvatiti."
     );
   }
 }
