@@ -104,7 +104,7 @@ export default function OwnerClientsPage() {
           );
 
           setError(
-            "Tvoj vlasniÄŤki raÄŤun joĹˇ nije povezan s teretanom."
+            "Tvoj vlasnički račun još nije povezan s teretanom."
           );
 
           setLoading(
@@ -156,14 +156,14 @@ export default function OwnerClientsPage() {
         loadError
       ) {
         console.error(
-          "GreĹˇka kod uÄŤitavanja klijenata:",
+          "Greška kod učitavanja klijenata:",
           loadError
         );
 
 
         if (!cancelled) {
           setError(
-            "Klijente trenutno nije moguÄ‡e uÄŤitati."
+            "Klijente trenutno nije moguće učitati."
           );
         }
       } finally {
@@ -218,7 +218,7 @@ export default function OwnerClientsPage() {
                 text-[#16A6A1]
               "
             >
-              ÄŚlanovi teretane
+              Članovi teretane
             </p>
 
 
@@ -483,7 +483,7 @@ export default function OwnerClientsPage() {
               >
                 Klijenta moĹľeĹˇ dodati
                 putem glavnog Owner
-                dashboarda koristeÄ‡i
+                dashboarda koristeći
                 njegovu email adresu.
               </p>
 
@@ -516,7 +516,7 @@ export default function OwnerClientsPage() {
                     text-[#C8D52B]
                   "
                 >
-                  â†’
+                  →
                 </span>
               </Link>
             </section>
@@ -576,7 +576,7 @@ export default function OwnerClientsPage() {
                         text-[#C8D52B]
                       "
                     >
-                      Aktivno ÄŤlanstvo
+                      Aktivno članstvo
                     </p>
 
 
@@ -780,7 +780,7 @@ function ClientCard({
             text-[#98A2B3]
           "
         >
-          ÄŚlan{" "}
+          Član{" "}
           {String(
             index + 1
           ).padStart(
@@ -888,7 +888,7 @@ function ClientCard({
               group-hover:text-white
             "
           >
-            â†’
+            →
           </div>
         </div>
       </div>
