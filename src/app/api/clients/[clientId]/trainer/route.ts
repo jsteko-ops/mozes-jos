@@ -66,11 +66,9 @@ export async function PATCH(request: Request, context: Context) {
   }
 
   try {
-    const [ownerSnap, gymSnap, clientSnap, memberSnap] = await Promise.all([
+    const [ownerSnap, clientSnap] = await Promise.all([
       adminDb.collection("users").doc(uid).get(),
-      adminDb.collection("gyms").get(),
       adminDb.collection("clients").doc(clientId).get(),
-      Promise.resolve(null),
     ]);
 
     const owner = ownerSnap.data() ?? {};
