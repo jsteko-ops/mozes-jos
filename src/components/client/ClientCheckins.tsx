@@ -4,12 +4,9 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from "react";
 
-import {
-  saveClientReply,
-} from "@/lib/services/klijentiService";
+import Link from "next/link";
 
 
 interface Checkin {
@@ -35,8 +32,6 @@ interface Checkin {
 
   trainerComment?: string;
 
-  clientReply?: string;
-
   createdAt?: any;
 
   reviewed?: boolean;
@@ -50,9 +45,6 @@ interface Props {
     | string
     | null;
 
-  clientId?:
-    | string
-    | null;
 }
 
 
@@ -97,48 +89,11 @@ function formatDate(
 export default function ClientCheckins({
   checkins,
   selectedCheckin,
-  clientId,
 }: Props) {
   const selectedRef =
     useRef<HTMLDivElement | null>(
       null
     );
-
-
-  const [
-    replies,
-    setReplies,
-  ] =
-    useState<
-      Record<string, string>
-    >({});
-
-
-  const [
-    submittedReplies,
-    setSubmittedReplies,
-  ] =
-    useState<
-      Record<string, string>
-    >({});
-
-
-  const [
-    savingReply,
-    setSavingReply,
-  ] =
-    useState<string | null>(
-      null
-    );
-
-
-  const [
-    replyError,
-    setReplyError,
-  ] =
-    useState<
-      Record<string, string>
-    >({});
 
 
   const sortedCheckins =
@@ -187,140 +142,6 @@ export default function ClientCheckins({
     selectedCheckin,
     sortedCheckins,
   ]);
-
-
-  useEffect(() => {
-    const existing: Record<
-      string,
-      string
-    > = {};
-
-
-    checkins.forEach(
-      (checkin) => {
-        if (
-          checkin.clientReply
-        ) {
-          existing[
-            checkin.id
-          ] =
-            checkin.clientReply;
-        }
-      }
-    );
-
-
-    setSubmittedReplies(
-      existing
-    );
-  }, [
-    checkins,
-  ]);
-
-
-  async function handleReply(
-    checkinId: string
-  ) {
-    if (!clientId) {
-      setReplyError(
-        (current) => ({
-          ...current,
-
-          [checkinId]:
-            "Klijent nije pronađen.",
-        })
-      );
-
-      return;
-    }
-
-
-    const message =
-      (
-        replies[
-          checkinId
-        ] || ""
-      ).trim();
-
-
-    if (!message) {
-      setReplyError(
-        (current) => ({
-          ...current,
-
-          [checkinId]:
-            "Upiši odgovor prije slanja.",
-        })
-      );
-
-      return;
-    }
-
-
-    try {
-      setSavingReply(
-        checkinId
-      );
-
-
-      setReplyError(
-        (current) => ({
-          ...current,
-
-          [checkinId]:
-            "",
-        })
-      );
-
-
-      await saveClientReply(
-        clientId,
-        checkinId,
-        message
-      );
-
-
-      setSubmittedReplies(
-        (current) => ({
-          ...current,
-
-          [checkinId]:
-            message,
-        })
-      );
-
-
-      setReplies(
-        (current) => ({
-          ...current,
-
-          [checkinId]:
-            "",
-        })
-      );
-    } catch (
-      error
-    ) {
-      console.error(
-        "Greška kod slanja odgovora treneru:",
-        error
-      );
-
-
-      setReplyError(
-        (current) => ({
-          ...current,
-
-          [checkinId]:
-            "Odgovor trenutno nije moguće poslati. Pokušaj ponovno.",
-        })
-      );
-    } finally {
-      setSavingReply(
-        null
-      );
-    }
-  }
 
 
   if (
@@ -486,23 +307,9 @@ export default function ClientCheckins({
               checkin.id;
 
 
-            const savedReply =
-              submittedReplies[
-                checkin.id
-              ] ||
-              checkin.clientReply ||
-              "";
-
-
             const hasTrainerReply =
               Boolean(
                 checkin.trainerComment
-              );
-
-
-            const hasClientReply =
-              Boolean(
-                savedReply
               );
 
 
@@ -889,313 +696,75 @@ export default function ClientCheckins({
                 )}
 
 
-                {/* CLIENT REPLY */}
+                {/* CHAT FOLLOW-UP */}
 
-                {hasTrainerReply &&
-                  hasClientReply && (
-                    <div
-                      className="
-                        border-t
-                        border-[#EEF0EC]
-                        bg-[#C8D52B]/[0.06]
-                        p-5
-                        sm:p-6
-                      "
-                    >
-                      <div
+                {hasTrainerReply && (
+                  <div
+                    className="
+                      flex
+                      flex-col
+                      gap-4
+                      border-t
+                      border-[#EEF0EC]
+                      p-5
+                      sm:flex-row
+                      sm:items-center
+                      sm:justify-between
+                      sm:p-6
+                    "
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
                         className="
                           flex
-                          items-start
-                          gap-4
-                        "
-                      >
-                        <div
-                          className="
-                            flex
-                            h-11
-                            w-11
-                            shrink-0
-                            items-center
-                            justify-center
-                            rounded-2xl
-                            bg-[#C8D52B]
-                            text-xs
-                            font-black
-                            text-[#111317]
-                          "
-                        >
-                          JA
-                        </div>
-
-
-                        <div>
-                          <p
-                            className="
-                              text-[9px]
-                              font-bold
-                              uppercase
-                              tracking-[0.14em]
-                              text-[#68720F]
-                            "
-                          >
-                            Moj odgovor
-                          </p>
-
-
-                          <p
-                            className="
-                              mt-2
-                              whitespace-pre-wrap
-                              text-sm
-                              font-semibold
-                              leading-6
-                              text-[#344054]
-                            "
-                          >
-                            {
-                              savedReply
-                            }
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-
-                {/* REPLY FORM */}
-
-                {hasTrainerReply &&
-                  !hasClientReply && (
-                    <div
-                      className="
-                        border-t
-                        border-[#EEF0EC]
-                        p-5
-                        sm:p-6
-                      "
-                    >
-                      <div
-                        className="
-                          mb-4
-                        "
-                      >
-                        <p
-                          className="
-                            text-[9px]
-                            font-bold
-                            uppercase
-                            tracking-[0.14em]
-                            text-[#16A6A1]
-                          "
-                        >
-                          Nastavi razgovor
-                        </p>
-
-
-                        <h3
-                          className="
-                            mt-1
-                            text-lg
-                            font-black
-                            text-[#15171A]
-                          "
-                        >
-                          Odgovori treneru
-                        </h3>
-
-
-                        <p
-                          className="
-                            mt-1
-                            text-xs
-                            leading-5
-                            text-[#667085]
-                          "
-                        >
-                          Tvoj odgovor bit
-                          će spremljen uz
-                          ovaj Check-in.
-                        </p>
-                      </div>
-
-
-                      <textarea
-                        rows={4}
-                        maxLength={
-                          2000
-                        }
-                        placeholder="Napiši odgovor treneru..."
-                        value={
-                          replies[
-                            checkin.id
-                          ] || ""
-                        }
-                        onChange={(
-                          event
-                        ) => {
-                          setReplies(
-                            (
-                              current
-                            ) => ({
-                              ...current,
-
-                              [checkin.id]:
-                                event
-                                  .target
-                                  .value,
-                            })
-                          );
-
-
-                          setReplyError(
-                            (
-                              current
-                            ) => ({
-                              ...current,
-
-                              [checkin.id]:
-                                "",
-                            })
-                          );
-                        }}
-                        disabled={
-                          savingReply ===
-                          checkin.id
-                        }
-                        className="
-                          min-h-28
-                          w-full
-                          resize-y
-                          rounded-2xl
-                          border
-                          border-[#E5E7EB]
-                          bg-white
-                          px-4
-                          py-3
-                          text-sm
-                          font-medium
-                          leading-6
-                          text-[#15171A]
-                          outline-none
-                          transition
-                          placeholder:text-[#B2B8C2]
-                          focus:border-[#16A6A1]
-                          focus:ring-4
-                          focus:ring-[#16A6A1]/10
-                          disabled:bg-[#F6F7F3]
-                        "
-                      />
-
-
-                      <div
-                        className="
-                          mt-2
-                          flex
-                          justify-end
-                        "
-                      >
-                        <span
-                          className="
-                            text-[10px]
-                            font-semibold
-                            text-[#98A2B3]
-                          "
-                        >
-                          {
-                            (
-                              replies[
-                                checkin.id
-                              ] || ""
-                            ).length
-                          }
-                          /2000
-                        </span>
-                      </div>
-
-
-                      {replyError[
-                        checkin.id
-                      ] && (
-                        <div
-                          className="
-                            mt-3
-                            rounded-xl
-                            border
-                            border-red-200
-                            bg-red-50
-                            px-4
-                            py-3
-                            text-xs
-                            font-semibold
-                            text-red-700
-                          "
-                        >
-                          {
-                            replyError[
-                              checkin.id
-                            ]
-                          }
-                        </div>
-                      )}
-
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void handleReply(
-                            checkin.id
-                          )
-                        }
-                        disabled={
-                          savingReply ===
-                            checkin.id ||
-                          !(
-                            replies[
-                              checkin.id
-                            ] || ""
-                          ).trim()
-                        }
-                        className="
-                          mt-4
-                          inline-flex
-                          min-h-12
+                          h-11
+                          w-11
+                          shrink-0
                           items-center
                           justify-center
-                          gap-2
-                          rounded-xl
-                          bg-[#111317]
-                          px-5
-                          py-3
-                          text-sm
-                          font-black
-                          text-white
-                          transition-all
-                          hover:-translate-y-0.5
-                          hover:bg-[#202328]
-                          disabled:cursor-not-allowed
-                          disabled:opacity-40
-                          disabled:hover:translate-y-0
+                          rounded-2xl
+                          bg-[#16A6A1]/10
+                          text-xl
                         "
                       >
-                        {savingReply ===
-                        checkin.id
-                          ? "Šaljem..."
-                          : "Pošalji treneru"}
-
-
-                        {savingReply !==
-                          checkin.id && (
-                          <span
-                            className="
-                              text-[#C8D52B]
-                            "
-                          >
-                            →
-                          </span>
-                        )}
-                      </button>
+                        💬
+                      </span>
+                      <div>
+                        <p className="text-sm font-black text-[#15171A]">
+                          Daljnja pitanja?
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[#667085]">
+                          Za nastavak razgovora s trenerom otvori Chat.
+                        </p>
+                      </div>
                     </div>
-                  )}
+
+                    <Link
+                      href="/dashboard/chat"
+                      className="
+                        inline-flex
+                        min-h-11
+                        shrink-0
+                        items-center
+                        justify-center
+                        gap-2
+                        rounded-xl
+                        bg-[#111317]
+                        px-5
+                        py-3
+                        text-sm
+                        font-black
+                        text-white
+                        transition
+                        hover:-translate-y-0.5
+                        hover:bg-[#202328]
+                      "
+                    >
+                      Otvori Chat
+                      <span className="text-[#C8D52B]">→</span>
+                    </Link>
+                  </div>
+                )}
 
 
                 {/* SELECTED MARKER */}
