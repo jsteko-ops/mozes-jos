@@ -551,51 +551,6 @@ export async function saveTrainerComment(
 // =======================
 
 
-export async function saveClientReply(
-  clientId: string,
-  checkinId: string,
-  clientReply: string
-) {
-  const user = auth.currentUser;
-
-  if (!user || user.uid !== clientId) {
-    throw new Error("Prijava klijenta nije valjana.");
-  }
-
-  const reply = clientReply.trim();
-
-  if (!reply || reply.length > 2000) {
-    throw new Error("Odgovor mora imati od 1 do 2000 znakova.");
-  }
-
-  const token = await user.getIdToken();
-  const response = await fetch(
-    `/api/checkins/me/${encodeURIComponent(checkinId)}/reply`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ reply }),
-      cache: "no-store",
-    }
-  );
-
-  const result = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(
-      result?.error || "Odgovor trenutno nije moguće spremiti."
-    );
-  }
-
-  if (result?.success !== true) {
-    throw new Error("Poslužitelj nije potvrdio spremanje odgovora.");
-  }
-}
-
-
 // =======================
 // TRAŽENJE KLIJENTA PO EMAILU
 // =======================
