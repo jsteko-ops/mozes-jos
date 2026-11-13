@@ -552,108 +552,48 @@ export async function saveTrainerComment(
 
 
 export async function saveClientReply(
-  clientId:string,
-  checkinId:string,
-  clientReply:string
-){
+  clientId: string,
+  checkinId: string,
+  clientReply: string
+) {
+  const user = auth.currentUser;
 
-  await updateDoc(
+  if (!user || user.uid !== clientId) {
+    throw new Error("Prijava klijenta nije valjana.");
+  }
 
-    doc(
-      db,
-      "clients",
-      clientId,
-      "checkins",
-      checkinId
-    ),
+  const reply = clientReply.trim();
 
+  if (!reply || reply.length > 2000) {
+    throw new Error("Odgovor mora imati od 1 do 2000 znakova.");
+  }
+
+  const token = await user.getIdToken();
+  const response = await fetch(
+    `/api/checkins/me/${encodeURIComponent(checkinId)}/reply`,
     {
-
-      clientReply,
-
-
-      clientReplyAt:
-        serverTimestamp(),
-
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ reply }),
+      cache: "no-store",
     }
-
   );
 
+  const result = await response.json().catch(() => null);
 
-
-  const clientSnap =
-    await getDoc(
-
-      doc(
-        db,
-        "clients",
-        clientId
-      )
-
+  if (!response.ok) {
+    throw new Error(
+      result?.error || "Odgovor trenutno nije moguće spremiti."
     );
-
-
-
-  if(!clientSnap.exists()){
-
-    return;
-
   }
 
-
-
-  const clientData =
-    clientSnap.data();
-
-
-
-  const trainerId =
-    clientData.trainerId;
-
-
-
-  if(!trainerId){
-
-    return;
-
+  if (result?.success !== true) {
+    throw new Error("Poslužitelj nije potvrdio spremanje odgovora.");
   }
-
-
-
-
-
-  await createNotification(
-
-    trainerId,
-
-    {
-
-      title:
-        "Novi odgovor klijenta",
-
-
-
-      message:
-        "Klijent je odgovorio na tvoj komentar na check-inu.",
-
-
-
-      type:
-        "checkin",
-
-
-
-      link:
-`/dashboard/trainer/checkin?client=${clientId}&checkin=${checkinId}`
-    }
-
-  );
-
-
 }
-
-
-
 
 
 // =======================
