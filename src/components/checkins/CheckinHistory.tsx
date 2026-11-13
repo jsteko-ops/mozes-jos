@@ -28,7 +28,6 @@ interface Checkin {
 
   trainerComment?: string;
 
-  clientReply?: string;
 }
 
 
@@ -885,47 +884,6 @@ export default function CheckinHistory({
                       </p>
                     </div>
                   )}
-                  {/* CLIENT REPLY */}
-
-                  {checkin.clientReply && (
-                    <div
-                      className="
-                        rounded-xl
-                        border
-                        border-[#C8D52B]/30
-                        bg-[#C8D52B]/10
-                        p-4
-                      "
-                    >
-                      <p
-                        className="
-                          text-[10px]
-                          font-bold
-                          uppercase
-                          tracking-wider
-                          text-[#5F6810]
-                        "
-                      >
-                        Odgovor klijenta
-                      </p>
-
-                      <p
-                        className="
-                          mt-2
-                          whitespace-pre-wrap
-                          text-sm
-                          leading-6
-                          text-[#15171A]
-                        "
-                      >
-                        {
-                          checkin.clientReply
-                        }
-                      </p>
-                    </div>
-                  )}
-
-
                   {/* REVIEW BUTTON */}
 
                   {canManage && !checkin.reviewed && (
