@@ -821,9 +821,6 @@ export default function ClientDashboard() {
                   selectedCheckin={
                     selectedCheckin
                   }
-                  clientId={
-                    client.id
-                  }
                 />
               </div>
 
