@@ -46,17 +46,73 @@ export async function GET(request: Request) {
       adminDb.collection("gymMembers").doc(gymId).collection("members").doc(uid).get(),
     ]);
     const membership = memberSnap.data();
+    const memberRole = membership?.gymRole ?? membership?.role;
 
     if (
       !gymSnap.exists ||
       !memberSnap.exists ||
-      membership?.role !== "client" ||
+      memberRole !== "client" ||
       membership?.gymId !== gymId
     ) {
       return NextResponse.json(
         { error: "Klijentski profil nije dostupan." },
         { status: 403 }
       );
+    }
+
+    const trainerId =
+      typeof client?.trainerId === "string" ? client.trainerId.trim() : "";
+    let trainer: { name: string; isOwner: boolean } | null = null;
+
+    if (trainerId) {
+      const trainerMemberRef = adminDb
+        .collection("gymMembers")
+        .doc(gymId)
+        .collection("members")
+        .doc(trainerId);
+      const [trainerMemberSnap, trainerUserSnap] = await Promise.all([
+        trainerMemberRef.get(),
+        adminDb.collection("users").doc(trainerId).get(),
+      ]);
+      const trainerMember = trainerMemberSnap.data() ?? {};
+      const trainerUser = trainerUserSnap.data() ?? {};
+      const trainerRole = trainerMember.gymRole ?? trainerMember.role;
+      const isOwner =
+        trainerId === gymSnap.data()?.ownerId &&
+        trainerUser.role === "gym_owner" &&
+        trainerUser.gymId === gymId;
+      const isTeamTrainer =
+        trainerMemberSnap.exists &&
+        trainerRole === "trainer" &&
+        trainerMember.gymId === gymId &&
+        trainerUser.role === "trainer" &&
+        trainerUser.gymId === gymId;
+
+      if (!isOwner && !isTeamTrainer) {
+        return NextResponse.json(
+          { error: "Dodjela trenera nije valjana." },
+          { status: 403 }
+        );
+      }
+
+      const fullName = [trainerUser.firstName, trainerUser.lastName]
+        .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
+        .join(" ");
+      const nameCandidates = [
+        trainerMember.name,
+        trainerMember.displayName,
+        trainerUser.displayName,
+        trainerUser.name,
+        fullName,
+      ];
+      const name = nameCandidates.find(
+        (value): value is string => typeof value === "string" && value.trim().length > 0
+      );
+
+      trainer = {
+        name: name?.trim() || (isOwner ? "Vlasnik teretane" : "Trener"),
+        isOwner,
+      };
     }
 
     return NextResponse.json(
@@ -67,7 +123,8 @@ export async function GET(request: Request) {
           email: typeof client?.email === "string" ? client.email : "",
           phone: typeof client?.phone === "string" ? client.phone : "",
           goal: typeof client?.goal === "string" ? client.goal : "",
-          trainerId: typeof client?.trainerId === "string" ? client.trainerId : "",
+          trainerId,
+          trainer,
           gymId,
         },
       },
