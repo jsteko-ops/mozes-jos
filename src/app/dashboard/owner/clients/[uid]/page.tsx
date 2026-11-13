@@ -277,9 +277,14 @@ export default function OwnerClientProfile() {
         }
 
 
+        const ownerUid = auth.currentUser?.uid;
+        if (!ownerUid) {
+          throw new Error("Prijava je potrebna.");
+        }
+
         setTrainers([
           {
-            uid: userProfile.uid,
+            uid: ownerUid,
             name:
               [userProfile.firstName, userProfile.lastName]
                 .filter(Boolean)
