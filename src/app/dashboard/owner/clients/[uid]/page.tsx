@@ -56,6 +56,7 @@ type Trainer = {
   name?: string;
   displayName?: string;
   email?: string;
+  isOwner?: boolean;
 };
 
 
@@ -276,16 +277,29 @@ export default function OwnerClientProfile() {
         }
 
 
-        setTrainers(
-          members
-            .filter((member) => member.gymRole === "trainer")
+        setTrainers([
+          {
+            uid: userProfile.uid,
+            name:
+              [userProfile.firstName, userProfile.lastName]
+                .filter(Boolean)
+                .join(" ") || "Ti (vlasnik teretane)",
+            email: userProfile.email,
+            isOwner: true,
+          },
+          ...members
+            .filter(
+              (member) =>
+                member.gymRole === "trainer" &&
+                member.uid !== userProfile.uid
+            )
             .map((member) => ({
               uid: member.uid,
               name: member.name,
               displayName: member.displayName,
               email: member.email,
-            }))
-        );
+            })),
+        ]);
 
         const clientData: Client = {
       ...clientMember,

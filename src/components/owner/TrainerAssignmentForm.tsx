@@ -8,6 +8,7 @@ type TrainerOption = {
   name?: string;
   displayName?: string;
   email?: string;
+  isOwner?: boolean;
 };
 
 type Props = {
@@ -87,7 +88,7 @@ export default function TrainerAssignmentForm({
           Dodijeli trenera
         </h3>
         <p className="mt-1 text-sm text-[#667085]">
-          Odaberi trenera koji će voditi ovog klijenta.
+          Odaberi trenera koji će voditi ovog klijenta. Možeš odabrati i sebe kao vlasnika.
         </p>
       </div>
 
@@ -110,7 +111,9 @@ export default function TrainerAssignmentForm({
           </option>
           {trainers.map((trainer) => (
             <option key={trainer.uid} value={trainer.uid}>
-              {trainer.name || trainer.displayName || trainer.email || "Trener"}
+              {trainer.isOwner
+                ? `${trainer.name || "Ti"} · vlasnik i trener`
+                : trainer.name || trainer.displayName || trainer.email || "Trener"}
               {trainer.email ? ` · ${trainer.email}` : ""}
             </option>
           ))}

@@ -17,8 +17,11 @@ export async function GET(request: Request) {
     if (!id(uid)) return reply({ error: "Pristup nije dopušten." }, 403);
     const self = await adminDb.collection("users").doc(uid).get();
     const role = self.data()?.role;
-    if (role !== "client" && role !== "trainer") return reply({ error: "Pristup nije dopušten." }, 403);
-    const field = role === "trainer" ? "trainerId" : "clientId";
+    if (role !== "client" && role !== "trainer" && role !== "gym_owner") {
+      return reply({ error: "Pristup nije dopušten." }, 403);
+    }
+    const isTrainer = role === "trainer" || role === "gym_owner";
+    const field = isTrainer ? "trainerId" : "clientId";
     const snap = await adminDb.collection("chats").where(field, "==", uid).orderBy("updatedAt", "desc").limit(60).get();
     const chats = await Promise.all(snap.docs.map(async (doc) => {
       const data = doc.data();
@@ -26,7 +29,7 @@ export async function GET(request: Request) {
       if (!id(trainerId) || !id(clientId) || doc.id !== `${trainerId}_${clientId}`) return null;
       const access = await authorizeChatPair(request, trainerId, clientId);
       if (access.ok === false || data.gymId && data.gymId !== access.gymId) return null;
-      const client = role === "trainer" ? await adminDb.collection("clients").doc(clientId).get() : null;
+      const client = isTrainer ? await adminDb.collection("clients").doc(clientId).get() : null;
       return {
         id: doc.id, trainerId, clientId, lastMessage: typeof data.lastMessage === "string" ? data.lastMessage : "",
         updatedAt: date(data.updatedAt), unreadForTrainer: data.unreadForTrainer === true,

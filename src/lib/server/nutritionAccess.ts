@@ -121,13 +121,18 @@ export async function nutritionAccess(
       adminDb.collection("gymMembers").doc(gymId).collection("members").doc(trainerId).get(),
       adminDb.collection("users").doc(trainerId).get(),
     ]);
-    if (
-      !trainerMemberSnap.exists || !trainerUserSnap.exists ||
-      memberRole(trainerMemberSnap.data()) !== "trainer" ||
-      str(trainerMemberSnap.data()?.gymId) !== gymId ||
-      trainerUserSnap.data()?.role !== "trainer" ||
-      str(trainerUserSnap.data()?.gymId) !== gymId
-    ) {
+    const assignedTrainer = trainerUserSnap.data();
+    const ownerIsAssignedCoach =
+      trainerId === str(gym?.ownerId) &&
+      assignedTrainer?.role === "gym_owner" &&
+      str(assignedTrainer?.gymId) === gymId;
+    const teamTrainerIsAssigned =
+      trainerMemberSnap.exists &&
+      memberRole(trainerMemberSnap.data()) === "trainer" &&
+      str(trainerMemberSnap.data()?.gymId) === gymId &&
+      assignedTrainer?.role === "trainer" &&
+      str(assignedTrainer?.gymId) === gymId;
+    if (!ownerIsAssignedCoach && !teamTrainerIsAssigned) {
       return { ok: false, status: 403, error: "Dodjela trenera nije valjana." };
     }
     return { ok: true, uid, clientId, gymId, role: "client" };

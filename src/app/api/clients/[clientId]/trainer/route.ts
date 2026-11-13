@@ -105,7 +105,7 @@ export async function PATCH(request: Request, context: Context) {
       return reply({ error: "Klijent nije član tvoje teretane." }, 403);
     }
 
-    if (trainerId) {
+    if (trainerId && trainerId !== uid) {
       const trainerRef = adminDb.collection("users").doc(trainerId);
       const trainerMemberRef = adminDb
         .collection("gymMembers")

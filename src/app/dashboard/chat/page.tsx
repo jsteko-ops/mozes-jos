@@ -62,12 +62,10 @@ export default function ChatPage() {
         // TRAINER
 
         if (
-          userProfile.role ===
-          "trainer"
+          userProfile.role === "trainer" ||
+          userProfile.role === "gym_owner"
         ) {
-          setTrainerId(
-            user.uid
-          );
+          setTrainerId(user.uid);
         }
 
 
@@ -112,14 +110,15 @@ export default function ChatPage() {
 
 
   const isTrainer =
-    userProfile?.role ===
-    "trainer";
+    userProfile?.role === "trainer" ||
+    userProfile?.role === "gym_owner";
 
 
   return (
     <RoleGuard
       allowedRoles={[
         "trainer",
+        "gym_owner",
         "client",
       ]}
     >

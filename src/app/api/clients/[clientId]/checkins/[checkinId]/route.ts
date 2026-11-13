@@ -134,15 +134,8 @@ export async function PATCH(
         const trainer = trainerSnapshot.data();
         const gymId = str(trainer?.gymId);
 
-        if (
-          !trainerSnapshot.exists ||
-          trainer?.role !== "trainer" ||
-          !validId(gymId)
-        ) {
-          throw new ApiError(
-            403,
-            "Pristup nije dopusten."
-          );
+        if (!trainerSnapshot.exists || !validId(gymId)) {
+          throw new ApiError(403, "Pristup nije dopusten.");
         }
 
         const gymRef = adminDb
@@ -193,6 +186,15 @@ export async function PATCH(
         const trainerRole =
           trainerMember?.gymRole ??
           trainerMember?.role;
+        const ownerIsAssignedCoach =
+          trainer?.role === "gym_owner" &&
+          gym?.ownerId === trainerUid &&
+          trainer?.gymId === gymId;
+        const teamTrainerIsAssigned =
+          trainer?.role === "trainer" &&
+          trainerMemberSnapshot.exists &&
+          trainerRole === "trainer" &&
+          trainerMember?.gymId === gymId;
 
         const clientRole =
           clientMember?.gymRole ??
@@ -201,9 +203,7 @@ export async function PATCH(
         if (
           !gymSnapshot.exists ||
           !str(gym?.ownerId) ||
-          !trainerMemberSnapshot.exists ||
-          trainerRole !== "trainer" ||
-          trainerMember?.gymId !== gymId ||
+          (!ownerIsAssignedCoach && !teamTrainerIsAssigned) ||
           !clientSnapshot.exists ||
           !clientMemberSnapshot.exists ||
           clientRole !== "client" ||

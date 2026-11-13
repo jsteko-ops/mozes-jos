@@ -61,20 +61,32 @@ export async function gymClientAccess(
 
   const gym = adminDb.collection("gyms").doc(gymId);
   const members = adminDb.collection("gymMembers").doc(gymId).collection("members");
-  const [gymSnap, clientMemberSnap, trainerMemberSnap] = await Promise.all([
-    gym.get(), members.doc(clientId).get(),
+  const [gymSnap, clientMemberSnap, trainerMemberSnap, trainerUserSnap] = await Promise.all([
+    gym.get(),
+    members.doc(clientId).get(),
     trainerId ? members.doc(trainerId).get() : Promise.resolve(null),
+    trainerId ? adminDb.collection("users").doc(trainerId).get() : Promise.resolve(null),
   ]);
   const gymData = gymSnap.data() ?? {};
   const membership = clientMemberSnap.data() ?? {};
   const assignedTrainer = trainerMemberSnap?.data() ?? {};
+  const assignedTrainerUser = trainerUserSnap?.data() ?? {};
   const memberRole = membership.gymRole ?? membership.role;
   const assignedRole = assignedTrainer.gymRole ?? assignedTrainer.role;
+  const ownerIsAssignedCoach =
+    Boolean(trainerId) &&
+    trainerId === str(gymData.ownerId) &&
+    assignedTrainerUser.role === "gym_owner" &&
+    str(assignedTrainerUser.gymId) === gymId;
+  const teamTrainerIsAssigned =
+    Boolean(trainerId) &&
+    trainerMemberSnap?.exists === true &&
+    assignedRole === "trainer" &&
+    assignedTrainer.gymId === gymId;
   if (!gymSnap.exists || !validId(str(gymData.ownerId)) ||
       !clientMemberSnap.exists || memberRole !== "client" ||
       membership.gymId !== gymId || str(membership.trainerId) !== trainerId ||
-      (trainerId && (!trainerMemberSnap?.exists || assignedRole !== "trainer" ||
-                     assignedTrainer.gymId !== gymId))) {
+      (trainerId && !ownerIsAssignedCoach && !teamTrainerIsAssigned)) {
     return denied("Članstvo klijenta nije valjano.");
   }
 

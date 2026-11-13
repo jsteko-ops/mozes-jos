@@ -30,26 +30,49 @@ export async function authorizeChatPair(request: Request, trainerId: string, cli
     userRef.doc(clientId).get(),
     adminDb.collection("clients").doc(clientId).get(),
   ]);
-  const selfData = self.data(); const trainerData = trainer.data();
-  const clientUserData = clientUser.data(); const clientData = client.data();
+  const selfData = self.data();
+  const trainerData = trainer.data();
+  const clientUserData = clientUser.data();
+  const clientData = client.data();
   const gymId = str(clientData?.gymId);
-  if (!gymId || !validChatId(gymId) || !self.exists || !trainer.exists || !clientUser.exists || !client.exists ||
-      str(trainerData?.role) !== "trainer" || str(clientUserData?.role) !== "client" ||
-      str(trainerData?.gymId) !== gymId || str(clientUserData?.gymId) !== gymId ||
-      str(clientData?.trainerId) !== trainerId || str(selfData?.gymId) !== gymId ||
-      (uid === trainerId && str(selfData?.role) !== "trainer") ||
+  if (!gymId || !validChatId(gymId) || !self.exists || !trainer.exists ||
+      !clientUser.exists || !client.exists ||
+      !["trainer", "gym_owner"].includes(str(trainerData?.role)) ||
+      str(trainerData?.gymId) !== gymId ||
+      str(clientUserData?.role) !== "client" ||
+      str(clientUserData?.gymId) !== gymId ||
+      str(clientData?.trainerId) !== trainerId ||
+      str(selfData?.gymId) !== gymId ||
+      (uid === trainerId &&
+        selfData?.role !== "trainer" &&
+        selfData?.role !== "gym_owner") ||
       (uid === clientId && str(selfData?.role) !== "client")) {
     return fail("Pristup nije dopušten.", 403);
   }
+
   const [gym, memberTrainer, memberClient] = await Promise.all([
     adminDb.collection("gyms").doc(gymId).get(),
     adminDb.collection("gymMembers").doc(gymId).collection("members").doc(trainerId).get(),
     adminDb.collection("gymMembers").doc(gymId).collection("members").doc(clientId).get(),
   ]);
-  const tm = memberTrainer.data(), cm = memberClient.data();
-  if (!gym.exists || !validChatId(str(gym.data()?.ownerId)) || !memberTrainer.exists || !memberClient.exists ||
-      (tm?.gymRole ?? tm?.role) !== "trainer" || str(tm?.gymId) !== gymId ||
-      (cm?.gymRole ?? cm?.role) !== "client" || str(cm?.gymId) !== gymId || str(cm?.trainerId) !== trainerId) {
+  const gymData = gym.data();
+  const tm = memberTrainer.data();
+  const cm = memberClient.data();
+  const ownerIsAssignedCoach =
+    str(gymData?.ownerId) === trainerId &&
+    trainerData?.role === "gym_owner" &&
+    str(trainerData?.gymId) === gymId;
+  const teamTrainerIsAssigned =
+    memberTrainer.exists &&
+    (tm?.gymRole ?? tm?.role) === "trainer" &&
+    str(tm?.gymId) === gymId &&
+    trainerData?.role === "trainer";
+  if (!gym.exists || !validChatId(str(gymData?.ownerId)) ||
+      (!ownerIsAssignedCoach && !teamTrainerIsAssigned) ||
+      !memberClient.exists ||
+      (cm?.gymRole ?? cm?.role) !== "client" ||
+      str(cm?.gymId) !== gymId ||
+      str(cm?.trainerId) !== trainerId) {
     return fail("Pristup nije dopušten.", 403);
   }
   return { ok: true, uid, role: uid === trainerId ? "trainer" : "client", gymId, trainerId, clientId };
