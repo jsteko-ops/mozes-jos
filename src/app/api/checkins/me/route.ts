@@ -132,23 +132,39 @@ export async function GET(request: Request) {
           .collection("members")
           .doc(trainerId)
       : null;
+    const trainerUserRef = trainerId
+      ? adminDb.collection("users").doc(trainerId)
+      : null;
 
     const [
       gymSnapshot,
       memberSnapshot,
       trainerSnapshot,
+      trainerUserSnapshot,
     ] = await Promise.all([
       gymRef.get(),
       memberRef.get(),
       trainerRef ? trainerRef.get() : Promise.resolve(null),
+      trainerUserRef ? trainerUserRef.get() : Promise.resolve(null),
     ]);
 
     const gym = gymSnapshot.data();
     const member = memberSnapshot.data();
     const trainer = trainerSnapshot?.data();
+    const trainerUser = trainerUserSnapshot?.data();
 
     const memberRole = member?.gymRole ?? member?.role;
     const trainerRole = trainer?.gymRole ?? trainer?.role;
+    const ownerIsAssignedCoach =
+      Boolean(trainerId) &&
+      trainerId === str(gym?.ownerId) &&
+      trainerUser?.role === "gym_owner" &&
+      str(trainerUser?.gymId) === gymId;
+    const teamTrainerIsAssigned =
+      Boolean(trainerId) &&
+      trainerSnapshot?.exists === true &&
+      trainerRole === "trainer" &&
+      trainer?.gymId === gymId;
 
     if (
       !gymSnapshot.exists ||
@@ -163,11 +179,8 @@ export async function GET(request: Request) {
 
     if (
       trainerId &&
-      (
-        !trainerSnapshot?.exists ||
-        trainerRole !== "trainer" ||
-        trainer?.gymId !== gymId
-      )
+      !ownerIsAssignedCoach &&
+      !teamTrainerIsAssigned
     ) {
       return deny("Dodjela trenera nije valjana.", 403);
     }
