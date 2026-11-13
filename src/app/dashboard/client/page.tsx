@@ -42,6 +42,7 @@ type ClientProfile = {
   phone?: string;
   goal?: string;
   trainerId?: string;
+  trainer?: { name: string; isOwner: boolean } | null;
 };
 
 
@@ -590,6 +591,31 @@ export default function ClientDashboard() {
                         mjestu.
                       </p>
 
+
+                      <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8D52B] text-sm font-black text-[#111317]">
+                          {client.trainer?.name?.trim().charAt(0).toUpperCase() || "T"}
+                        </span>
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-white/45">
+                            Tvoj trener
+                          </p>
+                          <p className="text-sm font-black text-white/90">
+                            {client.trainer?.name || "Trener još nije dodijeljen"}
+                          </p>
+                          {client.trainer?.isOwner && (
+                            <p className="text-xs text-white/50">Vlasnik teretane</p>
+                          )}
+                        </div>
+                        {client.trainer && (
+                          <Link
+                            href="/dashboard/chat"
+                            className="ml-auto rounded-xl border border-white/15 px-3 py-2 text-xs font-bold text-white/80 transition hover:bg-white/10"
+                          >
+                            Otvori chat →
+                          </Link>
+                        )}
+                      </div>
 
                       {client.goal && (
                         <div
