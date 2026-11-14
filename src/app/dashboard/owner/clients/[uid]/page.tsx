@@ -25,6 +25,7 @@ import ClientEditForm from "@/components/clients/ClientEditForm";
 import ClientTabs from "@/components/owner/ClientTabs";
 import TrainerAssignmentForm from "@/components/owner/TrainerAssignmentForm";
 import ClientNutrition from "@/components/client/ClientNutrition";
+import PrivateProfilePhoto from "@/components/profile/PrivateProfilePhoto";
 
 import CheckinForm from "@/components/checkins/CheckinForm";
 import CheckinHistory from "@/components/checkins/CheckinHistory";
@@ -669,27 +670,7 @@ export default function OwnerClientProfile() {
                       sm:items-center
                     "
                   >
-                    <div
-                      className="
-                        flex
-                        h-20
-                        w-20
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-[24px]
-                        bg-[#16A6A1]
-                        text-xl
-                        font-black
-                        text-white
-                      "
-                    >
-                      {getInitials(
-                        getClientName(
-                          client
-                        )
-                      )}
-                    </div>
+                    <PrivateProfilePhoto uid={clientId} name={getClientName(client)} size={80} />
 
 
                     <div>

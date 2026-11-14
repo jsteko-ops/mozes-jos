@@ -129,6 +129,13 @@ export async function PATCH(request: Request, context: Context) {
       ) {
         return reply({ error: "Odabrani trener nije član tvoje teretane." }, 400);
       }
+
+      if (trainer.profilePhotoPath !== "profile-photos/" + trainerId + "/avatar") {
+        return reply(
+          { error: "Trener mora dodati profilnu sliku prije dodjele." },
+          400
+        );
+      }
     }
 
     const updatedAt = FieldValue.serverTimestamp();

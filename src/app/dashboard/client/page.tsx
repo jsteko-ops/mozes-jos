@@ -21,6 +21,7 @@ import RoleGuard from "@/components/auth/RoleGuard";
 
 import ClientCheckins from "@/components/client/ClientCheckins";
 import ClientNutrition from "@/components/client/ClientNutrition";
+import PrivateProfilePhoto from "@/components/profile/PrivateProfilePhoto";
 
 import {
   auth,
@@ -593,9 +594,7 @@ export default function ClientDashboard() {
 
 
                       <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8D52B] text-sm font-black text-[#111317]">
-                          {client.trainer?.name?.trim().charAt(0).toUpperCase() || "T"}
-                        </span>
+                        <PrivateProfilePhoto uid={client.trainerId} name={client.trainer?.name || "Trener"} size={40} />
                         <div>
                           <p className="text-[9px] font-bold uppercase tracking-wider text-white/45">
                             Tvoj trener

@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import StripeButton from "@/components/StripeButton";
+import ProfilePhotoSettings from "@/components/profile/ProfilePhotoSettings";
 
 import {
   useAuth,
@@ -504,6 +505,8 @@ export default function SettingsPage() {
         "
       />
 
+
+      <ProfilePhotoSettings uid={user?.uid} role={userProfile?.role} />
 
       {/* OWNER SAFE REPORT SETTINGS */}
 
