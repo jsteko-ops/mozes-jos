@@ -6,8 +6,12 @@ import {
   useState,
 } from "react";
 
+import { sendPasswordResetEmail } from "firebase/auth";
+import Link from "next/link";
 import StripeButton from "@/components/StripeButton";
 import ProfilePhotoSettings from "@/components/profile/ProfilePhotoSettings";
+import PrivateProfilePhoto from "@/components/profile/PrivateProfilePhoto";
+import { auth } from "@/lib/firebase";
 
 import {
   useAuth,
@@ -25,6 +29,18 @@ type ResponsiblePerson = {
 type SafeReportSettings = {
   primaryUid: string | null;
   backupUid: string | null;
+};
+
+type ClientSettingsData = {
+  name: string;
+  email: string;
+  trainerId: string;
+  trainer: { name: string; isOwner: boolean } | null;
+};
+
+type ClientSettingsResponse = {
+  client?: ClientSettingsData;
+  error?: string;
 };
 
 
@@ -110,6 +126,17 @@ export default function SettingsPage() {
     useState("");
 
 
+  const [clientSettings, setClientSettings] =
+    useState<ClientSettingsData | null>(null);
+  const [clientSettingsLoading, setClientSettingsLoading] =
+    useState(false);
+  const [passwordResetSending, setPasswordResetSending] =
+    useState(false);
+  const [passwordResetMessage, setPasswordResetMessage] =
+    useState("");
+  const [passwordResetError, setPasswordResetError] =
+    useState("");
+
   const isOwner =
     userProfile?.role ===
     "gym_owner";
@@ -144,6 +171,55 @@ export default function SettingsPage() {
       ]
     );
 
+
+  useEffect(() => {
+    if (!user || userProfile?.role !== "client") return;
+    let cancelled = false;
+
+    async function loadClientSettings() {
+      setClientSettingsLoading(true);
+      try {
+        const token = await user!.getIdToken();
+        const response = await fetch("/api/clients/me", {
+          headers: { Authorization: "Bearer " + token },
+          cache: "no-store",
+        });
+        const data = (await response.json().catch(() => null)) as ClientSettingsResponse | null;
+        if (!response.ok || !data?.client) {
+          throw new Error(data?.error || "Podatke računa nije moguće učitati.");
+        }
+        if (!cancelled) setClientSettings(data.client);
+      } catch (error) {
+        console.error("Postavke klijentskog računa nisu učitane:", error);
+      } finally {
+        if (!cancelled) setClientSettingsLoading(false);
+      }
+    }
+
+    void loadClientSettings();
+    return () => { cancelled = true; };
+  }, [user, userProfile?.role]);
+
+  async function requestPasswordReset() {
+    const email = user?.email;
+    if (!email) {
+      setPasswordResetError("Za račun nije pronađena e-mail adresa.");
+      setPasswordResetMessage("");
+      return;
+    }
+    setPasswordResetSending(true);
+    setPasswordResetError("");
+    setPasswordResetMessage("");
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setPasswordResetMessage("Poslali smo poveznicu za promjenu lozinke na " + email + ".");
+    } catch (error) {
+      console.error("Slanje poveznice za promjenu lozinke nije uspjelo:", error);
+      setPasswordResetError("Poveznicu trenutačno nije moguće poslati. Pokušaj ponovno.");
+    } finally {
+      setPasswordResetSending(false);
+    }
+  }
 
   useEffect(() => {
     if (
@@ -507,6 +583,60 @@ export default function SettingsPage() {
 
 
       <ProfilePhotoSettings uid={user?.uid} role={userProfile?.role} />
+
+      {userProfile?.role === "client" && (
+        <section className="space-y-5 rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#16A6A1]">Klijentski račun</p>
+            <h2 className="mt-1 text-2xl font-black text-[#15171A]">Moji podaci i pristup</h2>
+            <p className="mt-2 text-sm leading-6 text-[#667085]">Pregledaj osnovne podatke i upravljaj pristupom svom računu.</p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAF8] p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#98A2B3]">Ime</p>
+              <p className="mt-1 break-words font-bold text-[#15171A]">
+                {clientSettingsLoading ? "Učitavam…" : clientSettings?.name || user?.displayName || "Nije uneseno"}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAF8] p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#98A2B3]">E-mail za prijavu</p>
+              <p className="mt-1 break-words font-bold text-[#15171A]">{user?.email || "Nije dostupan"}</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAF8] p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#98A2B3]">Tvoj trener</p>
+            {clientSettingsLoading ? (
+              <p className="mt-2 text-sm text-[#667085]">Učitavam dodjelu trenera…</p>
+            ) : clientSettings?.trainer ? (
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <PrivateProfilePhoto uid={clientSettings.trainerId} name={clientSettings.trainer.name} size={48} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-[#15171A]">{clientSettings.trainer.name}</p>
+                  {clientSettings.trainer.isOwner && <p className="text-xs text-[#667085]">Vlasnik teretane</p>}
+                </div>
+                <Link href="/dashboard/chat" className="rounded-xl bg-[#111317] px-4 py-2.5 text-sm font-bold text-white hover:bg-black">
+                  Otvori chat →
+                </Link>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-[#667085]">Trener još nije dodijeljen. Vlasnik teretane upravlja dodjelom.</p>
+            )}
+          </div>
+
+          <div className="border-t border-[#EEF0EC] pt-5">
+            <h3 className="font-black text-[#15171A]">Lozinka</h3>
+            <p className="mt-1 text-sm text-[#667085]">Poslat ćemo poveznicu za postavljanje nove lozinke na tvoj e-mail.</p>
+            <button type="button" onClick={() => void requestPasswordReset()} disabled={passwordResetSending}
+              className="mt-3 rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm font-bold text-[#15171A] hover:bg-[#F9FAF8] disabled:opacity-50">
+              {passwordResetSending ? "Šaljem poveznicu…" : "Pošalji poveznicu za promjenu lozinke"}
+            </button>
+            {passwordResetMessage && <p role="status" className="mt-3 text-sm font-semibold text-emerald-700">{passwordResetMessage}</p>}
+            {passwordResetError && <p role="alert" className="mt-3 text-sm font-semibold text-red-700">{passwordResetError}</p>}
+          </div>
+        </section>
+      )}
 
       {/* OWNER SAFE REPORT SETTINGS */}
 
